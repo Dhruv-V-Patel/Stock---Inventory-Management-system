@@ -1,0 +1,366 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Finished Stock | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/finished-stock.css" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="app-layout">
+      <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+      <div id="sidebar-container"></div>
+
+      <div class="main-wrapper">
+        <div id="header-container"></div>
+
+        <main class="main-content">
+          <section class="finished-stock-page">
+            <!-- =========================
+                     SUMMARY
+                ========================== -->
+            <section class="finished-summary-grid">
+              <article class="finished-summary-card">
+                <div class="summary-icon blue">
+                  <i class="fa-solid fa-box"></i>
+                </div>
+
+                <div>
+                  <span>Total Products</span>
+                  <strong id="totalProducts">0</strong>
+                </div>
+              </article>
+
+              <article class="finished-summary-card">
+                <div class="summary-icon green">
+                  <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div>
+                  <span>Total Stock</span>
+                  <strong id="totalStock">0</strong>
+                </div>
+              </article>
+
+              <article class="finished-summary-card">
+                <div class="summary-icon purple">
+                  <i class="fa-solid fa-arrow-down"></i>
+                </div>
+
+                <div>
+                  <span>Stock In Today</span>
+                  <strong id="stockInToday">0</strong>
+                </div>
+              </article>
+
+              <article class="finished-summary-card">
+                <div class="summary-icon orange">
+                  <i class="fa-solid fa-arrow-up"></i>
+                </div>
+
+                <div>
+                  <span>Stock Out Today</span>
+                  <strong id="stockOutToday">0</strong>
+                </div>
+              </article>
+            </section>
+
+            <!-- =========================
+                     PRODUCT-WISE STOCK
+                ========================== -->
+            <section class="content-card finished-product-card">
+              <div class="card-header finished-card-header">
+                <div>
+                  <h2>Product-wise Stock</h2>
+                  <p>
+                    Opening stock, today's movements and currently available
+                    quantity.
+                  </p>
+                </div>
+              </div>
+
+              <div class="finished-filters">
+                <div class="search-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+
+                  <input
+                    id="stockSearch"
+                    type="search"
+                    placeholder="Search by code, name or category..."
+                    autocomplete="off"
+                  />
+                </div>
+
+                <select id="categoryFilter" class="filter-select">
+                  <option value="">All Categories</option>
+                </select>
+
+                <select id="stockStatusFilter" class="filter-select">
+                  <option value="">All Stock Status</option>
+                  <option value="in_stock">In Stock</option>
+                  <option value="low_stock">Low Stock</option>
+                  <option value="out_of_stock">Out of Stock</option>
+                </select>
+
+                <button
+                  class="secondary-button"
+                  id="resetFilters"
+                  type="button"
+                >
+                  <i class="fa-solid fa-rotate-left"></i>
+                  Reset
+                </button>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table finished-stock-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Category</th>
+                      <th>Unit</th>
+                      <th>Opening</th>
+                      <th>Stock In</th>
+                      <th>Stock Out</th>
+                      <th>Damaged</th>
+                      <th>Available</th>
+                      <th>Status</th>
+                      <th class="action-column">Action</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="stockTableBody">
+                    <tr>
+                      <td colspan="9">
+                        <div class="stock-loading">
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                          Loading finished stock...
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="stock-empty" id="stockEmpty" hidden>
+                <div class="empty-icon">
+                  <i class="fa-solid fa-box-open"></i>
+                </div>
+
+                <h3>No finished stock found</h3>
+
+                <p>
+                  Finished stock will appear after production is completed and stock movements are recorded.
+                </p>
+              </div>
+
+              <div class="finished-stock-footer">
+                <span id="stockCount">Showing 0 products</span>
+
+                <div class="stock-pagination">
+                  <button
+                    type="button"
+                    class="pagination-button"
+                    id="previousPage"
+                    disabled
+                  >
+                    <i class="fa-solid fa-chevron-left"></i>
+                  </button>
+
+                  <span id="pageNumber">1</span>
+
+                  <button
+                    type="button"
+                    class="pagination-button"
+                    id="nextPage"
+                    disabled
+                  >
+                    <i class="fa-solid fa-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            </section>
+
+            <!-- =========================
+                     RECENT MOVEMENTS
+                ========================== -->
+            <section class="content-card movement-card">
+              <div class="card-header finished-card-header">
+                <div>
+                  <h2>Recent Stock Movements</h2>
+                  <p>Latest finished-stock IN and OUT transactions.</p>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="data-table movement-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Product</th>
+                      <th>Type</th>
+                      <th>Quantity</th>
+                      <th>Reference</th>
+                      <th>Remarks</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="movementTableBody">
+                    <tr>
+                      <td colspan="6">
+                        <div class="stock-loading">
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                          Loading recent movements...
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="stock-empty compact" id="movementEmpty" hidden>
+                <div class="empty-icon">
+                  <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                </div>
+
+                <h3>No stock movements</h3>
+                <p>No finished-stock movement has been recorded yet.</p>
+              </div>
+            </section>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <!-- =========================
+     PRODUCT STOCK HISTORY MODAL
+========================== -->
+    <div class="modal-overlay" id="historyModal" hidden>
+      <div
+        class="modal finished-history-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="historyTitle"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-clock-rotate-left"></i>
+            </div>
+
+            <div>
+              <h2 id="historyTitle">Stock History</h2>
+              <p id="historySubtitle">Product stock movement history</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeHistoryModal"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="history-summary">
+          <div>
+            <span>Product</span>
+            <strong id="historyProductName">-</strong>
+          </div>
+
+          <div>
+            <span>Current Stock</span>
+            <strong id="historyCurrentStock">0</strong>
+          </div>
+        </div>
+
+        <div class="table-responsive history-table-wrap">
+          <table class="data-table history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Movement</th>
+                <th>Reference</th>
+                <th>Quantity</th>
+                <th>Remarks</th>
+              </tr>
+            </thead>
+
+            <tbody id="historyTableBody">
+              <tr>
+                <td colspan="5">
+                  <div class="stock-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading movement history...
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="modal-footer history-footer">
+          <button
+            class="secondary-button"
+            id="closeHistoryButton"
+            type="button"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/finished-stock.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+
+        await Promise.all([
+          loadSidebar("ready-stock"),
+
+          loadHeader({
+            title: "Finished Stock",
+            description: "View finished product inventory and stock movements",
+          }),
+        ]);
+
+        if (typeof initFinishedStockPage === "function") {
+          initFinishedStockPage();
+        }
+      });
+    </script>
+  </body>
+</html>

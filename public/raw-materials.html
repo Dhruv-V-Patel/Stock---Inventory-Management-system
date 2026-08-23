@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Materials | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/raw-materials.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <meta name="theme-color" content="#2563eb" />
+
+</head>
+
+<body>
+    <div class="app-layout">
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+        <div id="sidebar-container"></div>
+
+        <div class="main-wrapper">
+
+            <main class="main-content">
+                <div id="header-container"></div>
+
+                <section class="summary-grid">
+                    <article class="summary-card">
+                        <div class="summary-icon">
+                            <i class="fa-solid fa-cubes"></i>
+                        </div>
+                        <div>
+                            <span>Total Materials</span>
+                            <strong id="totalMaterials">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="summary-icon success">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <span>Active Materials</span>
+                            <strong id="activeMaterials">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="summary-icon category">
+                            <i class="fa-solid fa-tags"></i>
+                        </div>
+                        <div>
+                            <span>Categories</span>
+                            <strong id="totalCategories">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="summary-card">
+                        <div class="summary-icon danger">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <div>
+                            <span>Inactive</span>
+                            <strong id="inactiveMaterials">0</strong>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="content-card materials-card">
+                    <div class="card-header">
+                        <div>
+                            <h2>Raw Material List</h2>
+                            <p>Maintain materials used in purchasing, BOM and production.</p>
+                        </div>
+
+                        <button class="primary-button" id="addMaterialButton" type="button">
+                            <i class="fa-solid fa-plus"></i>
+                            Add Raw Material
+                        </button>
+                    </div>
+
+                    <div class="filters">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input id="searchInput" type="search" placeholder="Search by code, name or category..."
+                                autocomplete="off">
+                        </div>
+
+                        <select id="categoryFilter" aria-label="Filter by category">
+                            <option value="">All Categories</option>
+                        </select>
+
+                        <select id="statusFilter" aria-label="Filter by status">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                        </select>
+
+                        <button class="secondary-button" id="resetFiltersButton" type="button">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Reset
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table materials-table">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Code</th>
+                                    <th>Category</th>
+                                    <th>Unit</th>
+                                    <th>Min. Stock</th>
+                                    <th>Status</th>
+                                    <th class="action-column">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="materialsTableBody">
+                                <tr>
+                                    <td colspan="7" class="table-state">
+                                        <div class="loading-state">
+                                            <span class="spinner"></span>
+                                            Loading raw materials...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="table-footer">
+                        <span id="tableResultCount">0 materials</span>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add/Edit Modal -->
+    <div class="modal-overlay" id="materialModal" aria-hidden="true">
+        <div class="modal material-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+            <div class="modal-header">
+                <div>
+                    <h2 id="modalTitle">Add Raw Material</h2>
+                    <p id="modalSubtitle">Create a new raw material master record.</p>
+                </div>
+
+                <button class="modal-close" id="closeModalButton" type="button" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="materialForm" novalidate>
+                <input type="hidden" id="materialId">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="materialCode">Material Code <span>*</span></label>
+                        <input id="materialCode" name="code" type="text" maxlength="50" placeholder="e.g. RM-001"
+                            required>
+                        <small>Unique code for stock and purchase records.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialName">Material Name <span>*</span></label>
+                        <input id="materialName" name="name" type="text" maxlength="150" placeholder="e.g. Cement"
+                            required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialCategory">Category</label>
+                        <input id="materialCategory" name="category" type="text" maxlength="100"
+                            list="categorySuggestions" placeholder="e.g. Cement">
+                        <datalist id="categorySuggestions"></datalist>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialUnit">Unit <span>*</span></label>
+
+                        <select id="materialUnit" name="unit" required>
+                            <option value="">Select Unit</option>
+                            <option value="KG">KG - Kilogram</option>
+                            <option value="TON">TON - Tonne</option>
+                            <option value="BAG">BAG - Bag</option>
+                            <option value="CFT">CFT - Cubic Feet</option>
+                            <option value="CUM">CUM - Cubic Meter</option>
+                            <option value="NOS">NOS - Numbers</option>
+                            <option value="PCS">PCS - Pieces</option>
+                            <option value="MTR">MTR - Meter</option>
+                            <option value="SQFT">SQFT - Square Feet</option>
+                            <option value="SQM">SQM - Square Meter</option>
+                            <option value="LITRE">LITRE - Litre</option>
+                            <option value="GRAM">GRAM - Gram</option>
+                            <option value="ML">ML - Millilitre</option>
+                            <option value="SET">SET - Set</option>
+                            <option value="BOX">BOX - Box</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="minimumStock">Minimum Stock</label>
+                        <input id="minimumStock" name="minimum_stock" type="number" min="0" step="0.001" value="0"
+                            placeholder="0">
+                        <small>Used later for low-stock alerts.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialStatus">Status <span>*</span></label>
+                        <select id="materialActive" name="is_active" required>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-error" id="formError"></div>
+
+                <div class="modal-footer">
+                    <button class="secondary-button" id="cancelModalButton" type="button">
+                        Cancel
+                    </button>
+                    <button class="primary-button" id="saveMaterialButton" type="submit">
+                        <i class="fa-solid fa-floppy-disk"></i>
+                        Save Material
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal-overlay" id="deleteModal" aria-hidden="true">
+        <div class="modal confirmation-modal">
+            <div class="confirmation-icon">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h2>Deactivate Material?</h2>
+            <p id="deleteMessage">
+                This material will be marked inactive. Existing purchase and production history will remain safe.
+            </p>
+            <div class="modal-footer">
+                <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
+                <button class="danger-button" id="confirmDeleteButton" type="button">
+                    <i class="fa-solid fa-trash-can"></i>
+                    Deactivate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/sidebar.js"></script>
+    <script src="js/header.js"></script>
+    <script src="/js/raw-materials.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                window.location.replace("/login");
+                return;
+            }
+
+            await Promise.all([
+                loadSidebar("raw-materials"),
+                loadHeader({
+                    title: "Raw Materials Master",
+                    description:
+                        "Manage raw material master data and minimum stock levels",
+                }),
+            ]);
+
+            if (typeof initProductsPage === "function") {
+                initProductsPage();
+            }
+        });
+    </script>
+</body>
+
+</html>

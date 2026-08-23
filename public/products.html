@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Products | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/products.css" />
+
+    <link rel="manifest" href="manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="header-container"></div>
+
+      <main class="main-content">
+        <section class="products-page">
+          <!-- <div class="products-toolbar">
+            <button class="primary-button" id="addProductButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Product</span>
+            </button>
+          </div> -->
+
+          <section class="product-summary-grid">
+            <article class="product-summary-card">
+              <div class="summary-icon blue">
+                <i class="fa-solid fa-box"></i>
+              </div>
+              <div>
+                <span>Total Products</span>
+                <strong id="totalProducts">0</strong>
+              </div>
+            </article>
+
+            <article class="product-summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div>
+                <span>Active Products</span>
+                <strong id="activeProducts">0</strong>
+              </div>
+            </article>
+
+            <article class="product-summary-card">
+              <div class="summary-icon purple">
+                <i class="fa-solid fa-layer-group"></i>
+              </div>
+              <div>
+                <span>Categories</span>
+                <strong id="productCategories">0</strong>
+              </div>
+            </article>
+
+            <article class="product-summary-card">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-ban"></i>
+              </div>
+              <div>
+                <span>Inactive Products</span>
+                <strong id="inactiveProducts">0</strong>
+              </div>
+            </article>
+          </section>
+
+          <section class="content-card products-card">
+            <div class="card-header products-card-header">
+              <div>
+                <h2>Product List</h2>
+                <p>All products configured in the system</p>
+              </div>
+               <button class="primary-button" id="addProductButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Product</span>
+            </button>
+            </div>
+
+            <div class="products-filters">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  id="productSearch"
+                  type="search"
+                  placeholder="Search by code, name or category..."
+                  autocomplete="off"
+                />
+              </div>
+
+              <select id="categoryFilter" class="filter-select">
+                <option value="">All Categories</option>
+              </select>
+
+              <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+
+              <button class="secondary-button" id="resetFilters" type="button">
+                <i class="fa-solid fa-rotate-left"></i>
+                Reset
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table products-table">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Code</th>
+                    <th>Category</th>
+                    <th>Size / Specification</th>
+                    <th>Unit</th>
+                    <th>Min. Stock</th>
+                    <th>Selling Rate</th>
+                    <th>Status</th>
+                    <th class="action-column">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="productsTableBody">
+                  <tr>
+                    <td colspan="9">
+                      <div class="products-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        Loading products...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="products-empty" id="productsEmpty" hidden>
+              <div class="empty-icon">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <h3>No products found</h3>
+              <p>Try changing the filters or add a new product.</p>
+              <button
+                class="primary-button small"
+                id="emptyAddProduct"
+                type="button"
+              >
+                <i class="fa-solid fa-plus"></i>
+                Add Product
+              </button>
+            </div>
+
+            <div class="products-footer">
+              <span id="productsCount">Showing 0 products</span>
+
+              <div class="products-pagination" id="productsPagination">
+                <button
+                  type="button"
+                  class="pagination-button"
+                  id="previousPage"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <span id="pageNumber">1</span>
+
+                <button
+                  type="button"
+                  class="pagination-button"
+                  id="nextPage"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- Product Modal -->
+    <div class="modal-overlay" id="productModal" hidden>
+      <div
+        class="modal product-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="productModalTitle"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-box"></i>
+            </div>
+
+            <div>
+              <h2 id="productModalTitle">Add Product</h2>
+              <p id="productModalDescription">
+                Create a product master record.
+              </p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeProductModal"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="productForm" novalidate>
+          <input type="hidden" id="productId" />
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="productCode">Product Code <span>*</span></label>
+              <input
+                id="productCode"
+                name="code"
+                type="text"
+                maxlength="50"
+                placeholder="e.g. RCC-001"
+                required
+              />
+              <small class="form-error" data-error-for="productCode"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="productName">Product Name <span>*</span></label>
+              <input
+                id="productName"
+                name="name"
+                type="text"
+                maxlength="150"
+                placeholder="e.g. RCC Pipe"
+                required
+              />
+              <small class="form-error" data-error-for="productName"></small>
+            </div>
+
+              <div class="form-group">
+                <label for="productCategory"> Category </label>
+
+                <div class="category-field">
+                  <select id="productCategory" name="category">
+                    <option value="">Select Category</option>
+                  </select>
+
+                  <button
+                    type="button"
+                    class="add-category-button"
+                    id="addCategoryButton"
+                    title="Add Category"
+                    aria-label="Add Category"
+                  >
+                    <i class="fa-solid fa-plus"></i>
+                  </button>
+                </div>
+              </div>
+
+            <div class="form-group">
+              <label for="productSize">Size / Specification</label>
+              <input
+                id="productSize"
+                name="size"
+                type="text"
+                maxlength="100"
+                placeholder="e.g. 600mm × 2m"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="productUnit">Unit <span>*</span></label>
+              <select id="productUnit" name="unit" required>
+                <option value="PCS">PCS</option>
+                <option value="MTR">MTR</option>
+                <option value="KG">KG</option>
+                <option value="SET">SET</option>
+                <option value="NOS">NOS</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="minimumStock">Minimum Stock</label>
+              <input
+                id="minimumStock"
+                name="minimum_stock"
+                type="number"
+                min="0"
+                step="0.001"
+                value="0"
+                placeholder="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="sellingRate">Selling Rate</label>
+              <div class="currency-input">
+                <span>₹</span>
+                <input
+                  id="sellingRate"
+                  name="selling_rate"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value="0"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="productStatus">Status <span>*</span></label>
+              <select id="productStatus" name="is_active" required>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+              Stock quantity is not maintained here. It is calculated from stock
+              movements, production, sales and dispatch transactions.
+            </span>
+          </div>
+
+          <div class="modal-footer">
+            <button class="secondary-button" id="cancelProduct" type="button">
+              Cancel
+            </button>
+
+            <button class="primary-button" id="saveProduct" type="submit">
+              <i class="fa-solid fa-check"></i>
+              <span>Save Product</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="categoryModal" hidden>
+      <div
+        class="category-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="categoryModalTitle"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+
+            <div>
+              <h2 id="categoryModalTitle">Add Category</h2>
+
+              <p>Create a new product category.</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeCategoryModal"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="categoryForm" novalidate>
+          <div class="category-form-body">
+            <div class="form-group">
+              <label for="newCategoryName">
+                Category Name <span>*</span>
+              </label>
+
+              <input
+                id="newCategoryName"
+                type="text"
+                maxlength="100"
+                placeholder="e.g. RCC Pipe"
+                autocomplete="off"
+                required
+              />
+
+              <small class="form-error" id="categoryError"></small>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="secondary-button" id="cancelCategory" type="button">
+              Cancel
+            </button>
+
+            <button class="primary-button" id="saveCategory" type="submit">
+              <i class="fa-solid fa-check"></i>
+              Save Category
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+
+    <!-- ================== Delete Modal ============================ -->
+        <div class="modal-overlay" id="deleteModal" aria-hidden="true" hidden>
+        <div class="modal confirmation-modal">
+            <div class="confirmation-icon">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h2>Deactivate Material?</h2>
+            <p id="deleteMessage">
+               If this product is already referenced by production, sales or other transactions, the database may reject deletion.
+            </p>
+            <div class="modal-footer">
+                <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
+                <button class="danger-button" id="confirmDeleteButton" type="button">
+                    <i class="fa-solid fa-trash-can"></i>
+                    Deactivate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="js/sidebar.js"></script>
+    <script src="js/header.js"></script>
+    <script src="js/products.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+
+        await Promise.all([
+          loadSidebar("products"),
+          loadHeader({
+            title: "Product Master",
+            description:
+              "Manage RCC pipes, covers, frames, blocks and other products.",
+          }),
+        ]);
+
+        if (typeof initProductsPage === "function") {
+          initProductsPage();
+        }
+      });
+    </script>
+  </body>
+</html>

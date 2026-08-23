@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customers | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/customers.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="customers-page">
+
+        <section class="customer-summary-grid">
+          <article class="customer-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <div>
+              <span>Total Customers</span>
+              <strong id="totalCustomers">0</strong>
+            </div>
+          </article>
+
+          <article class="customer-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <span>Active Customers</span>
+              <strong id="activeCustomers">0</strong>
+            </div>
+          </article>
+
+          <article class="customer-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+              <span>With GSTIN</span>
+              <strong id="gstCustomers">0</strong>
+            </div>
+          </article>
+
+          <article class="customer-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+              <span>Outstanding</span>
+              <strong id="outstandingCustomers">₹0.00</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card customers-card">
+          <div class="card-header customers-card-header">
+            <div>
+              <h2>Customer List</h2>
+              <p>All customers configured in the system</p>
+            </div>
+
+            <button class="primary-button" id="addCustomerButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Customer</span>
+            </button>
+          </div>
+
+          <div class="customers-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                id="customerSearch"
+                type="search"
+                placeholder="Search customer, contact or mobile..."
+                autocomplete="off">
+            </div>
+
+            <select id="statusFilter" class="filter-select">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table customers-table">
+              <thead>
+                <tr>
+                  <th>Customer</th>
+                  <th>Contact Person</th>
+                  <th>Mobile</th>
+                  <th>GSTIN</th>
+                  <th>Total Sales</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="customersTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="customers-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading customers...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="customers-empty" id="customersEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-users"></i>
+            </div>
+            <h3>No customers found</h3>
+            <p>Try changing the filters or add a new customer.</p>
+
+            <button class="primary-button small" id="emptyAddCustomer" type="button">
+              <i class="fa-solid fa-plus"></i>
+              Add Customer
+            </button>
+          </div>
+
+          <div class="customers-footer">
+            <span id="customersCount">Showing 0 customers</span>
+
+            <div class="customers-pagination">
+              <button type="button" class="pagination-button" id="previousPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span id="pageNumber">1</span>
+
+              <button type="button" class="pagination-button" id="nextPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Customer Add/Edit Modal -->
+  <div class="modal-overlay" id="customerModal" hidden>
+    <div class="modal customer-modal" role="dialog" aria-modal="true"
+      aria-labelledby="customerModalTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-user"></i>
+          </div>
+
+          <div>
+            <h2 id="customerModalTitle">Add Customer</h2>
+            <p id="customerModalDescription">
+              Create a customer master record.
+            </p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeCustomerModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="customerForm" novalidate>
+        <input type="hidden" id="customerId">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="customerName">
+              Customer Name <span>*</span>
+            </label>
+            <input id="customerName" type="text" maxlength="150"
+              placeholder="e.g. ABC Traders" required>
+            <small class="form-error" data-error-for="customerName"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="contactPerson">Contact Person</label>
+            <input id="contactPerson" type="text" maxlength="100"
+              placeholder="e.g. Raj Patel">
+            <small class="form-error" data-error-for="contactPerson"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="customerMobile">Mobile</label>
+            <input id="customerMobile" type="tel" maxlength="10"
+              inputmode="numeric" placeholder="e.g. 9876543210">
+            <small class="form-error" data-error-for="customerMobile"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="customerGstin">GSTIN</label>
+            <input id="customerGstin" type="text" maxlength="15"
+              placeholder="e.g. 24ABCDE1234F1Z5" autocomplete="off">
+            <small class="form-error" data-error-for="customerGstin"></small>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="paymentTerms">Payment Terms</label>
+            <input id="paymentTerms" type="text" maxlength="100"
+              placeholder="e.g. 30 Days">
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="customerAddress">Address</label>
+            <textarea id="customerAddress" rows="3" maxlength="1000"
+              placeholder="Customer billing / office address"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="customerStatus">
+              Status <span>*</span>
+            </label>
+
+            <select id="customerStatus" required>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>
+            A customer used in sales or other transactions cannot be hard-deleted.
+            You can set it inactive instead.
+          </span>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelCustomer" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="saveCustomer" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Save Customer</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Customer View Modal -->
+  <div class="modal-overlay" id="customerViewModal" hidden>
+    <div class="modal customer-view-modal" role="dialog" aria-modal="true"
+      aria-labelledby="viewCustomerName">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-user"></i>
+          </div>
+
+          <div>
+            <h2 id="viewCustomerName">Customer</h2>
+            <p>Customer details and sales summary.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeCustomerView" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="customer-view-body">
+        <div class="customer-profile">
+          <div class="customer-profile-item">
+            <span>Contact Person</span>
+            <strong id="viewCustomerContact">—</strong>
+          </div>
+
+          <div class="customer-profile-item">
+            <span>Mobile</span>
+            <strong id="viewCustomerMobile">—</strong>
+          </div>
+
+          <div class="customer-profile-item">
+            <span>GSTIN</span>
+            <strong id="viewCustomerGstin">—</strong>
+          </div>
+
+          <div class="customer-profile-item">
+            <span>Payment Terms</span>
+            <strong id="viewCustomerTerms">—</strong>
+          </div>
+
+          <div class="customer-profile-item full">
+            <span>Address</span>
+            <strong id="viewCustomerAddress">—</strong>
+          </div>
+
+          <div class="customer-profile-item">
+            <span>Status</span>
+            <strong id="viewCustomerStatus">—</strong>
+          </div>
+        </div>
+
+        <div class="customer-view-summary">
+          <div class="customer-view-summary-card">
+            <span>Net Sales</span>
+            <strong id="viewTotalSales">₹0.00</strong>
+          </div>
+
+          <div class="customer-view-summary-card">
+            <span>Received</span>
+            <strong id="viewPaidAmount">₹0.00</strong>
+          </div>
+
+          <div class="customer-view-summary-card">
+            <span>Pending</span>
+            <strong id="viewDueAmount">₹0.00</strong>
+          </div>
+        </div>
+
+        <div class="customer-view-section">
+          <h3>Recent Sales</h3>
+
+          <div class="table-responsive">
+            <table class="customer-view-table">
+              <thead>
+                <tr>
+                  <th>Sale No</th>
+                  <th>Date</th>
+                  <th>Total</th>
+                  <th>Sales Return</th>
+                  <th>Net Total</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+
+              <tbody id="recentSalesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="closeCustomerViewButton" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Customer Modal -->
+  <div class="modal-overlay" id="deleteCustomerModal" hidden>
+    <div class="delete-modal" role="dialog" aria-modal="true"
+      aria-labelledby="deleteCustomerTitle">
+
+      <div class="delete-modal-icon">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+
+      <h2 id="deleteCustomerTitle">Delete Customer?</h2>
+
+      <p>
+        Are you sure you want to delete
+        <strong id="deleteCustomerName"></strong>?
+      </p>
+
+      <div class="delete-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>
+          Customers used in transactions cannot be deleted.
+        </span>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button type="button" class="secondary-button" id="cancelDeleteCustomer">
+          Cancel
+        </button>
+
+        <button type="button" class="danger-button" id="confirmDeleteCustomer">
+          <i class="fa-solid fa-trash"></i>
+          <span>Delete Customer</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/sidebar.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/customers.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("customers"),
+        loadHeader({
+          title: "Customer Master",
+          description: "Manage customers, contacts, GSTIN and outstanding balances."
+        })
+      ]);
+
+      if (typeof initCustomersPage === "function") {
+        await initCustomersPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

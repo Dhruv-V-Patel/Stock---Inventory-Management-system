@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Audit Logs | Jay Products</title>
+    <script>(() => document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'))()</script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/audit-logs.css">
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+        <div id="header-container"></div>
+        <main class="main-content">
+            <section class="audit-logs-page">
+                <section class="audit-summary-grid">
+                    <article class="audit-summary-card">
+                        <div class="summary-icon blue"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div><span>Total Activities</span><strong id="totalLogs">0</strong></div>
+                    </article>
+                    <article class="audit-summary-card">
+                        <div class="summary-icon purple"><i class="fa-solid fa-calendar-day"></i></div>
+                        <div><span>Today</span><strong id="todayLogs">0</strong></div>
+                    </article>
+                    <article class="audit-summary-card">
+                        <div class="summary-icon green"><i class="fa-solid fa-pen-to-square"></i></div>
+                        <div><span>Updates</span><strong id="updateLogs">0</strong></div>
+                    </article>
+                    <article class="audit-summary-card">
+                        <div class="summary-icon orange"><i class="fa-solid fa-trash-can"></i></div>
+                        <div><span>Deletes</span><strong id="deleteLogs">0</strong></div>
+                    </article>
+                </section>
+                <section class="content-card audit-logs-card">
+                    <div class="card-header audit-card-header">
+                        <div>
+                            <h2>Audit Log</h2>
+                            <p>Track important actions and changes made in the system.</p>
+                        </div><button class="secondary-button" id="refreshAuditLogs" type="button"><i
+                                class="fa-solid fa-rotate"></i> Refresh</button>
+                    </div>
+                    <div class="audit-filters">
+                        <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="auditSearch"
+                                type="search" placeholder="Search user, module, action or record..." autocomplete="off">
+                        </div><select id="auditUserFilter" class="filter-select">
+                            <option value="">All Users</option>
+                        </select><select id="auditModuleFilter" class="filter-select">
+                            <option value="">All Modules</option>
+                        </select><select id="auditActionFilter" class="filter-select">
+                            <option value="">All Actions</option>
+                        </select>
+                        <div class="date-filter-wrapper"><input id="auditFromDate" class="date-filter" type="date"><i
+                                class="fa-regular fa-calendar date-filter-icon"></i></div>
+                        <div class="date-filter-wrapper"><input id="auditToDate" class="date-filter" type="date"><i
+                                class="fa-regular fa-calendar date-filter-icon"></i></div><button
+                            class="secondary-button" id="resetAuditFilters" type="button"><i
+                                class="fa-solid fa-rotate-left"></i> Reset</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="data-table audit-logs-table">
+                            <thead>
+                                <tr>
+                                    <th>Date & Time</th>
+                                    <th>User</th>
+                                    <th>Module</th>
+                                    <th>Action</th>
+                                    <th>Record ID</th>
+                                    <th>IP Address</th>
+                                    <th class="action-column">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="auditLogsTableBody">
+                                <tr>
+                                    <td colspan="7">
+                                        <div class="audit-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading
+                                            audit logs...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="audit-empty" id="auditEmpty" hidden>
+                        <div class="empty-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <h3>No audit logs found</h3>
+                        <p>Try changing the filters or date range.</p>
+                    </div>
+                    <div class="audit-footer"><span id="auditCount">Showing 0 logs</span>
+                        <div class="audit-pagination"><button type="button" class="pagination-button" id="previousPage"
+                                disabled><i class="fa-solid fa-chevron-left"></i></button><span
+                                id="pageNumber">1</span><button type="button" class="pagination-button" id="nextPage"
+                                disabled><i class="fa-solid fa-chevron-right"></i></button></div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+    </div>
+    <div class="modal-overlay" id="auditDetailsModal" hidden>
+        <div class="modal audit-details-modal" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-title-icon audit-details-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                    <div>
+                        <h2 id="auditDetailsTitle">Audit Log Details</h2>
+                        <p id="auditDetailsSubtitle">Activity details</p>
+                    </div>
+                </div><button class="modal-close" id="closeAuditDetails" type="button"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="auditDetails" class="audit-details">
+                <div class="audit-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading audit log...</div>
+            </div>
+            <div class="modal-footer"><button class="secondary-button" id="closeAuditDetailsButton"
+                    type="button">Close</button></div>
+        </div>
+    </div>
+    <div id="toastContainer" class="toast-container"></div>
+    <script src="/js/audit-logs.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script>document.addEventListener('DOMContentLoaded', async () => { if (!localStorage.getItem('accessToken')) return window.location.replace('/login'); await Promise.all([loadSidebar('audit-logs'), loadHeader({ title: 'Audit Logs', description: 'Track system activities and record changes' })]) })</script>
+</body>
+
+</html>

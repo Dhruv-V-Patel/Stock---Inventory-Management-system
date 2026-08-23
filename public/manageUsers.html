@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Manage Users | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/manageUsers.css" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="header-container"></div>
+
+      <main class="main-content">
+        <section class="manage-users-page">
+          <!-- SUMMARY -->
+          <section class="users-summary-grid">
+            <article class="users-summary-card">
+              <div class="summary-icon blue">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <div>
+                <span>Total Users</span><strong id="totalUsers">0</strong>
+              </div>
+            </article>
+            <article class="users-summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+              <div>
+                <span>Active Users</span><strong id="activeUsers">0</strong>
+              </div>
+            </article>
+            <article class="users-summary-card">
+              <div class="summary-icon purple">
+                <i class="fa-solid fa-shield-halved"></i>
+              </div>
+              <div><span>Admins</span><strong id="totalAdmins">0</strong></div>
+            </article>
+            <article class="users-summary-card">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-user-clock"></i>
+              </div>
+              <div>
+                <span>Inactive Users</span><strong id="inactiveUsers">0</strong>
+              </div>
+            </article>
+          </section>
+
+          <!-- USER LIST -->
+          <section class="content-card users-card">
+            <div class="card-header users-card-header">
+              <div>
+                <h2>Users</h2>
+                <p>Manage system users and account access.</p>
+              </div>
+
+              <button class="primary-button" id="addUserButton" type="button">
+                <i class="fa-solid fa-plus"></i>
+                <span>Add User</span>
+              </button>
+            </div>
+
+            <div class="users-filters">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input
+                  id="userSearch"
+                  type="search"
+                  placeholder="Search name, email or mobile..."
+                  autocomplete="off"
+                />
+              </div>
+
+              <select id="roleFilter" class="filter-select">
+                <option value="">All Roles</option>
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+              </select>
+
+              <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+
+              <button class="secondary-button" id="resetFilters" type="button">
+                <i class="fa-solid fa-rotate-left"></i>
+                Reset
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table users-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Email</th>
+                    <th>Mobile</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th class="action-column">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="usersTableBody">
+                  <tr>
+                    <td colspan="7">
+                      <div class="users-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        Loading users...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="users-empty" id="usersEmpty" hidden>
+              <div class="empty-icon">
+                <i class="fa-solid fa-users"></i>
+              </div>
+              <h3>No users found</h3>
+              <p>Try changing the filters or create your first system user.</p>
+              <button
+                class="primary-button small"
+                id="emptyAddUser"
+                type="button"
+              >
+                <i class="fa-solid fa-plus"></i>
+                Add User
+              </button>
+            </div>
+
+            <div class="users-footer">
+              <span id="usersCount">Showing 0 users</span>
+
+              <div class="users-pagination">
+                <button
+                  type="button"
+                  class="pagination-button"
+                  id="previousPage"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <span id="pageNumber">1</span>
+
+                <button
+                  type="button"
+                  class="pagination-button"
+                  id="nextPage"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- ADD / EDIT USER MODAL -->
+    <div class="modal-overlay" id="userModal" hidden>
+      <div
+        class="modal user-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="userModalTitle"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-user-gear"></i>
+            </div>
+
+            <div>
+              <h2 id="userModalTitle">Add User</h2>
+              <p id="userModalDescription">Create a new user account.</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeUserModal"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <form id="userForm" novalidate>
+          <input type="hidden" id="userId" />
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="userName">Full Name <span>*</span></label>
+              <input
+                id="userName"
+                type="text"
+                maxlength="150"
+                placeholder="e.g. Dhruv Patel"
+                autocomplete="name"
+              />
+              <small class="form-error" data-error-for="userName"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="userEmail">Email <span>*</span></label>
+              <input
+                id="userEmail"
+                type="email"
+                maxlength="255"
+                placeholder="e.g. dhruv@example.com"
+                autocomplete="email"
+              />
+              <small class="form-error" data-error-for="userEmail"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="userMobile">Mobile <span>*</span></label>
+              <input
+                id="userMobile"
+                type="tel"
+                maxlength="20"
+                placeholder="e.g. 9876543210"
+                autocomplete="tel"
+              />
+              <small class="form-error" data-error-for="userMobile"></small>
+            </div>
+
+            <div class="form-group">
+              <label for="userRole">Role <span>*</span></label>
+              <select id="userRole">
+                <option value="">Select Role</option>
+                <option value="admin">Admin</option>
+                <option value="member">Member</option>
+              </select>
+              <small class="form-error" data-error-for="userRole"></small>
+            </div>
+
+            <div class="form-group password-group">
+              <label for="userPassword">
+                New Password <span id="passwordRequiredMark">*</span>
+              </label>
+
+              <div class="password-input">
+                <input
+                  id="userPassword"
+                  type="password"
+                  maxlength="100"
+                  placeholder="Enter new password"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  id="toggleUserPassword"
+                  aria-label="Show password"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+
+              <div class="password-strength" id="passwordStrength">
+                <div class="strength-bar">
+                  <span id="passwordStrengthBar"></span>
+                </div>
+                <span id="passwordStrengthText">Password strength: —</span>
+              </div>
+
+              <ul class="password-rules">
+                <li data-rule="length">At least 8 characters</li>
+                <li data-rule="uppercase">One uppercase letter</li>
+                <li data-rule="digit">One digit</li>
+                <li data-rule="special">One special symbol</li>
+              </ul>
+
+              <small class="form-error" data-error-for="userPassword"></small>
+              <small class="field-help" id="passwordHelp"
+                >Minimum 8 characters with uppercase, digit and special
+                symbol.</small
+              >
+            </div>
+
+            <div class="form-group password-group">
+              <label for="confirmUserPassword">
+                Confirm New Password
+                <span id="confirmPasswordRequiredMark">*</span>
+              </label>
+
+              <div class="password-input">
+                <input
+                  id="confirmUserPassword"
+                  type="password"
+                  maxlength="100"
+                  placeholder="Re-enter new password"
+                  autocomplete="new-password"
+                />
+                <button
+                  type="button"
+                  id="toggleConfirmUserPassword"
+                  aria-label="Show password"
+                >
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </div>
+
+              <small
+                class="form-error"
+                data-error-for="confirmUserPassword"
+              ></small>
+            </div>
+
+            <div class="form-group">
+              <label for="userStatus">Status</label>
+              <select id="userStatus">
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button class="secondary-button" id="cancelUser" type="button">
+              Cancel
+            </button>
+
+            <button class="primary-button" id="saveUser" type="submit">
+              <i class="fa-solid fa-check"></i>
+              <span>Save User</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- VIEW USER MODAL -->
+    <div class="modal-overlay" id="userViewModal" hidden>
+      <div
+        class="modal user-view-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="viewUserName"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div>
+              <h2>User Details</h2>
+              <p>Account information.</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeUserView"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="user-view-body">
+          <div class="user-profile">
+            <div class="user-avatar large" id="viewUserAvatar">DP</div>
+            <div>
+              <h3 id="viewUserName">—</h3>
+              <span class="role-badge" id="viewUserRole">—</span>
+            </div>
+          </div>
+
+          <div class="user-details-grid">
+            <div class="user-detail-box">
+              <span>Email</span>
+              <strong id="viewUserEmail">—</strong>
+            </div>
+
+            <div class="user-detail-box">
+              <span>Mobile</span>
+              <strong id="viewUserMobile">—</strong>
+            </div>
+
+            <div class="user-detail-box">
+              <span>Role</span>
+              <strong id="viewUserRoleDetail">—</strong>
+            </div>
+
+            <div class="user-detail-box">
+              <span>Status</span>
+              <strong id="viewUserStatus">—</strong>
+            </div>
+          </div>
+
+          <div class="created-detail">
+            <i class="fa-regular fa-calendar"></i>
+            <span>Created:</span>
+            <strong id="viewUserCreated">—</strong>
+          </div>
+
+          <div class="modal-footer">
+            <button
+              class="secondary-button"
+              id="closeUserViewButton"
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div class="modal-overlay" id="deleteUserModal" hidden>
+      <div
+        class="delete-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="deleteUserTitle"
+      >
+        <div class="delete-modal-icon">
+          <i class="fa-solid fa-trash"></i>
+        </div>
+
+        <h2 id="deleteUserTitle">Delete User?</h2>
+
+        <p>
+          Are you sure you want to delete
+          <strong id="deleteUserName"></strong>?
+        </p>
+
+        <div class="delete-warning">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>This action permanently removes the user account.</span>
+        </div>
+
+        <div class="delete-modal-actions">
+          <button type="button" class="secondary-button" id="cancelDeleteUser">
+            Cancel
+          </button>
+
+          <button type="button" class="danger-button" id="confirmDeleteUser">
+            <i class="fa-solid fa-trash"></i>
+            <span>Delete User</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/manageUsers.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+
+        await Promise.all([
+          loadSidebar("manageUsers"),
+          loadHeader({
+            title: "Manage Users",
+            description: "Manage system users and account access.",
+          }),
+        ]);
+
+        if (typeof initManageUsersPage === "function") {
+          await initManageUsersPage();
+        }
+      });
+    </script>
+  </body>
+</html>

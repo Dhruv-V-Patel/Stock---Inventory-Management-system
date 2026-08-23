@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/production.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+    <main class="main-content">
+      <section class="production-page">
+        <!-- <div class="production-toolbar">
+            <div class="production-title">
+              <div class="production-title-icon">
+                <i class="fa-solid fa-industry"></i>
+              </div>
+              <div>
+                <p class="eyebrow">MANUFACTURING</p>
+                <h1>Production</h1>
+                <p class="subtitle">
+                  Manage production batches and track manufacturing output.
+                </p>
+              </div>
+            </div>
+           
+          </div> -->
+
+        <section class="production-summary-grid">
+          <article class="production-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <span>Total Batches</span><strong id="totalBatches">0</strong>
+            </div>
+          </article>
+          <article class="production-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div>
+              <span>Today's Production</span><strong id="todayProduction">0 <small>NOS</small></strong>
+            </div>
+          </article>
+          <article class="production-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div>
+              <span>Planned Quantity</span><strong id="plannedQuantitySummary">0 <small>NOS</small></strong>
+            </div>
+          </article>
+          <article class="production-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <span>Produced Quantity</span><strong id="producedQuantitySummary">0 <small>NOS</small></strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card product-wise-card">
+          <div class="card-header">
+            <div>
+              <h2>Product-wise Production</h2>
+              <p>Production quantity grouped by product.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table product-wise-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Planned Qty</th>
+                  <th>Produced Qty</th>
+                  <th>Damaged Qty</th>
+                </tr>
+              </thead>
+              <tbody id="productWiseTableBody"></tbody>
+            </table>
+          </div>
+          <div class="production-empty compact" id="productWiseEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-chart-column"></i>
+            </div>
+            <h3>No production data</h3>
+            <p>Product-wise production will appear here.</p>
+          </div>
+        </section>
+
+        <section class="content-card production-card">
+          <div class="card-header">
+            <div>
+              <h2>Production Batches</h2>
+              <p>All production batches configured in the system.</p>
+            </div>
+            <button class="primary-button" id="addProductionButton" type="button">
+              <i class="fa-solid fa-plus"></i><span>New Production</span>
+            </button>
+          </div>
+          <div class="production-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i><input id="productionSearch" type="search"
+                placeholder="Search batch, product or code..." autocomplete="off" />
+            </div>
+            <select id="productionProductFilter" class="filter-select">
+              <option value="">All Products</option>
+            </select>
+            <select id="productionShiftFilter" class="filter-select">
+              <option value="">All Shifts</option>
+              <option>Morning</option>
+              <option>Afternoon</option>
+              <option>Evening</option>
+            </select>
+            <div class="date-filter-wrapper">
+              <input id="productionDateFilter" class="filter-date" type="date" aria-label="Production date" />
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+            <button class="secondary-button" id="resetProductionFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table production-table">
+              <thead>
+                <tr>
+                  <th>Batch No.</th>
+                  <th>Product</th>
+                  <th>Date</th>
+                  <th>Planned</th>
+                  <th>Produced</th>
+                  <th>Wastage</th>
+                  <th>Shift</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+              <tbody id="productionTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="production-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Loading
+                      production...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="production-empty" id="productionEmpty" hidden>
+            <div class="empty-icon"><i class="fa-solid fa-industry"></i></div>
+            <h3>No Production Found</h3>
+            <p>
+              Create your first production batch to start tracking
+              manufacturing.
+            </p>
+            <button class="primary-button small" id="emptyAddProduction" type="button">
+              <i class="fa-solid fa-plus"></i> New Production
+            </button>
+          </div>
+          <div class="production-footer">
+            <span id="productionCount">Showing 0 production batches</span>
+            <div class="production-pagination">
+              <button class="pagination-button" id="previousProductionPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <span id="productionPageNumber">1</span>
+              <button class="pagination-button" id="nextProductionPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- CREATE MODAL -->
+  <div class="modal-overlay" id="productionModal" hidden>
+    <div class="production-modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-industry"></i>
+          </div>
+          <div>
+            <h2 id="productionModalTitle">Create Production Batch</h2>
+            <p id="productionModalDescription">
+              Create a production batch using an active product BOM.
+            </p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeProductionModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <form id="productionForm" novalidate>
+        <input type="hidden" id="productionId" />
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="productionProduct">Product <span>*</span></label><select id="productionProduct" required>
+              <option value="">Select Product</option>
+            </select><small class="form-error" data-error-for="product"></small>
+          </div>
+          <div class="form-group">
+            <label for="productionBom">Product Design <span>*</span></label><select id="productionBom" required disabled>
+              <option value="">Select Product Design</option>
+            </select><small class="form-help">Select a product first to load its active Product Design.</small><small
+              class="form-error" data-error-for="bom"></small>
+          </div>
+          <div class="form-group">
+            <label for="productionDate">Production Date <span>*</span></label>
+            <input id="productionDate" type="date" required max="" />
+            <small class="form-error" data-error-for="date"></small>
+          </div>
+          <div class="form-group">
+            <label for="producedQuantity">
+              Produced Quantity <span>*</span>
+            </label>
+            <input id="producedQuantity" type="number" min="0" step="1" placeholder="e.g. 38" required />
+            <small class="form-error" data-error-for="produced"></small>
+          </div>
+          <div class="form-group">
+            <label for="damagedQuantity">
+              Damaged Quantity
+            </label>
+
+            <input type="number" id="damagedQuantity" min="0" step="1" value="0" />
+          </div>
+          <div class="form-group">
+            <label for="productionShift">Shift</label><select id="productionShift">
+              <option>Morning</option>
+              <option>Afternoon</option>
+              <option>Evening</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="productionMachine">Machine</label><input id="productionMachine" maxlength="100"
+              placeholder="e.g. Machine-01" />
+          </div>
+          <div class="form-group">
+            <label for="productionSupervisor">Supervisor</label><input id="productionSupervisor" maxlength="100"
+              placeholder="e.g. Rajesh" />
+          </div>
+        </div>
+        <div class="form-group production-notes">
+          <label for="productionRemarks">Notes</label><textarea id="productionRemarks" rows="3" maxlength="1000"
+            placeholder="Enter production notes..."></textarea>
+        </div>
+        <div class="materials-section">
+          <div class="materials-header">
+            <h3>Raw Materials Required</h3>
+            <p>
+              Standard quantity comes from the selected BOM. Enter the actual
+              quantity consumed.
+            </p>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table materials-table">
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Standard Qty</th>
+                  <th>Actual Qty</th>
+                  <th>Variance</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+              <tbody id="productionMaterialsBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="materials-placeholder">
+                      Select a product and BOM to view raw materials.
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i><span>Standard Qty = BOM quantity per unit × planned production
+            quantity. Variance = Actual Qty − Standard Qty.</span>
+        </div>
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelProduction" type="button">
+            Cancel</button><button class="primary-button" id="saveProduction" type="submit">
+            <i class="fa-solid fa-check"></i><span>Save Production</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VIEW MODAL -->
+  <div class="modal-overlay" id="viewProductionModal" hidden>
+    <div class="production-modal view-modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon"><i class="fa-solid fa-eye"></i></div>
+          <div>
+            <h2>Production Details</h2>
+            <p>Production batch and material consumption details.</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeViewProductionModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="view-production-body" id="viewProductionBody"></div>
+    </div>
+  </div>
+
+
+  <!-- EDIT MODAL -->
+  <div class="modal-overlay" id="editProductionModal" hidden>
+    <div class="production-modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </div>
+
+          <div>
+            <h2 id="editProductionModalTitle">
+              Edit Production Batch
+            </h2>
+
+            <p id="editProductionModalDescription">
+              Update production batch details and actual raw material consumption.
+            </p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeEditProductionModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="editProductionForm" novalidate>
+        <input type="hidden" id="editProductionId" />
+
+        <div class="form-grid">
+
+          <!-- Product -->
+          <div class="form-group">
+            <label for="editProductionProduct">
+              Product <span>*</span>
+            </label>
+
+            <select id="editProductionProduct" required disabled>
+              <option value="">Select Product</option>
+            </select>
+
+            <small class="form-error" data-error-for="edit-product"></small>
+          </div>
+
+          <!-- BOM -->
+          <div class="form-group">
+            <label for="editProductionBom">
+              Product Design <span>*</span>
+            </label>
+
+            <select id="editProductionBom" required disabled>
+              <option value="">Select Product Design</option>
+            </select>
+
+            <small class="form-help">
+              BOM used for this production batch.
+            </small>
+
+            <small class="form-error" data-error-for="edit-bom"></small>
+          </div>
+
+          <!-- Production Date -->
+          <div class="form-group">
+            <label for="editProductionDate">
+              Production Date <span>*</span>
+            </label>
+
+            <input id="editProductionDate" type="date" required />
+
+            <small class="form-error" data-error-for="edit-date"></small>
+          </div>
+
+          <!-- Produced Quantity -->
+          <div class="form-group">
+            <label for="editProducedQuantity">
+              Produced Quantity <span>*</span>
+            </label>
+
+            <input id="editProducedQuantity" type="number" min="0" step="1" placeholder="e.g. 38" required />
+
+            <small class="form-error" data-error-for="edit-produced"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="editDamagedQuantity">
+              Damaged Quantity <span>*</span>
+            </label>
+
+            <input id="editDamagedQuantity" type="number" min="0" step="1" placeholder="e.g. 38" required />
+
+            <small class="form-error" data-error-for="edit-produced"></small>
+          </div>
+
+          <!-- Shift -->
+          <div class="form-group">
+            <label for="editProductionShift">
+              Shift
+            </label>
+
+            <select id="editProductionShift">
+              <option>Morning</option>
+              <option>Afternoon</option>
+              <option>Evening</option>
+            </select>
+          </div>
+
+          <!-- Machine -->
+          <div class="form-group">
+            <label for="editProductionMachine">
+              Machine
+            </label>
+
+            <input id="editProductionMachine" maxlength="100" placeholder="e.g. Machine-01" />
+          </div>
+
+          <!-- Supervisor -->
+          <div class="form-group">
+            <label for="editProductionSupervisor">
+              Supervisor
+            </label>
+
+            <input id="editProductionSupervisor" maxlength="100" placeholder="e.g. Rajesh" />
+          </div>
+
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group production-notes">
+          <label for="editProductionRemarks">
+            Notes
+          </label>
+
+          <textarea id="editProductionRemarks" rows="3" maxlength="1000"
+            placeholder="Enter production notes..."></textarea>
+        </div>
+
+        <!-- Raw Materials -->
+        <div class="materials-section">
+
+          <div class="materials-header">
+            <h3>Raw Materials Used</h3>
+
+            <p>
+              Standard quantity comes from the BOM.
+              Update the actual quantity consumed during production.
+            </p>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table materials-table">
+
+              <thead>
+                <tr>
+                  <th>Material</th>
+                  <th>Standard Qty</th>
+                  <th>Actual Qty</th>
+                  <th>Variance</th>
+                  <th>Unit</th>
+                </tr>
+              </thead>
+
+              <tbody id="editProductionMaterialsBody">
+                <tr>
+                  <td colspan="5">
+                    <div class="materials-placeholder">
+                      Loading raw materials...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+
+            </table>
+          </div>
+        </div>
+
+        <!-- Info -->
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+
+          <span>
+            Standard Qty = BOM quantity per unit × planned production
+            quantity. Variance = Actual Qty − Standard Qty.
+          </span>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer">
+
+          <button class="secondary-button" id="cancelEditProduction" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="updateProduction" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Update Production</span>
+          </button>
+
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE MODAL -->
+  <div class="modal-overlay" id="deleteProductionModal" hidden>
+    <div class="delete-modal" role="dialog" aria-modal="true">
+      <div class="delete-icon"><i class="fa-solid fa-trash-can"></i></div>
+      <h3>Delete Production Batch?</h3>
+      <p id="deleteProductionMessage">
+        This will also remove related production material and wastage records.
+      </p>
+      <div class="delete-actions">
+        <button class="secondary-button" id="cancelDeleteProduction" type="button">
+          Cancel</button><button class="danger-button" id="confirmDeleteProduction" type="button">
+          <i class="fa-solid fa-trash"></i> Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/production.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("production"),
+        loadHeader({
+          title: "Production",
+          description:
+            "Manage production batches and track manufacturing output",
+        }),
+      ]);
+
+      if (typeof initProductionPage === "function") initProductionPage();
+    });
+  </script>
+</body>
+
+</html>

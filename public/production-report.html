@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Production Report | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/production-report.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="production-report-page">
+        <section class="summary-grid">
+          <article class="summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-layer-group"></i>
+            </div>
+            <div>
+              <span>Total Batches</span>
+              <strong id="totalBatches">0</strong>
+            </div>
+          </article>
+
+           <article class="summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-gauge-high"></i>
+            </div>
+            <div>
+              <span>Production Efficiency</span>
+              <strong id="efficiency">0%</strong>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-clipboard-list"></i>
+            </div>
+            <div>
+              <span>Planned Quantity</span>
+              <strong id="plannedQuantity">0</strong>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <span>Produced Quantity</span>
+              <strong id="producedQuantity">0</strong>
+            </div>
+          </article>
+
+          <article class="summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <span>Total Wastage</span>
+              <strong id="wastageQuantity">0</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card report-card">
+          <div class="card-header">
+            <div>
+              <h2>Product-wise Production</h2>
+              <p>Production quantity grouped by product for the selected period.</p>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>Code</th>
+                  <th>Unit</th>
+                  <th>Planned Qty</th>
+                  <th>Produced Qty</th>
+                  <th>Wastage</th>
+                  <th>Efficiency</th>
+                </tr>
+              </thead>
+              <tbody id="productWiseBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="report-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading production report...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="report-empty compact" id="productWiseEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-chart-column"></i>
+            </div>
+            <h3>No production data</h3>
+            <p>No product-wise production is available for the selected filters.</p>
+          </div>
+        </section>
+
+        <section class="content-card report-card">
+          <div class="card-header">
+            <div>
+              <h2>Production Batches</h2>
+              <p>Production batches matching the selected filters.</p>
+            </div>
+            <div class="report-toolbar-actions">
+            <button class="secondary-button" id="printReport" type="button">
+              <i class="fa-solid fa-print"></i>
+              <span>Print</span>
+            </button>
+            <button class="primary-button" id="exportReport" type="button">
+              <i class="fa-solid fa-file-excel"></i>
+              <span>Export</span>
+            </button>
+          </div>
+          </div>
+
+          <div class="report-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="search" type="search" placeholder="Search batch, product or code..." autocomplete="off">
+            </div>
+
+            <select id="productFilter" class="filter-select">
+              <option value="">All Products</option>
+            </select>
+
+            <select id="shiftFilter" class="filter-select">
+              <option value="">All Shifts</option>
+            </select>
+
+            <div class="date-filter">
+              <label for="fromDate">From</label>
+              <input id="fromDate" type="date" aria-label="From date">
+            </div>
+
+            <div class="date-filter">
+              <label for="toDate">To</label>
+              <input id="toDate" type="date" aria-label="To date">
+            </div>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Batch No.</th>
+                  <th>Product</th>
+                  <th>Date</th>
+                  <th>Planned</th>
+                  <th>Produced</th>
+                  <th>Wastage</th>
+                  <th>Efficiency</th>
+                  <th>Shift</th>
+                  <th>Machine</th>
+                  <th>Supervisor</th>
+                </tr>
+              </thead>
+              <tbody id="batchBody">
+                <tr>
+                  <td colspan="11">
+                    <div class="report-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading production batches...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="report-empty" id="batchEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+            <h3>No Production Found</h3>
+            <p>No production batches match the selected filters.</p>
+          </div>
+
+          <div class="report-footer">
+            <span id="reportCount">Showing 0 production batches</span>
+            <div class="report-pagination">
+              <button class="pagination-button" id="previousPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <span id="pageNumber">1</span>
+              <button class="pagination-button" id="nextPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <div class="report-period" id="reportPeriod">
+          Report Period: All Dates
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/production-report.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("production-report"),
+        loadHeader({
+          title: "Production Report",
+          description: "Production quantity, wastage and batch analysis",
+        }),
+      ]);
+
+      if (typeof initProductionReportPage === "function") {
+        initProductionReportPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

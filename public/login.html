@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Login | Someshwar AI Solutions LLP</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <link rel="stylesheet" href="css/login.css" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+  <!-- Google Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+
+<body>
+  <main class="login-page">
+    <!-- Company Name -->
+    <header class="company-header">
+      <h1>JAY PRODUCTS</h1>
+    </header>
+
+    <!-- Login Card -->
+    <section class="login-card">
+      <!-- LEFT SIDE -->
+      <div class="login-section">
+        <!-- Brand -->
+        <div class="brand">
+          <img src="images/someshwar-AI-logo.png" alt="Someshwar AI Solutions" class="brand-logo" />
+
+          <div class="brand-content">
+            <h2>SOMESHWAR</h2>
+            <p>AI SOLUTION</p>
+          </div>
+        </div>
+
+        <h3 class="welcome-title">Welcome to <a href="https://someshwarai.in" target="_blank"><span>Someshwar
+              AI</span></a></h3>
+
+        <!-- Login Form -->
+        <form id="loginForm" novalidate>
+          <!-- Username -->
+          <div class="form-group">
+            <label for="username"> Username <span>*</span> </label>
+
+            <div class="input-wrapper">
+              <input type="text" id="username" name="username" placeholder="Enter Email or Phone Number"
+                autocomplete="username" />
+
+              <i class="fa-regular fa-user input-icon"></i>
+            </div>
+
+            <small class="error-message" id="usernameError"></small>
+          </div>
+
+          <!-- Password -->
+          <div class="form-group">
+            <label for="password"> Password <span>*</span> </label>
+
+            <div class="input-wrapper">
+              <input type="password" id="password" name="password" placeholder="Password"
+                autocomplete="current-password" />
+
+              <button type="button" class="password-toggle" id="passwordToggle" aria-label="Show password">
+                <i class="fa-solid fa-eye-slash" id="passwordIcon"></i>
+              </button>
+            </div>
+
+            <small class="error-message" id="passwordError"></small>
+          </div>
+
+          <!-- Forgot Password -->
+          <div class="forgot-password">
+            <a href="/forgotPassword" id="forgotPassword"> Forgot Password? </a>
+          </div>
+
+          <!-- Login Button -->
+          <button type="submit" class="login-button" id="loginButton">
+            <span id="loginButtonText"> Login </span>
+          </button>
+
+          <div class="login-message" id="loginMessage"></div>
+        </form>
+
+        <!-- Footer -->
+        <div class="login-footer">
+          <p>Follow us on</p>
+
+          <div class="social-links">
+            <a href="https://www.instagram.com/someshwaraillp" target="_blank" aria-label="Instagram">
+              <i class="fa-brands fa-instagram"></i>
+            </a>
+
+            <a href="https://www.facebook.com/profile.php?id=61590596334388" target="_blank" aria-label="Facebook">
+              <i class="fa-brands fa-facebook-f"></i>
+            </a>
+
+            <!-- <a href="#" aria-label="LinkedIn">
+                    <i class="fa-brands fa-linkedin-in"></i>
+                </a>
+
+                <a href="#" aria-label="X">
+                    <i class="fa-brands fa-x-twitter"></i>
+                </a> -->
+          </div>
+        </div>
+      </div>
+
+      <div class="visual-section">
+        <div class="visual-decoration visual-decoration-one"></div>
+        <div class="visual-decoration visual-decoration-two"></div>
+
+        <div class="visual-content">
+
+          <div class="product-icon">
+            <span class="rupee-icon"><i class="fa-solid fa-cubes"></i></span>
+          </div>
+
+          <div class="visual-text">
+            <span class="system-badge">
+              <i class="fa-solid fa-shield-halved"></i>
+              RCC PRODUCT MANAGEMENT SYSTEM
+            </span>
+
+            <h2>
+              Manage Your Products.<br>
+              <span>Control Your Stock.</span>
+            </h2>
+
+            <p>
+              Manage RCC products, monitor stock, track sales, manage customers, and
+              keep your entire business organized in one place.
+            </p>
+          </div>
+
+          <div class="feature-list">
+
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fa-solid fa-boxes-stacked"></i>
+              </div>
+              <div>
+                <strong>Manage Products</strong>
+                <span>Manage your RCC products</span>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fa-solid fa-warehouse"></i>
+              </div>
+              <div>
+                <strong>Track Stock</strong>
+                <span>Monitor available stock</span>
+              </div>
+            </div>
+
+            <div class="feature-item">
+              <div class="feature-icon">
+                <i class="fa-solid fa-user-tie"></i>
+              </div>
+              <div>
+                <strong>Manage Customers</strong>
+                <span>Keep customer records organized</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="powered-by">
+            <span>Designed & Developed by</span>
+            <a href="https://someshwarai.in" target="_blank"><strong>Someshwar AI Solution LLP</strong></a>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- Copyright -->
+    <footer class="page-footer">
+      © <span id="currentYear"></span>
+      Someshwar AI Solution LLP. All rights reserved.
+    </footer>
+  </main>
+
+  <script src="js/login.js"></script>
+</body>
+
+</html>

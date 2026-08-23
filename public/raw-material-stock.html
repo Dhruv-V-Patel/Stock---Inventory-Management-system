@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raw Material Stock | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/raw-material-stock.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+<div class="app-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+        <div id="header-container"></div>
+
+        <main class="main-content">
+            <section class="stock-page">
+
+                <section class="stock-summary-grid">
+                    <article class="stock-summary-card">
+                        <div class="stock-summary-icon blue">
+                            <i class="fa-solid fa-cubes"></i>
+                        </div>
+                        <div>
+                            <span>Total Materials</span>
+                            <strong id="totalMaterials">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="stock-summary-card">
+                        <div class="stock-summary-icon green">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <span>In Stock</span>
+                            <strong id="inStockMaterials">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="stock-summary-card">
+                        <div class="stock-summary-icon orange">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <span>Low Stock</span>
+                            <strong id="lowStockMaterials">0</strong>
+                        </div>
+                    </article>
+
+                    <article class="stock-summary-card">
+                        <div class="stock-summary-icon red">
+                            <i class="fa-solid fa-circle-xmark"></i>
+                        </div>
+                        <div>
+                            <span>Out of Stock</span>
+                            <strong id="outOfStockMaterials">0</strong>
+                        </div>
+                    </article>
+                </section>
+
+                <section class="content-card stock-card">
+                    <div class="card-header stock-card-header">
+                        <div>
+                            <h2>Raw Material Stock</h2>
+                            <p>Current stock calculated from raw material stock movements.</p>
+                        </div>
+                    </div>
+
+                    <div class="stock-filters">
+                        <div class="search-box">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input
+                                id="stockSearch"
+                                type="search"
+                                placeholder="Search by code, name or category..."
+                                autocomplete="off"
+                            >
+                        </div>
+
+                        <select id="categoryFilter" class="filter-select">
+                            <option value="">All Categories</option>
+                        </select>
+
+                        <select id="statusFilter" class="filter-select">
+                            <option value="">All Stock Status</option>
+                            <option value="in_stock">In Stock</option>
+                            <option value="low_stock">Low Stock</option>
+                            <option value="out_of_stock">Out of Stock</option>
+                        </select>
+
+                        <button class="secondary-button" id="resetFilters" type="button">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Reset
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table stock-table">
+                            <thead>
+                                <tr>
+                                    <th>Material</th>
+                                    <th>Code</th>
+                                    <th>Category</th>
+                                    <th>Unit</th>
+                                    <th>Min. Stock</th>
+                                    <th>Current Stock</th>
+                                    <th>Status</th>
+                                    <th class="action-column">Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="stockTableBody">
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="stock-loading">
+                                            <i class="fa-solid fa-spinner fa-spin"></i>
+                                            Loading raw material stock...
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="stock-empty" id="stockEmpty" hidden>
+                        <div class="empty-icon">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <h3>No raw material stock found</h3>
+                        <p>Try changing the search or stock filters.</p>
+                    </div>
+
+                    <div class="stock-footer">
+                        <span id="stockCount">Showing 0 materials</span>
+
+                        <div class="stock-pagination">
+                            <button type="button"
+                                    class="pagination-button"
+                                    id="previousPage"
+                                    disabled>
+                                <i class="fa-solid fa-chevron-left"></i>
+                            </button>
+
+                            <span id="pageNumber">1</span>
+
+                            <button type="button"
+                                    class="pagination-button"
+                                    id="nextPage"
+                                    disabled>
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+            </section>
+        </main>
+    </div>
+</div>
+
+<!-- Stock History Modal -->
+<div class="modal-overlay" id="historyModal" hidden>
+    <div class="modal stock-history-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="historyTitle">
+
+        <div class="modal-header">
+            <div class="modal-title-wrap">
+                <div class="modal-title-icon">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                </div>
+
+                <div>
+                    <h2 id="historyTitle">Stock History</h2>
+                    <p id="historySubtitle">Stock movement history</p>
+                </div>
+            </div>
+
+            <button class="modal-close"
+                    id="closeHistoryModal"
+                    type="button"
+                    aria-label="Close">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+
+        <div class="history-summary">
+            <div>
+                <span>Material</span>
+                <strong id="historyMaterialName">-</strong>
+            </div>
+            <div>
+                <span>Current Stock</span>
+                <strong id="historyCurrentStock">0</strong>
+            </div>
+        </div>
+
+        <div class="table-responsive history-table-wrap">
+            <table class="data-table history-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Movement</th>
+                        <th>Reference</th>
+                        <th>Quantity</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody">
+                    <tr>
+                        <td colspan="5">
+                            <div class="stock-loading">
+                                <i class="fa-solid fa-spinner fa-spin"></i>
+                                Loading movement history...
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="modal-footer history-footer">
+            <button class="secondary-button" id="closeHistoryButton" type="button">
+                Close
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/sidebar.js"></script>
+<script src="/js/header.js"></script>
+<script src="/js/raw-material-stock.js"></script>
+
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+            window.location.replace("/login");
+            return;
+        }
+
+        await Promise.all([
+            loadSidebar("raw-material-stock"),
+            loadHeader({
+                title: "Raw Material Stock",
+                description: "View current raw material inventory and stock movements",
+            }),
+        ]);
+
+        if (typeof initRawMaterialStockPage === "function") {
+            initRawMaterialStockPage();
+        }
+    });
+</script>
+</body>
+</html>

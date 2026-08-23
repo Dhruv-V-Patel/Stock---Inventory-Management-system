@@ -1,0 +1,302 @@
+<aside class="sidebar" id="sidebar">
+
+    <!-- ==================== HEADER ==================== -->
+    <div class="sidebar-header">
+        <a href="/" class="sidebar-brand">
+            <div class="brand-icon">
+                <!-- <i class="fa-solid fa-indian-rupee-sign"></i> -->
+                 <img src="images/logo.png" alt="Jay Products" class="brand-logo"/>
+            </div>
+
+            <div class="brand-text">
+                <h2>Jay Products</h2>
+                <span>Stock & Inventory Management</span>
+            </div>
+        </a>
+    </div>
+
+
+    <!-- ==================== NAVIGATION ==================== -->
+    <nav class="sidebar-nav">
+
+        <!-- Dashboard -->
+        <a href="/" class="nav-item" data-page="dashboard">
+            <div class="nav-icon">
+                <i class="fa-solid fa-chart-pie"></i>
+            </div>
+
+            <span>Dashboard</span>
+        </a>
+
+        <!-- ==================== MASTER ==================== -->
+        <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="masterToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-database"></i>
+                </div>
+
+                <span>Master</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="masterArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="masterSubmenu">
+                <a href="/products" class="submenu-item" data-page="products">
+                    <i class="fa-solid fa-box"></i>
+                    <span>Products</span>
+                </a>
+
+                <a href="/raw-materials" class="submenu-item" data-page="raw-materials">
+                    <i class="fa-solid fa-cubes"></i>
+                    <span>Raw Materials</span>
+                </a>
+
+                <a href="/customers" class="submenu-item" data-page="customers">
+                    <i class="fa-solid fa-users"></i>
+                    <span>Customers</span>
+                </a>
+
+                <a href="/suppliers" class="submenu-item" data-page="suppliers">
+                    <i class="fa-solid fa-truck-field"></i>
+                    <span>Suppliers</span>
+                </a>
+
+                <a href="/product-bom" class="submenu-item" data-page="product-bom">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>Product Mix Design</span>
+                </a>
+            </div>
+        </div>
+        <!-- ==================== INVENTORY ==================== -->
+        <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="inventoryToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                </div>
+
+                <span>Inventory</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="inventoryArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="inventorySubmenu">
+
+                <a href="/raw-material-stock" class="submenu-item" data-page="raw-material-stock">
+                    <i class="fa-solid fa-layer-group"></i>
+                    <span>Raw Material Stock</span>
+                </a>
+
+                <a href="/ready-stock" class="submenu-item" data-page="ready-stock">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Ready Stock</span>
+                </a>
+
+                <!-- <a href="/stock-movements" class="submenu-item" data-page="stock-movements">
+                    <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                    <span>Stock Movements</span>
+                </a> -->
+            </div>
+        </div>
+
+        <!-- ==================== PURCHASE ==================== -->
+         <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="purchaseToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+
+                <span>Purchase</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="purchaseArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="purchaseSubmenu">
+               <a href="/purchases" class="submenu-item" data-page="purchase">
+                    <i class="fa-solid fa-cart-plus"></i>
+                    <span>Purchase</span>
+                </a>
+
+                <a href="/purchase-return" class="submenu-item" data-page="purchase-returns">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Purchase Return</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ==================== PRODUCTION ==================== -->
+        <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="productionToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-industry"></i>
+                </div>
+
+                <span>Production</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="productionArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="productionSubmenu">
+                <a href="/production" class="submenu-item" data-page="production">
+                    <i class="fa-solid fa-gears"></i>
+                    <span>Daily Production</span>
+                </a>
+
+                <a href="/production-wastage" class="submenu-item" data-page="production-wastage">
+                    <i class="fa-solid fa-trash-can"></i>
+                    <span>Production Wastage</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ==================== SALES ==================== -->
+        <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="salesToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-file-invoice"></i>
+                </div>
+
+                <span>Sales</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="salesArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="salesSubmenu">
+                <a href="/sales" class="submenu-item" data-page="sales">
+                    <i class="fa-solid fa-file-invoice"></i>
+                    <span>Sales</span>
+                </a>
+
+                <a href="/sales-return" class="submenu-item" data-page="sales-return">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Sales Return</span>
+                </a>
+
+                <a href="/dispatch" class="submenu-item" data-page="dispatch">
+                    <i class="fa-solid fa-truck"></i>
+                    <span>Dispatch</span>
+                </a>
+            </div>
+        </div>
+       
+        <!-- ==================== PAYMENTS ==================== -->
+        <a href="/payments" class="nav-item" data-page="payments">
+            <div class="nav-icon">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+            </div>
+
+            <span>Payments</span>
+        </a>
+
+        <!-- ==================== REPORTS ==================== -->
+        <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="reportsToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-chart-column"></i>
+                </div>
+
+                <span>Reports</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="reportsArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="reportsSubmenu">
+                <a href="/stock-report" class="submenu-item" data-page="stock-report">
+                    <i class="fa-solid fa-boxes-stacked"></i>
+                    <span>Stock Report</span>
+                </a>
+                <a href="/production-report" class="submenu-item" data-page="production-report">
+                    <i class="fa-solid fa-industry"></i>
+                    <span>Production Report</span>
+                </a>
+                <a href="/purchase-report" class="submenu-item" data-page="purchase-report">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Purchase Report</span>
+                </a>
+                <a href="/sales-report" class="submenu-item" data-page="sales-report">
+                    <i class="fa-solid fa-chart-column"></i>
+                    <span>Sales Report</span>
+                </a>
+                <a href="/payments-report" class="submenu-item" data-page="payment-report">
+                    <i class="fa-solid fa-money-bill-transfer"></i>
+                    <span>Payment Report</span>
+                </a>
+                <!-- <a href="/profit-loss-report" class="submenu-item" data-page="profit-loss-report">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <span>Profit/Loss Report</span>
+                </a> -->
+            </div>
+        </div>
+
+
+        <!-- ==================== ADMINISTRATION ==================== -->
+        <div class="admin-menu" id="adminMenu">
+            <div class="nav-section-title">
+                ADMINISTRATION
+            </div>
+            <div class="settings-menu">
+                <button type="button" class="nav-item settings-toggle" id="settingsToggle" aria-expanded="false">
+                    <div class="nav-icon">
+                        <i class="fa-solid fa-gear"></i>
+                    </div>
+                    <span>Settings</span>
+                    <i class="fa-solid fa-chevron-down settings-arrow" id="settingsArrow"></i>
+                </button>
+
+                <div class="settings-submenu" id="settingsSubmenu">
+                    <a href="/manageUsers" class="submenu-item" data-page="manageUsers">
+                        <i class="fa-solid fa-users"></i>
+                        <span>Manage Users</span>
+                    </a>
+                    <a href="/userAuthorities" class="submenu-item" data-page="userAuthorities">
+                        <i class="fa-solid fa-user-gear"></i>
+                        <span>User Authorities</span>
+                    </a>
+                    <a href="/audit-logs" class="submenu-item" data-page="audit-logs">
+                        <i class="fa-solid fa-clock-rotate-left"></i>
+                        <span>Audit Logs</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- ==================== BOTTOM ==================== -->
+    <div class="sidebar-bottom">
+
+        <!-- Developer Credit -->
+        <div class="sidebar-credit">
+            <span>Designed &amp; Developed by</span>
+            <strong>
+                <a href="https://someshwarai.in" target="_blank" rel="noopener noreferrer">
+                    Someshwar AI Solution LLP
+                </a>
+            </strong>
+        </div>
+
+        <!-- User Profile -->
+        <div class="sidebar-profile">
+            <div class="sidebar-profile-info">
+                <div class="user-avatar" id="sidebarUserAvatar"></div>
+                <div class="user-details">
+                    <strong id="sidebarUserName"></strong>
+                    <span id="sidebarUserRole"></span>
+                </div>
+            </div>
+
+            <div class="sidebar-profile-actions">
+                <!-- Theme -->
+                <button type="button" class="theme-toggle-button" id="themeToggle" title="Toggle theme"
+                    aria-label="Toggle theme">
+                    <i class="fa-solid fa-moon" id="themeIcon"></i>
+                </button>
+
+
+                <!-- Logout -->
+                <button type="button" class="logout-button" id="logoutButton" title="Logout" aria-label="Logout">
+                    <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+</aside>

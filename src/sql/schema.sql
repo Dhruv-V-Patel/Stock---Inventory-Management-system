@@ -1,0 +1,653 @@
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    mobile VARCHAR(15) UNIQUE,
+    password_hash TEXT NOT NULL,
+
+    role VARCHAR(50) NOT NULL DEFAULT 'member'
+        CHECK (role IN ('admin', 'member')),
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    reset_code VARCHAR(6),
+    reset_code_expiry TIMESTAMP WITHOUT TIME ZONE
+);
+
+CREATE TABLE IF NOT EXISTS product_categories (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_product_categories_name UNIQUE (name)
+);
+
+CREATE TABLE IF NOT EXISTS products (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    category_id BIGINT NULL REFERENCES product_categories(id) ON DELETE RESTRICT,
+    size VARCHAR(100),
+    unit VARCHAR(20) NOT NULL DEFAULT 'PCS',
+    minimum_stock NUMERIC(14, 3) NOT NULL DEFAULT 0,
+    selling_rate NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS raw_materials (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    category VARCHAR(100),
+    unit VARCHAR(20) NOT NULL,
+    minimum_stock NUMERIC(14, 3) NOT NULL DEFAULT 0,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS suppliers (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    contact_person VARCHAR(100),
+    mobile VARCHAR(20),
+    gstin VARCHAR(20),
+    address TEXT,
+    payment_terms VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    contact_person VARCHAR(100),
+    mobile VARCHAR(20),
+    gstin VARCHAR(20),
+    address TEXT,
+    payment_terms VARCHAR(100),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS product_boms (
+    id BIGSERIAL PRIMARY KEY,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    name VARCHAR(150) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    UNIQUE(product_id, name)
+);
+
+CREATE TABLE IF NOT EXISTS product_bom_items (
+    id BIGSERIAL PRIMARY KEY,
+    bom_id BIGINT NOT NULL REFERENCES product_boms(id) ON DELETE CASCADE,
+    raw_material_id BIGINT NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL,
+    unit VARCHAR(20) NOT NULL,
+    UNIQUE(bom_id, raw_material_id)
+);
+
+CREATE TABLE IF NOT EXISTS purchases (
+    id BIGSERIAL PRIMARY KEY,
+    purchase_no VARCHAR(50) UNIQUE NOT NULL,
+    supplier_id BIGINT NOT NULL REFERENCES suppliers(id) ON DELETE RESTRICT,
+    purchase_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    invoice_no VARCHAR(100),
+    invoice_date TIMESTAMP WITHOUT TIME ZONE,
+    vehicle_no VARCHAR(30),
+    driver_name VARCHAR(150),
+    driver_mobile VARCHAR(20),
+    subtotal NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    discount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    freight_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (
+            payment_status IN (
+                'PENDING',
+                'PARTIAL',
+                'PAID'
+            )
+        ),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS purchase_items (
+    id BIGSERIAL PRIMARY KEY,
+    purchase_id BIGINT NOT NULL REFERENCES purchases(id) ON DELETE CASCADE,
+    raw_material_id BIGINT NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    rate NUMERIC(14, 2) NOT NULL CHECK (rate >= 0),
+    amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS purchase_returns (
+    id BIGSERIAL PRIMARY KEY,
+    return_no VARCHAR(50) UNIQUE NOT NULL,
+    supplier_id BIGINT NOT NULL REFERENCES suppliers(id) ON DELETE RESTRICT,
+    purchase_id BIGINT REFERENCES purchases(id) ON DELETE SET NULL,
+    return_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT,
+    total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS purchase_return_items (
+    id BIGSERIAL PRIMARY KEY,
+    purchase_return_id BIGINT NOT NULL REFERENCES purchase_returns(id) ON DELETE CASCADE,
+    raw_material_id BIGINT NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    rate NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    reason VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS production_batches (
+    id BIGSERIAL PRIMARY KEY,
+    batch_no VARCHAR(50) UNIQUE NOT NULL,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    production_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    bom_id BIGINT NOT NULL REFERENCES product_boms(id) ON DELETE RESTRICT,
+    planned_quantity NUMERIC(14, 3) NOT NULL DEFAULT 0,
+    produced_quantity NUMERIC(14, 3) NOT NULL CHECK (produced_quantity > 0),
+    wastage_quantity NUMERIC(14, 3) NOT NULL DEFAULT 0,
+    shift VARCHAR(50),
+    machine VARCHAR(100),
+    supervisor VARCHAR(150),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS production_materials (
+    id BIGSERIAL PRIMARY KEY,
+    production_batch_id BIGINT NOT NULL REFERENCES production_batches(id) ON DELETE CASCADE,
+    raw_material_id BIGINT NOT NULL REFERENCES raw_materials(id) ON DELETE RESTRICT,
+    standard_quantity NUMERIC(14, 3) NOT NULL DEFAULT 0,
+    actual_quantity NUMERIC(14, 3) NOT NULL CHECK (actual_quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    variance_quantity NUMERIC(14, 3) GENERATED ALWAYS AS (actual_quantity - standard_quantity) STORED,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS production_wastage (
+    id BIGSERIAL PRIMARY KEY,
+    production_batch_id BIGINT NOT NULL REFERENCES production_batches(id) ON DELETE CASCADE,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    reason VARCHAR(100) NOT NULL,
+    remarks TEXT,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+-- CREATE TABLE IF NOT EXISTS curing_batches (
+--     id BIGSERIAL PRIMARY KEY,
+--     curing_no VARCHAR(50) UNIQUE NOT NULL,
+--     production_batch_id BIGINT NOT NULL REFERENCES production_batches(id) ON DELETE RESTRICT,
+--     product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+--     quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+--     curing_start_date DATE NOT NULL,
+--     expected_ready_date DATE NOT NULL,
+--     completed_date DATE,
+--     status VARCHAR(20) NOT NULL DEFAULT 'IN_CURING'
+--         CHECK (
+--             status IN (
+--                 'IN_CURING',
+--                 'COMPLETED'
+--             )
+--         ),
+--     damaged_quantity NUMERIC(14, 3) NOT NULL DEFAULT 0,
+--     remarks TEXT,
+--     created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+--     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+--     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+-- );
+
+CREATE TABLE IF NOT EXISTS stock_movements (
+    id BIGSERIAL PRIMARY KEY,
+    item_type VARCHAR(30) NOT NULL
+        CHECK (
+            item_type IN (
+                'RAW_MATERIAL',
+                'PRODUCT'
+            )
+        ),
+    item_id BIGINT NOT NULL,
+    direction VARCHAR(10) NOT NULL
+        CHECK (
+            direction IN (
+                'IN',
+                'OUT'
+            )
+        ),
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    movement_type VARCHAR(50) NOT NULL,
+    reference_type VARCHAR(50),
+    reference_id BIGINT,
+    movement_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sales (
+    id BIGSERIAL PRIMARY KEY,
+    sale_no VARCHAR(50) UNIQUE NOT NULL,
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    sale_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    vehicle_no VARCHAR(30),
+    driver_name VARCHAR(150),
+    driver_mobile VARCHAR(20),
+    subtotal NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    discount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+        CHECK (
+            payment_status IN (
+                'PENDING',
+                'PARTIAL',  -- not pay full amount
+                'PAID'
+            )
+        ),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sale_items (
+    id BIGSERIAL PRIMARY KEY,
+    sale_id BIGINT NOT NULL REFERENCES sales(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    rate NUMERIC(14, 2) NOT NULL CHECK (rate >= 0),
+    amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sales_returns (
+    id BIGSERIAL PRIMARY KEY,
+    return_no VARCHAR(50) UNIQUE NOT NULL,
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    sale_id BIGINT REFERENCES sales(id) ON DELETE SET NULL,
+    return_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sales_return_items (
+    id BIGSERIAL PRIMARY KEY,
+    sales_return_id BIGINT NOT NULL REFERENCES sales_returns(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    rate NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    reason VARCHAR(100),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS dispatches (
+    id BIGSERIAL PRIMARY KEY,
+    dispatch_no VARCHAR(50) UNIQUE NOT NULL,
+    sale_id BIGINT REFERENCES sales(id) ON DELETE SET NULL,
+    customer_id BIGINT NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    dispatch_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    vehicle_no VARCHAR(30),
+    driver_name VARCHAR(150),
+    driver_mobile VARCHAR(20),
+    challan_no VARCHAR(100),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS dispatch_items (
+    id BIGSERIAL PRIMARY KEY,
+    dispatch_id BIGINT NOT NULL REFERENCES dispatches(id) ON DELETE CASCADE,
+    product_id BIGINT NOT NULL REFERENCES products(id) ON DELETE RESTRICT,
+    quantity NUMERIC(14, 3) NOT NULL CHECK (quantity > 0),
+    unit VARCHAR(20) NOT NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS payments (
+    id BIGSERIAL PRIMARY KEY,
+    payment_no VARCHAR(50) UNIQUE NOT NULL,
+    payment_type VARCHAR(20) NOT NULL
+        CHECK (
+            payment_type IN (
+                'CUSTOMER',
+                'SUPPLIER'
+            )
+        ),
+    customer_id BIGINT REFERENCES customers(id) ON DELETE RESTRICT,
+    supplier_id BIGINT REFERENCES suppliers(id) ON DELETE SET NULL,
+    sale_id BIGINT REFERENCES sales(id) ON DELETE SET NULL,
+    purchase_id BIGINT REFERENCES purchases(id) ON DELETE SET NULL,
+    payment_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    payment_method VARCHAR(30),
+    reference_no VARCHAR(100),
+    remarks TEXT,
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT chk_payment_reference
+    CHECK (
+        (
+            payment_type = 'CUSTOMER'
+            AND customer_id IS NOT NULL
+            AND supplier_id IS NULL
+            AND sale_id IS NOT NULL
+            AND purchase_id IS NULL
+        )
+        OR
+        (
+            payment_type = 'SUPPLIER'
+            AND supplier_id IS NOT NULL
+            AND customer_id IS NULL
+            AND purchase_id IS NOT NULL
+            AND sale_id IS NULL
+        )
+    )
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(50) NOT NULL,
+    module VARCHAR(50) NOT NULL,
+    record_id BIGINT,
+    old_data JSONB,
+    new_data JSONB,
+    ip_address INET,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+
+CREATE INDEX IF NOT EXISTS idx_products_name ON products(name);
+
+CREATE INDEX IF NOT EXISTS idx_raw_materials_name ON raw_materials(name);
+
+CREATE INDEX IF NOT EXISTS idx_purchases_supplier ON purchases(supplier_id);
+
+CREATE INDEX IF NOT EXISTS idx_purchases_date ON purchases(purchase_date);
+
+CREATE INDEX IF NOT EXISTS idx_production_product ON production_batches(product_id);
+
+CREATE INDEX IF NOT EXISTS idx_production_date ON production_batches(production_date);
+
+-- CREATE INDEX IF NOT EXISTS idx_curing_status ON curing_batches(status);
+
+-- CREATE INDEX IF NOT EXISTS idx_curing_expected_ready ON curing_batches(expected_ready_date);
+
+CREATE INDEX IF NOT EXISTS idx_stock_movements_item ON stock_movements(item_type, item_id);
+
+CREATE INDEX IF NOT EXISTS idx_stock_movements_date ON stock_movements(movement_date);
+
+CREATE INDEX IF NOT EXISTS idx_sales_customer ON sales(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_sales_date ON sales(sale_date);
+
+CREATE INDEX IF NOT EXISTS idx_dispatches_customer ON dispatches(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_dispatches_date ON dispatches(dispatch_date);
+
+CREATE INDEX IF NOT EXISTS idx_payments_customer ON payments(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_payments_supplier ON payments(supplier_id);
+
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_gstin
+ON suppliers (UPPER(TRIM(gstin)))
+WHERE gstin IS NOT NULL
+  AND TRIM(gstin) <> '';
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_name_normalized
+ON suppliers (LOWER(TRIM(name)));
+
+-- CREATE TABLE IF NOT EXISTS vehicles (
+--     id BIGSERIAL PRIMARY KEY,
+--     vehicle_number VARCHAR(30) UNIQUE NOT NULL,
+--     vehicle_type VARCHAR(50),
+--     owner_name VARCHAR(150),
+--     capacity NUMERIC(14, 3),
+--     capacity_unit VARCHAR(20),
+--     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+--     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+--     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+-- );
+
+-- CREATE TABLE IF NOT EXISTS drivers (
+--     id BIGSERIAL PRIMARY KEY,
+--     name VARCHAR(150) NOT NULL,
+--     mobile VARCHAR(20),
+--     license_number VARCHAR(50),
+--     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+--     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+--     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+-- );
+
+
+CREATE TABLE IF NOT EXISTS roles (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS permissions (
+    id BIGSERIAL PRIMARY KEY,
+    module VARCHAR(100) NOT NULL,
+    action VARCHAR(50) NOT NULL,
+    name VARCHAR(150) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_permissions_module_action
+        UNIQUE (module, action)
+);
+
+
+CREATE TABLE IF NOT EXISTS role_permissions (
+    id BIGSERIAL PRIMARY KEY,
+
+    role_id BIGINT NOT NULL
+        REFERENCES roles(id)
+        ON DELETE CASCADE,
+
+    permission_id BIGINT NOT NULL
+        REFERENCES permissions(id)
+        ON DELETE CASCADE,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_role_permission
+        UNIQUE (role_id, permission_id)
+);
+
+CREATE TABLE IF NOT EXISTS user_permissions (
+    id BIGSERIAL PRIMARY KEY,
+
+    user_id BIGINT NOT NULL
+        REFERENCES users(id)
+        ON DELETE CASCADE,
+
+    permission_id BIGINT NOT NULL
+        REFERENCES permissions(id)
+        ON DELETE CASCADE,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_user_permission
+        UNIQUE (user_id, permission_id)
+);
+
+ALTER TABLE purchase_return_items
+ADD COLUMN IF NOT EXISTS reason VARCHAR(100);
+
+ALTER TABLE sales_return_items
+ADD COLUMN IF NOT EXISTS reason VARCHAR(100);
+
+ALTER TABLE purchase_returns
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW();
+
+ALTER TABLE sales_returns
+ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW();
+
+INSERT INTO roles (name, description)
+VALUES
+    ('admin', 'Full system access'),
+    ('member', 'Standard system access')
+ON CONFLICT (name) DO NOTHING;
+
+
+
+INSERT INTO permissions (module, action, name, description)
+VALUES
+
+-- Dashboard
+('dashboard', 'view', 'View Dashboard', 'View dashboard'),
+
+-- Master
+('products', 'view', 'View Products', 'View products'),
+('products', 'edit', 'Edit Products', 'Create and update products'),
+('products', 'delete', 'Delete Products', 'Delete products'),
+
+
+('raw-materials', 'view', 'View Raw Materials', 'View raw materials'),
+('raw-materials', 'edit', 'Edit Raw Materials', 'Create and update raw materials'),
+('raw-materials', 'delete', 'Delete Raw Materials', 'Delete raw materials'),
+
+
+('customers', 'view', 'View Customers', 'View customers'),
+('customers', 'edit', 'Edit Customers', 'Create and update customers'),
+('customers', 'delete', 'Delete Customers', 'Delete customers'),
+
+
+('suppliers', 'view', 'View Suppliers', 'View suppliers'),
+('suppliers', 'edit', 'Edit Suppliers', 'Create and update suppliers'),
+('suppliers', 'delete', 'Delete Suppliers', 'Delete suppliers'),
+
+
+('product-bom', 'view', 'View Product Mix Design', 'View product mix design'),
+('product-bom', 'edit', 'Edit Product Mix Design', 'Create and update product mix design'),
+('product-bom', 'delete', 'Delete Product Mix Design', 'Delete product mix design'),
+
+-- Inventory
+('raw-material-stock', 'view', 'View Raw Material Stock', 'View raw material stock'),
+('raw-material-stock', 'edit', 'Edit Raw Material Stock', 'Update raw material stock'),
+('raw-material-stock', 'delete', 'Delete Raw Material Stock', 'Delete raw material stock'),
+
+('ready-stock', 'view', 'View Ready Stock', 'View ready stock'),
+('ready-stock', 'edit', 'Edit Ready Stock', 'Update ready stock'),
+('ready-stock', 'delete', 'Delete Ready Stock', 'Delete ready stock'),
+
+-- Purchase
+('purchases', 'view', 'View Purchase', 'View purchases'),
+('purchases', 'edit', 'Edit Purchase', 'Create and update purchases'),
+('purchases', 'delete', 'Delete Purchase', 'Delete purchases'),
+
+
+('purchase-returns', 'view', 'View Purchase Returns', 'View purchase returns'),
+('purchase-returns', 'edit', 'Edit Purchase Returns', 'Create and update purchase returns'),
+('purchase-returns', 'delete', 'Delete Purchase Returns', 'Delete purchase returns'),
+
+
+-- Production
+('production', 'view', 'View Daily Production', 'View daily production'),
+('production', 'edit', 'Edit Daily Production', 'Create and update daily production'),
+('production', 'delete', 'Delete Daily Production', 'Delete daily production'),
+
+
+('production-wastage', 'view', 'View Production Wastage', 'View production wastage'),
+('production-wastage', 'edit', 'Edit Production Wastage', 'Create and update production wastage'),
+('production-wastage', 'delete', 'Delete Production Wastage', 'Delete production wastage'),
+
+
+-- Sales
+('sales', 'view', 'View Sales', 'View sales'),
+('sales', 'edit', 'Edit Sales', 'Create and update sales'),
+('sales', 'delete', 'Delete Sales', 'Delete sales'),
+
+
+('sales-returns', 'view', 'View Sales Returns', 'View sales returns'),
+('sales-returns', 'edit', 'Edit Sales Returns', 'Create and update sales returns'),
+('sales-returns', 'delete', 'Delete Sales Returns', 'Delete sales returns'),
+
+('dispatch', 'view', 'View Dispatch', 'View dispatch'),
+('dispatch', 'edit', 'Edit Dispatch', 'Create and update dispatch'),
+('dispatch', 'delete', 'Delete Dispatch', 'Delete dispatch'),
+
+
+-- Payments
+('payments', 'view', 'View Payments', 'View payments'),
+('payments', 'edit', 'Edit Payments', 'Create and update payments'),
+('payments', 'delete', 'Delete Payments', 'Delete payments'),
+
+
+-- Reports
+('stock-report', 'view', 'View Stock Report', 'View stock report'),
+
+('production-report', 'view', 'View Production Report', 'View production report'),
+
+('purchase-report', 'view', 'View Purchase Report', 'View purchase report'),
+
+('sales-report', 'view', 'View Sales Report', 'View sales report'),
+
+('payments-report', 'view', 'View Payment Report', 'View payment report'),
+
+-- Administration
+('manage-users', 'view', 'View Manage Users', 'View users'),
+('manage-users', 'edit', 'Edit Manage Users', 'Create and update users'),
+('manage-users', 'delete', 'Delete Manage Users', 'Delete users'),
+
+('audit-logs', 'view', 'View Audit Logs', 'View audit logs')
+
+ON CONFLICT (module, action) DO NOTHING;
+
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT
+    r.id,
+    p.id
+FROM roles r
+CROSS JOIN permissions p
+WHERE r.name = 'admin'
+ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+
+INSERT INTO role_permissions (role_id, permission_id)
+SELECT
+    r.id,
+    p.id
+FROM roles r
+INNER JOIN permissions p
+    ON p.action = 'view'
+WHERE r.name = 'member'
+ON CONFLICT (role_id, permission_id) DO NOTHING;

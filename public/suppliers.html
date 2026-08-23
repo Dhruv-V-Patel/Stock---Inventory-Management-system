@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Suppliers | Jay Products</title>
+
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/suppliers.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="suppliers-page">
+
+        <section class="supplier-summary-grid">
+          <article class="supplier-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-truck-field"></i>
+            </div>
+            <div>
+              <span>Total Suppliers</span>
+              <strong id="totalSuppliers">0</strong>
+            </div>
+          </article>
+
+          <article class="supplier-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <div>
+              <span>Active Suppliers</span>
+              <strong id="activeSuppliers">0</strong>
+            </div>
+          </article>
+
+          <article class="supplier-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+              <span>With GSTIN</span>
+              <strong id="gstSuppliers">0</strong>
+            </div>
+          </article>
+
+          <article class="supplier-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+              <span>Total Due</span>
+              <strong id="totalDueSuppliers">₹0.00</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card suppliers-card">
+          <div class="card-header suppliers-card-header">
+            <div>
+              <h2>Supplier List</h2>
+              <p>All suppliers configured in the system</p>
+            </div>
+
+            <button class="primary-button" id="addSupplierButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>Add Supplier</span>
+            </button>
+          </div>
+
+          <div class="suppliers-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="supplierSearch" type="search" placeholder="Search supplier, contact or mobile..."
+                autocomplete="off">
+            </div>
+
+            <select id="statusFilter" class="filter-select">
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table suppliers-table">
+              <thead>
+                <tr>
+                  <th>Supplier</th>
+                  <th>Contact Person</th>
+                  <th>Mobile</th>
+                  <th>GSTIN</th>
+                  <th>Total Purchase</th>
+                  <th>Due</th>
+                  <th>Status</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="suppliersTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="suppliers-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading suppliers...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="suppliers-empty" id="suppliersEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-truck-field"></i>
+            </div>
+            <h3>No suppliers found</h3>
+            <p>Try changing the filters or add a new supplier.</p>
+
+            <button class="primary-button small" id="emptyAddSupplier" type="button">
+              <i class="fa-solid fa-plus"></i>
+              Add Supplier
+            </button>
+          </div>
+
+          <div class="suppliers-footer">
+            <span id="suppliersCount">Showing 0 suppliers</span>
+
+            <div class="suppliers-pagination">
+              <button type="button" class="pagination-button" id="previousPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span id="pageNumber">1</span>
+
+              <button type="button" class="pagination-button" id="nextPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Supplier Add/Edit Modal -->
+  <div class="modal-overlay" id="supplierModal" hidden>
+    <div class="modal supplier-modal" role="dialog" aria-modal="true" aria-labelledby="supplierModalTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-user"></i>
+          </div>
+
+          <div>
+            <h2 id="supplierModalTitle">Add Supplier</h2>
+            <p id="supplierModalDescription">
+              Create a supplier master record.
+            </p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeSupplierModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="supplierForm" novalidate>
+        <input type="hidden" id="supplierId">
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="supplierName">
+              Supplier Name <span>*</span>
+            </label>
+            <input id="supplierName" type="text" maxlength="150" placeholder="e.g. ABC Traders" required>
+            <small class="form-error" data-error-for="supplierName"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="contactPerson">Contact Person</label>
+            <input id="contactPerson" type="text" maxlength="100" placeholder="e.g. Raj Patel">
+            <small class="form-error" data-error-for="contactPerson"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="supplierMobile">Mobile</label>
+            <input id="supplierMobile" type="tel" maxlength="10" inputmode="numeric" placeholder="e.g. 9876543210">
+            <small class="form-error" data-error-for="supplierMobile"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="supplierGstin">GSTIN</label>
+            <input id="supplierGstin" type="text" maxlength="15" placeholder="e.g. 24ABCDE1234F1Z5" autocomplete="off">
+            <small class="form-error" data-error-for="supplierGstin"></small>
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="paymentTerms">Payment Terms</label>
+            <input id="paymentTerms" type="text" maxlength="100" placeholder="e.g. 30 Days">
+          </div>
+
+          <div class="form-group form-group-full">
+            <label for="supplierAddress">Address</label>
+            <textarea id="supplierAddress" rows="3" maxlength="1000"
+              placeholder="Supplier billing / office address"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="supplierStatus">
+              Status <span>*</span>
+            </label>
+
+            <select id="supplierStatus" required>
+              <option value="true">Active</option>
+              <option value="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>
+            A supplier used in purchases or other transactions cannot be hard-deleted.
+            You can set it inactive instead.
+          </span>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelSupplier" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="saveSupplier" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Save Supplier</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Supplier View Modal -->
+  <div class="modal-overlay" id="supplierViewModal" hidden>
+    <div class="modal supplier-view-modal" role="dialog" aria-modal="true" aria-labelledby="viewSupplierName">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-user"></i>
+          </div>
+
+          <div>
+            <h2 id="viewSupplierName">Supplier</h2>
+            <p>Supplier details and purchases summary.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeSupplierView" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="supplier-view-body">
+        <div class="supplier-profile">
+          <div class="supplier-profile-item">
+            <span>Contact Person</span>
+            <strong id="viewSupplierContact">—</strong>
+          </div>
+
+          <div class="supplier-profile-item">
+            <span>Mobile</span>
+            <strong id="viewSupplierMobile">—</strong>
+          </div>
+
+          <div class="supplier-profile-item">
+            <span>GSTIN</span>
+            <strong id="viewSupplierGstin">—</strong>
+          </div>
+
+          <div class="supplier-profile-item">
+            <span>Payment Terms</span>
+            <strong id="viewSupplierTerms">—</strong>
+          </div>
+
+          <div class="supplier-profile-item full">
+            <span>Address</span>
+            <strong id="viewSupplierAddress">—</strong>
+          </div>
+
+          <div class="supplier-profile-item">
+            <span>Status</span>
+            <strong id="viewSupplierStatus">—</strong>
+          </div>
+        </div>
+
+        <div class="supplier-view-summary">
+          <div class="supplier-view-summary-card">
+            <span>Net Purchase</span>
+            <strong id="viewTotalPurchase">₹0.00</strong>
+          </div>
+
+          <div class="supplier-view-summary-card">
+            <span>Paid</span>
+            <strong id="viewPaidAmount">₹0.00</strong>
+          </div>
+
+          <div class="supplier-view-summary-card">
+            <span>Due</span>
+            <strong id="viewDueAmount">₹0.00</strong>
+          </div>
+        </div>
+
+        <div class="supplier-view-section">
+          <h3>Recent Purchases</h3>
+
+          <div class="table-responsive">
+            <table class="supplier-view-table">
+              <thead>
+                <tr>
+                  <th>Purchase No</th>
+                  <th>Date</th>
+                  <th>Total</th>
+                  <th>Purchase Return</th>
+                  <th>Net Total</th>
+                  <th>Payment Status</th>
+                </tr>
+              </thead>
+
+              <tbody id="recentPurchasesBody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="closeSupplierViewButton" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Supplier Modal -->
+  <div class="modal-overlay" id="deleteSupplierModal" hidden>
+    <div class="delete-modal" role="dialog" aria-modal="true" aria-labelledby="deleteSupplierTitle">
+
+      <div class="delete-modal-icon">
+        <i class="fa-solid fa-trash"></i>
+      </div>
+
+      <h2 id="deleteSupplierTitle">Delete Supplier?</h2>
+
+      <p>
+        Are you sure you want to delete
+        <strong id="deleteSupplierName"></strong>?
+      </p>
+
+      <div class="delete-warning">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <span>
+          Suppliers used in transactions cannot be deleted.
+        </span>
+      </div>
+
+      <div class="delete-modal-actions">
+        <button type="button" class="secondary-button" id="cancelDeleteSupplier">
+          Cancel
+        </button>
+
+        <button type="button" class="danger-button" id="confirmDeleteSupplier">
+          <i class="fa-solid fa-trash"></i>
+          <span>Delete Supplier</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="js/sidebar.js"></script>
+  <script src="js/header.js"></script>
+  <script src="js/suppliers.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("suppliers"),
+        loadHeader({
+          title: "Supplier Master",
+          description: "Manage suppliers, contacts, GSTIN and outstanding balances."
+        })
+      ]);
+
+      if (typeof initSuppliersPage === "function") {
+        await initSuppliersPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

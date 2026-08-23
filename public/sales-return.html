@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sales Return | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/sale-return.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="sale-return-page">
+
+        <section class="sale-return-summary-grid">
+          <article class="sale-return-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+            </div>
+            <div>
+              <span>Total Returns</span>
+              <strong id="totalReturns">0</strong>
+            </div>
+          </article>
+
+          <article class="sale-return-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div>
+              <span>This Month</span>
+              <strong id="monthReturns">0</strong>
+            </div>
+          </article>
+
+          <article class="sale-return-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <span>Returned Quantity</span>
+              <strong id="returnedQuantity">0</strong>
+            </div>
+          </article>
+
+          <article class="sale-return-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+            <div>
+              <span>Total Return Value</span>
+              <strong id="totalReturnValue">₹0.00</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card sale-returns-card">
+          <div class="card-header sale-returns-card-header">
+            <div>
+              <h2>Sales Return List</h2>
+              <p>Manage finished products returned by customers.</p>
+            </div>
+
+            <button class="primary-button" id="addSaleReturnButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>New Sales Return</span>
+            </button>
+          </div>
+
+          <div class="sale-return-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                id="returnSearch"
+                type="search"
+                placeholder="Search return no, customer or sale..."
+                autocomplete="off">
+            </div>
+
+            <select id="customerFilter" class="filter-select">
+              <option value="">All Customers</option>
+            </select>
+
+            <div class="date-filter-wrapper">
+              <input id="returnDateFilter"
+                     class="date-filter"
+                     type="date"
+                     aria-label="Return date">
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table sale-returns-table">
+              <thead>
+                <tr>
+                  <th>Return No.</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Sale No.</th>
+                  <th>Items</th>
+                  <th>Quantity</th>
+                  <th>Total</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+              <tbody id="returnsTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="sale-returns-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading sales returns...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sale-returns-empty" id="returnsEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-arrow-rotate-left"></i>
+            </div>
+            <h3>No sales returns found</h3>
+            <p>Create your first sales return.</p>
+            <button class="primary-button small" id="emptyAddReturn" type="button">
+              <i class="fa-solid fa-plus"></i>
+              New Sales Return
+            </button>
+          </div>
+
+          <div class="sale-returns-footer">
+            <span id="returnsCount">Showing 0 returns</span>
+
+            <div class="sale-returns-pagination">
+              <button type="button" class="pagination-button" id="previousPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <span id="pageNumber">1</span>
+              <button type="button" class="pagination-button" id="nextPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- New / Edit Sales Return -->
+  <div class="modal-overlay" id="saleReturnModal" hidden>
+    <div class="modal sale-return-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="saleReturnModalTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon sale-return-icon">
+            <i class="fa-solid fa-arrow-rotate-left"></i>
+          </div>
+          <div>
+            <h2 id="saleReturnModalTitle">New Sales Return</h2>
+            <p>Record finished products returned by a customer.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeSaleReturnModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="saleReturnForm" novalidate>
+        <div class="sale-return-form-grid">
+
+          <div class="form-group">
+            <label for="customerId">Customer <span>*</span></label>
+            <select id="customerId" required>
+              <option value="">Select Customer</option>
+            </select>
+            <small class="form-error" data-error-for="customer"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="saleId">Original Sale <span>*</span></label>
+            <select id="saleId" required disabled>
+              <option value="">Select Sale</option>
+            </select>
+            <small class="form-error" data-error-for="sale"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="returnDate">Return Date <span>*</span></label>
+            <input id="returnDate" type="date" required>
+            <small class="form-error" data-error-for="date"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="overallReason">Return Reason</label>
+            <select id="overallReason">
+              <option value="">Select Reason</option>
+              <option value="Damaged">Damaged</option>
+              <option value="Wrong Product">Wrong Product</option>
+              <option value="Quality Issue">Quality Issue</option>
+              <option value="Excess Product">Excess Product</option>
+              <option value="Expired">Expired</option>
+              <option value="Incorrect Supply">Incorrect Supply</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <section class="items-section">
+          <div class="items-section-header">
+            <div>
+              <h3>Returned Items</h3>
+              <p>Select the sold product and enter the quantity being returned.</p>
+            </div>
+          </div>
+
+          <div class="sale-items-table-wrap">
+            <table class="sale-items-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Sold</th>
+                  <th>Returned</th>
+                  <th>Available</th>
+                  <th>Return Qty.</th>
+                  <th>Unit</th>
+                  <th>Rate</th>
+                  <th>Reason *</th>
+                  <th>Amount</th>
+                </tr>
+              </thead>
+              <tbody id="returnItemsBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="return-table-placeholder">
+                      Select an original sale.
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <small id="itemsError" class="items-error"></small>
+        </section>
+
+        <div class="sale-return-bottom-grid">
+          <div class="form-group">
+            <label for="remarks">Notes</label>
+            <textarea id="remarks" rows="3" placeholder="Optional notes"></textarea>
+          </div>
+
+          <div class="sale-return-total-box">
+            <span>Total Return Value</span>
+            <strong id="grandTotal">₹0.00</strong>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelSaleReturn" type="button">Cancel</button>
+          <button class="primary-button" id="saveSaleReturn" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Save Sales Return</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Sales Return -->
+  <div class="modal-overlay" id="viewSaleReturnModal" hidden>
+    <div class="modal sale-view-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="viewReturnTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon sale-return-icon">
+            <i class="fa-solid fa-eye"></i>
+          </div>
+          <div>
+            <h2 id="viewReturnTitle">Sales Return</h2>
+            <p id="viewReturnSubtitle">Return details</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeViewSaleReturn" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="saleReturnDetails" class="sale-return-details">
+        <div class="sale-returns-loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          Loading return...
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="secondary-button" id="closeViewSaleReturnButton" type="button">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Modal -->
+  <div class="modal-overlay" id="deleteModal" aria-hidden="true" hidden>
+    <div class="modal confirmation-modal">
+      <div class="confirmation-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h2>Delete Sales Return?</h2>
+      <p id="deleteMessage">
+        This will remove the sales return and reverse the related finished-stock IN movement.
+      </p>
+      <div class="modal-footer">
+        <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
+        <button class="danger-button" id="confirmDeleteButton" type="button">
+          <i class="fa-solid fa-trash-can"></i>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script src="/js/sale-return.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("sales-return"),
+        loadHeader({
+          title: "Sales Returns",
+          description: "Manage customer returns and finished-stock adjustments",
+        }),
+      ]);
+    });
+  </script>
+</body>
+</html>

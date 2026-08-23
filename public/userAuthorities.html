@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>User Authorities | Jay Products</title>
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/userAuthorities.css" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="header-container"></div>
+
+      <main class="main-content">
+        <section class="authorization-page">
+          <section class="content-card user-selection-card">
+            <div class="card-header authorization-card-header">
+              <div>
+                <h2>Select User</h2>
+
+                <p>Select a user to manage their system permissions.</p>
+              </div>
+            </div>
+
+            <div class="user-selection-content">
+              <div class="user-select-wrapper">
+                <label for="userSelect"> User </label>
+
+                <div class="user-select-box">
+                  <i class="fa-solid fa-user"></i>
+
+                  <select id="userSelect">
+                    <option value="">Select User</option>
+                  </select>
+
+                  <i class="fa-solid fa-chevron-down select-arrow"></i>
+                </div>
+              </div>
+
+              <div class="selected-user-info" id="selectedUserInfo" hidden>
+                <div class="selected-user-avatar" id="selectedUserAvatar">
+                  U
+                </div>
+
+                <div class="selected-user-details">
+                  <strong id="selectedUserName"> — </strong>
+
+                  <span id="selectedUserEmail"> — </span>
+                </div>
+
+                <span class="role-badge" id="selectedUserRole"> — </span>
+              </div>
+            </div>
+          </section>
+
+          <!-- =====================================================
+             PERMISSIONS
+        ====================================================== -->
+
+          <section class="content-card permissions-card">
+            <div class="card-header permissions-card-header">
+              <div>
+                <h2>Permissions</h2>
+
+                <p>Control what this user can view, edit or delete.</p>
+              </div>
+
+              <div class="permission-summary">
+                <span id="permissionCount"> 0 permissions enabled </span>
+              </div>
+            </div>
+
+            <!-- FILTER BAR -->
+
+            <div class="permissions-toolbar">
+              <div class="permission-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                  type="search"
+                  id="permissionSearch"
+                  placeholder="Search module or permission..."
+                  autocomplete="off"
+                />
+              </div>
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="selectAllButton"
+              >
+                <i class="fa-solid fa-check-double"></i>
+
+                <span>Select All</span>
+              </button>
+
+              <button
+                type="button"
+                class="secondary-button"
+                id="clearAllButton"
+              >
+                <i class="fa-solid fa-xmark"></i>
+
+                <span>Clear All</span>
+              </button>
+            </div>
+
+            <!-- PERMISSION TABLE -->
+
+            <div class="permissions-table-wrapper">
+              <table class="data-table permissions-table">
+                <thead>
+                  <tr>
+                    <th class="permission-module-column">Module</th>
+
+                    <th class="permission-action-column">View</th>
+
+                    <th class="permission-action-column">Edit</th>
+
+                    <th class="permission-action-column">Delete</th>
+                  </tr>
+                </thead>
+
+                <tbody id="permissionsTableBody">
+                  <tr>
+                    <td colspan="4">
+                      <div class="authorization-empty">
+                        <div class="authorization-empty-icon">
+                          <i class="fa-solid fa-user-lock"></i>
+                        </div>
+
+                        <h3>Select a User</h3>
+
+                        <p>Select a user above to manage their permissions.</p>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- EMPTY SEARCH -->
+
+            <div class="authorization-empty" id="noPermissionResults" hidden>
+              <div class="authorization-empty-icon">
+                <i class="fa-solid fa-magnifying-glass"></i>
+              </div>
+
+              <h3>No Permissions Found</h3>
+
+              <p>No permission matches your search.</p>
+            </div>
+
+            <!-- =================================================
+               FOOTER
+          ================================================== -->
+
+            <div class="authorization-footer">
+              <div class="authorization-footer-info">
+                <i class="fa-solid fa-circle-info"></i>
+
+                <span id="footerPermissionText">
+                  Select a user to manage permissions.
+                </span>
+              </div>
+
+              <button
+                type="button"
+                class="primary-button"
+                id="saveChangesButton"
+                disabled
+              >
+                <i class="fa-solid fa-check"></i>
+
+                <span>Save Changes</span>
+              </button>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- =========================================================
+       TOAST
+  ========================================================== -->
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- =========================================================
+       SCRIPTS
+  ========================================================== -->
+
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/userAuthorities.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+
+        await Promise.all([
+          loadSidebar("userAuthorities"),
+
+          loadHeader({
+            title: "User Authorities",
+            description: "Manage individual user permissions.",
+          }),
+        ]);
+
+        if (typeof initUserAuthorizationPage === "function") {
+          await initUserAuthorizationPage();
+        }
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Report | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/stock-report.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="stock-report-page">
+
+        <section class="stock-summary-grid">
+          <article class="stock-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+            <div>
+              <span>Total Items</span>
+              <strong id="totalItems">0</strong>
+            </div>
+          </article>
+
+          <article class="stock-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-cubes"></i>
+            </div>
+            <div>
+              <span>Raw Materials</span>
+              <strong id="rawMaterials">0</strong>
+            </div>
+          </article>
+
+          <article class="stock-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-cube"></i>
+            </div>
+            <div>
+              <span>Ready Stock</span>
+              <strong id="readyStock">0</strong>
+            </div>
+          </article>
+
+          <article class="stock-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+            <div>
+              <span>Low Stock</span>
+              <strong id="lowStock">0</strong>
+            </div>
+          </article>
+
+          <article class="stock-summary-card">
+            <div class="summary-icon red">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </div>
+            <div>
+              <span>Out of Stock</span>
+              <strong id="outOfStock">0</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card stock-report-card">
+          <div class="card-header">
+            <div>
+              <h2>Stock Summary</h2>
+              <p>Current inventory position with opening, inward, outward and closing stock.</p>
+            </div>
+
+            <div class="header-actions">
+              <button class="secondary-button" id="printStockReport" type="button">
+                <i class="fa-solid fa-print"></i>
+                <span>Print</span>
+              </button>
+              <button class="primary-button" id="exportStockReport" type="button">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Export</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="stock-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="stockSearch" type="search" placeholder="Search item or code..." autocomplete="off" />
+            </div>
+
+            <select id="stockTypeFilter" class="filter-select">
+              <option value="">All Stock</option>
+              <option value="RAW_MATERIAL">Raw Material</option>
+              <option value="PRODUCT">Ready Stock</option>
+            </select>
+
+            <select id="stockStatusFilter" class="filter-select">
+              <option value="">All Status</option>
+              <option value="IN_STOCK">In Stock</option>
+              <option value="LOW_STOCK">Low Stock</option>
+              <option value="OUT_OF_STOCK">Out of Stock</option>
+            </select>
+
+            <select id="stockCategoryFilter" class="filter-select">
+              <option value="">All Categories</option>
+            </select>
+
+            <div class="date-filter">
+              <label for="stockFromDate">From</label>
+              <input id="stockFromDate" type="date" />
+            </div>
+
+            <div class="date-filter">
+              <label for="stockToDate">To</label>
+              <input id="stockToDate" type="date" />
+            </div>
+
+            <button class="secondary-button" id="resetStockFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div class="report-note">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>
+              Leave dates empty to view current stock. When dates are selected,
+              Opening = before From date, Inward/Outward = selected period,
+              Closing = Opening + Inward − Outward.
+            </span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table stock-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Item</th>
+                  <th>Type</th>
+                  <th>Category</th>
+                  <th>Unit</th>
+                  <th>Opening</th>
+                  <th>Inward</th>
+                  <th>Outward</th>
+                  <th>Closing Stock</th>
+                  <th>Status</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="stockTableBody">
+                <tr>
+                  <td colspan="10">
+                    <div class="stock-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading stock report...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="stock-empty" id="stockEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-box-open"></i>
+            </div>
+            <h3>No Stock Found</h3>
+            <p>Try changing the filters or add inventory transactions.</p>
+          </div>
+
+          <div class="stock-footer">
+            <span id="stockCount">Showing 0 items</span>
+
+            <div class="stock-pagination">
+              <button class="pagination-button" id="previousStockPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span id="stockPageNumber">1</span>
+
+              <button class="pagination-button" id="nextStockPage" type="button" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- VIEW STOCK MODAL -->
+  <div class="modal-overlay" id="stockDetailsModal" hidden>
+    <div class="stock-modal" role="dialog" aria-modal="true">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-boxes-stacked"></i>
+          </div>
+
+          <div>
+            <h2 id="stockModalTitle">Stock Details</h2>
+            <p id="stockModalSubtitle">Inventory movement history.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeStockDetailsModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="stock-detail-body" id="stockDetailBody"></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/stock-report.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("stock-report"),
+        loadHeader({
+          title: "Stock Report",
+          description: "View current inventory and stock movement summary",
+        }),
+      ]);
+
+      if (typeof initStockReportPage === "function") {
+        initStockReportPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

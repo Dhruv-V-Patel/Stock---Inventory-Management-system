@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Production Wastage | Jay Products</title>
+  <script>(() => { const theme = localStorage.getItem("theme") || "light"; document.documentElement.setAttribute("data-theme", theme) })();</script>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/production-wastage.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+    <main class="main-content">
+      <section class="production-wastage-page">
+        <section class="wastage-summary-grid">
+          <article class="wastage-summary-card">
+            <div class="summary-icon blue"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div><span>Total Damaged</span><strong id="totalDamaged">0 <small>NOS</small></strong></div>
+          </article>
+          <article class="wastage-summary-card">
+            <div class="summary-icon orange"><i class="fa-solid fa-calendar-day"></i></div>
+            <div><span>Today's Damaged</span><strong id="todayDamaged">0 <small>NOS</small></strong></div>
+          </article>
+          <article class="wastage-summary-card">
+            <div class="summary-icon purple"><i class="fa-solid fa-boxes-stacked"></i></div>
+            <div><span>Batches With Damage</span><strong id="damagedBatches">0</strong></div>
+          </article>
+          <article class="wastage-summary-card">
+            <div class="summary-icon red"><i class="fa-solid fa-percent"></i></div>
+            <div><span>Damage Rate</span><strong id="damageRate">0.00<small>%</small></strong></div>
+          </article>
+        </section>
+
+        <section class="content-card product-wise-card">
+          <div class="card-header">
+            <div>
+              <h2>Product-wise Damaged</h2>
+              <p>Damaged quantity grouped by product.</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table product-wise-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Produced Qty</th>
+                  <th>Damaged Qty</th>
+                  <th>Damage %</th>
+                </tr>
+              </thead>
+              <tbody id="productWiseTableBody"></tbody>
+            </table>
+          </div>
+          <div class="wastage-empty compact" id="productWiseEmpty" hidden>
+            <div class="empty-icon"><i class="fa-solid fa-chart-column"></i></div>
+            <h3>No damaged production</h3>
+            <p>Product-wise damaged quantity will appear here.</p>
+          </div>
+        </section>
+
+        <section class="content-card wastage-card">
+          <div class="card-header">
+            <div>
+              <h2>Production Wastage</h2>
+              <p>Damaged quantities generated from production batches.</p>
+            </div>
+          </div>
+          <div class="wastage-filters">
+            <div class="search-box"><i class="fa-solid fa-magnifying-glass"></i><input id="wastageSearch" type="search"
+                placeholder="Search batch, product or code..." autocomplete="off"></div>
+            <select id="wastageProductFilter" class="filter-select">
+              <option value="">All Products</option>
+            </select>
+            <select id="wastageShiftFilter" class="filter-select">
+              <option value="">All Shifts</option>
+              <option>Morning</option>
+              <option>Afternoon</option>
+              <option>Evening</option>
+              <option>Night</option>
+            </select>
+            <input id="wastageDateFilter" class="filter-date" type="date" aria-label="Production date">
+            <button class="secondary-button" id="resetWastageFilters" type="button"><i
+                class="fa-solid fa-rotate-left"></i> Reset</button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table wastage-table">
+              <thead>
+                <tr>
+                  <th>Batch No.</th>
+                  <th>Product</th>
+                  <th>Date</th>
+                  <th>Produced</th>
+                  <th>Damaged</th>
+                  <th>Damage %</th>
+                  <th>Shift</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+              <tbody id="wastageTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="wastage-loading"><i class="fa-solid fa-spinner fa-spin"></i> Loading production
+                      wastage...</div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="wastage-empty" id="wastageEmpty" hidden>
+            <div class="empty-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3>No Wastage Found</h3>
+            <p>Damaged production will appear here when production batches contain damaged quantity.</p>
+          </div>
+          <div class="wastage-footer"><span id="wastageCount">Showing 0 wastage records</span>
+            <div class="wastage-pagination"><button class="pagination-button" id="previousWastagePage" type="button"
+                disabled><i class="fa-solid fa-chevron-left"></i></button><span id="wastagePageNumber">1</span><button
+                class="pagination-button" id="nextWastagePage" type="button" disabled><i
+                  class="fa-solid fa-chevron-right"></i></button></div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-overlay" id="viewWastageModal" hidden>
+    <div class="wastage-modal" role="dialog" aria-modal="true">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div>
+            <h2>Production Wastage Details</h2>
+            <p>Production batch and damaged quantity details.</p>
+          </div>
+        </div><button class="modal-close" id="closeViewWastageModal" type="button"><i
+            class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="view-wastage-body" id="viewWastageBody"></div>
+    </div>
+  </div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/production-wastage.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) { window.location.replace("/login"); return; }
+      await Promise.all([
+        loadSidebar("production-wastage"),
+        loadHeader({ title: "Production Wastage", description: "View and track damaged quantities generated during production" })
+      ]);
+      if (typeof initProductionWastagePage === "function") initProductionWastagePage();
+    });
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Sales | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/sales.css">
+
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="sales-page">
+
+        <section class="sales-summary-grid">
+          <article class="sales-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+            <div>
+              <span>Total Sales</span>
+              <strong id="totalSales">0</strong>
+            </div>
+          </article>
+
+          <article class="sales-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div>
+              <span>This Month</span>
+              <strong id="monthSales">0</strong>
+            </div>
+          </article>
+
+          <article class="sales-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+              <span>Pending Payments</span>
+              <strong id="pendingSales">0</strong>
+            </div>
+          </article>
+
+          <article class="sales-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+            <div>
+              <span>Net Sales Value</span>
+              <strong id="totalSalesValue">₹0</strong>
+            </div>
+          </article>
+        </section>
+
+        <section class="content-card sales-card">
+          <div class="card-header sales-card-header">
+            <div>
+              <h2>Sales List</h2>
+              <p>Manage finished-product sales and stock-out transactions.</p>
+            </div>
+
+            <button class="primary-button" id="addSaleButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>New Sale</span>
+            </button>
+          </div>
+
+          <div class="sales-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="saleSearch" type="search" placeholder="Search invoice, customer or mobile..."
+                autocomplete="off">
+            </div>
+
+            <select id="salePaymentStatusFilter" class="filter-select">
+              <option value="">All Payment Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="PAID">Paid</option>
+            </select>
+
+            <div class="date-filter-wrapper">
+              <input id="saleDateFilter" class="date-filter" type="date" aria-label="Sale date" />
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+
+            <button class="secondary-button" id="resetSaleFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table sales-table">
+              <thead>
+                <tr>
+                  <th>Sale No.</th>
+                  <th>Customer</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Return</th>
+                  <th>Net Total</th>
+                  <th>Payment</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="salesTableBody">
+                <tr>
+                  <td colspan="7">
+                    <div class="sales-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading sales...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="sales-empty" id="salesEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-file-invoice-dollar"></i>
+            </div>
+            <h3>No sales found</h3>
+            <p>Create your first finished-product sale.</p>
+            <button class="primary-button small" id="emptyAddSale" type="button">
+              <i class="fa-solid fa-plus"></i>
+              New Sale
+            </button>
+          </div>
+
+          <div class="sales-footer">
+            <span id="salesCount">Showing 0 sales</span>
+
+            <div class="sales-pagination">
+              <button type="button" class="pagination-button" id="previousSalePage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span id="salePageNumber">1</span>
+
+              <button type="button" class="pagination-button" id="nextSalePage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- CREATE / EDIT SALE MODAL -->
+  <div class="modal-overlay" id="saleModal" hidden>
+    <div class="modal sale-modal" role="dialog" aria-modal="true" aria-labelledby="saleModalTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-circle-plus"></i>
+          </div>
+
+          <div>
+            <h2 id="saleModalTitle">New Sale</h2>
+            <p id="saleModalDescription">
+              Sell finished products and automatically reduce finished stock.
+            </p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeSaleModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="saleForm" novalidate>
+        <div class="sale-form-grid">
+
+          <div class="form-group">
+            <label for="customerId">
+              Customer <span>*</span>
+            </label>
+
+            <select id="customerId" required>
+              <option value="">Select Customer</option>
+            </select>
+
+            <small class="form-error" data-error-for="customer"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="saleDate">
+              Sale Date <span>*</span>
+            </label>
+
+            <input id="saleDate" type="date" required>
+
+            <small class="form-error" data-error-for="date"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="vehicleNo">Vehicle No.</label>
+            <input id="vehicleNo" type="text" maxlength="30" placeholder="e.g. GJ-01-AB-1234" autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="driverName">Transporter Name</label>
+            <input id="driverName" type="text" maxlength="150">
+          </div>
+
+          <div class="form-group">
+            <label for="driverMobile">Transporter Mobile</label>
+            <input id="driverMobile" type="text" maxlength="10">
+          </div>
+
+          <div class="form-group">
+            <label for="paymentStatus">Payment Status</label>
+            <select id="paymentStatus">
+              <option value="PENDING">Pending</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="PAID">Paid</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="items-section">
+          <div class="items-section-header">
+            <div>
+              <h3>Sale Items</h3>
+              <p>Select only finished products with available stock.</p>
+            </div>
+
+            <button class="secondary-button small" id="addSaleItemButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              Add Item
+            </button>
+          </div>
+
+          <div class="sale-items-table-wrap">
+            <table class="sale-items-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Available</th>
+                  <th>Unit</th>
+                  <th>Qty</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+
+              <tbody id="saleItemsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="items-error" id="saleItemsError"></div>
+        </div>
+
+        <div class="sale-total-grid">
+          <div class="form-group">
+            <label for="discount">Discount</label>
+            <div class="currency-input">
+              <span>₹</span>
+              <input id="discount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="taxAmount">Tax Amount</label>
+            <div class="currency-input">
+              <span>₹</span>
+              <input id="taxAmount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div></div>
+
+          <div class="sale-grand-total">
+            <span>Grand Total</span>
+            <strong id="grandTotal">₹0.00</strong>
+          </div>
+        </div>
+
+        <div class="form-group remarks-group">
+          <label for="remarks">Remarks</label>
+          <textarea id="remarks" rows="2" maxlength="1000" placeholder="Optional notes..."></textarea>
+        </div>
+
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>
+            Saving this sale automatically creates
+            <strong>PRODUCT / OUT</strong>
+            stock movements.
+          </span>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelSale" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="saveSale" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Save Sale</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- VIEW SALE MODAL -->
+  <div class="modal-overlay" id="viewSaleModal" hidden>
+    <div class="modal sale-view-modal" role="dialog" aria-modal="true" aria-labelledby="viewSaleTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+
+          <div>
+            <h2 id="viewSaleTitle">Sale</h2>
+            <p id="viewSaleSubtitle">Sale details</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeViewSaleModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="saleDetailsContent" class="sale-details-content"></div>
+
+      <div class="modal-footer">
+        <button class="secondary-button" id="closeViewSale" type="button">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+   <!-- ================== Delete Modal ============================ -->
+  <div class="modal-overlay" id="deleteModal" aria-hidden="true" hidden>
+    <div class="modal confirmation-modal">
+      <div class="confirmation-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h2>Delete Sale?</h2>
+      <p id="deleteMessage">
+        This will restore the sold quantity to Finished Stock. Sales with payments, dispatches or returns cannot be deleted.
+      </p>
+      <div class="modal-footer">
+        <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
+        <button class="danger-button" id="confirmDeleteButton" type="button">
+          <i class="fa-solid fa-trash-can"></i>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/sales.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("sales"),
+        loadHeader({
+          title: "Sales",
+          description: "Manage finished-product sales and stock-out transactions",
+        }),
+      ]);
+
+      if (typeof initSalesPage === "function") {
+        initSalesPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

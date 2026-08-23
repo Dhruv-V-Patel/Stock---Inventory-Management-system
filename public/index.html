@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Dashboard | Jay Products</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <!-- ==============================
+           DASHBOARD
+      =============================== -->
+
+      <section class="dashboard">
+        <!-- ==============================
+             KPI CARDS
+        =============================== -->
+
+        <section class="kpi-grid">
+          <article class="kpi-card">
+            <div class="kpi-icon blue">
+              <i class="fa-solid fa-cubes-stacked"></i>
+            </div>
+
+            <div>
+              <span>Raw Material Items</span>
+              <strong id="rawMaterialItems">0 Items</strong>
+              <small>Active materials</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon green">
+              <i class="fa-solid fa-industry"></i>
+            </div>
+
+            <div>
+              <span>Today's Production</span>
+              <strong id="todayProduction"> 0 Units </strong>
+              <small>Across all products</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon purple">
+              <i class="fa-solid fa-boxes-stacked"></i>
+            </div>
+
+            <div>
+              <span>Ready Stock</span>
+              <strong id="finishedStock"> 0 Units </strong>
+              <small>Available for sale</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon orange">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </div>
+
+            <div>
+              <span>Low Products Items</span>
+              <strong id="lowStockItems"> 0 Items </strong>
+              <small>Need attention</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon teal">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+
+            <div>
+              <span>Today's Sales</span>
+              <strong id="todaySales"> ₹0 </strong>
+              <small>Sales value</small>
+            </div>
+          </article>
+
+          <article class="kpi-card">
+            <div class="kpi-icon red">
+              <i class="fa-solid fa-recycle"></i>
+            </div>
+
+            <div>
+              <!-- <span>Today's Wastage</span>
+              <strong id="todayWastage"> 0% </strong>
+              <small>Production wastage</small> -->
+              <span>Production Efficiency</span>
+              <strong id="productionEfficiency">0.00%</strong>
+              <small>Production efficiency</small>
+            </div>
+          </article>
+        </section>
+
+        <!-- ==============================
+             MAIN GRID
+        =============================== -->
+
+        <section class="content-grid">
+          <!-- Production vs Sales -->
+
+          <article class="panel chart-panel">
+            <div class="panel-header">
+              <div>
+                <h2>Production vs Sales</h2>
+
+                <p>Last 7 days performance</p>
+              </div>
+
+              <!-- <span class="dashboard-period"> Last 7 Days </span> -->
+              <select id="productionSalesPeriod" class="dashboard-period-select"
+                aria-label="Production and sales period">
+                <option value="7">Last 7 Days</option>
+                <option value="15">Last 15 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="60">Last 60 Days</option>
+                <option value="90">Last 90 Days</option>
+              </select>
+            </div>
+
+            <div class="chart-wrap">
+              <canvas id="productionChart"></canvas>
+            </div>
+          </article>
+
+          <!-- Finished Stock -->
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Ready Stock</h2>
+                <p>Current available quantity</p>
+              </div>
+
+              <a href="/ready-stock" class="view-link"> View All </a>
+            </div>
+
+            <div class="stock-list" id="finishedStockList">
+              <div class="dashboard-loading">Loading...</div>
+            </div>
+          </article>
+
+          <!-- Raw Material Consumption -->
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Raw Material Consumption</h2>
+                <p>Today's usage</p>
+              </div>
+
+              <a href="/raw-material-stock" class="view-link"> View Details </a>
+            </div>
+
+            <div class="material-list" id="materialConsumptionList">
+              <div class="dashboard-loading">Loading...</div>
+            </div>
+          </article>
+
+          <!-- Low Stock -->
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Low Raw Material Stock Items</h2>
+                <p>Below minimum level</p>
+              </div>
+              <a href="/raw-material-stock" class="view-link"> View All </a>
+            </div>
+
+            <div class="low-stock-list" id="lowStockList">
+              <div class="dashboard-loading">Loading...</div>
+            </div>
+          </article>
+
+          <!-- Recent Production -->
+
+          <article class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Recent Production</h2>
+                <p>Latest completed batches</p>
+              </div>
+
+              <a href="/production" class="view-link"> View All </a>
+            </div>
+
+            <div class="production-list" id="recentProductionList">
+              <div class="dashboard-loading">Loading...</div>
+            </div>
+          </article>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- ==============================
+       SHARED JS
+  =============================== -->
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+
+  <!-- Dashboard JS -->
+
+  <script src="/js/dashboard.js"></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const ACCESS_TOKEN_MAX_AGE = 7 * 24 * 60 * 60 * 1000;
+
+    const token = localStorage.getItem("accessToken");
+    const createdAt = Number(localStorage.getItem("accessTokenCreatedAt"));
+
+    // No token
+    if (!token) {
+      window.location.replace("/login");
+      return;
+    }
+
+    // Token is older than 7 days
+    if (!createdAt || Date.now() - createdAt >= ACCESS_TOKEN_MAX_AGE) {
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("accessTokenCreatedAt");
+
+      window.location.replace("/login");
+      return;
+    }
+
+    await Promise.all([
+      loadSidebar("dashboard"),
+
+      loadHeader({
+        title: "Dashboard",
+        description: "RCC Manufacturing & Inventory Overview",
+      }),
+    ]);
+  });
+</script>
+</body>
+
+</html>

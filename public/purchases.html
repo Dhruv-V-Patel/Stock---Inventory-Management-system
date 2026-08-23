@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Purchase | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/purchase.css">
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="purchase-page">
+        <section class="purchase-summary-grid">
+          <article class="purchase-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <div>
+              <span>Total Purchases</span>
+              <strong id="totalPurchases">0</strong>
+            </div>
+          </article>
+
+          <article class="purchase-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+            <div>
+              <span>This Month</span>
+              <strong id="monthPurchases">0</strong>
+            </div>
+          </article>
+
+          <article class="purchase-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+            <div>
+              <span>Pending Payments</span>
+              <strong id="pendingPurchases">0</strong>
+            </div>
+          </article>
+
+          <article class="purchase-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+            <div>
+              <span>Net Purchase Value</span>
+              <strong id="totalPurchaseValue">₹0</strong>
+            </div>
+          </article>
+
+        </section>
+
+        <section class="content-card purchases-card">
+          <div class="card-header purchases-card-header">
+            <div>
+              <h2>Purchase List</h2>
+              <p>Raw material purchases recorded in the system.</p>
+            </div>
+            <button class="primary-button" id="addPurchaseButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              <span>New Purchase</span>
+            </button>
+          </div>
+
+          <div class="purchase-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="purchaseSearch" type="search" placeholder="Search purchase no, supplier or invoice..."
+                autocomplete="off">
+            </div>
+
+            <select id="paymentStatusFilter" class="filter-select">
+              <option value="">All Payment Status</option>
+              <option value="PENDING">Pending</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="PAID">Paid</option>
+            </select>
+
+            <div class="date-filter-wrapper">
+              <input id="purchaseDateFilter" class="date-filter" type="date" aria-label="Purchase date" />
+
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+              Reset
+            </button>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table purchases-table">
+              <thead>
+                <tr>
+                  <th>Purchase No.</th>
+                  <th>Supplier</th>
+                  <th>Date</th>
+                  <th>Invoice No.</th>
+                  <th>Items</th>
+                  <th>Total</th>
+                  <th>Return</th>
+                  <th>Net Total</th>
+                  <th>Payment</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="purchasesTableBody">
+                <tr>
+                  <td colspan="10">
+                    <div class="purchases-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading purchases...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="purchases-empty" id="purchasesEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
+            <h3>No purchases found</h3>
+            <p>Create your first raw material purchase.</p>
+            <button class="primary-button small" id="emptyAddPurchase" type="button">
+              <i class="fa-solid fa-plus"></i>
+              New Purchase
+            </button>
+          </div>
+
+          <div class="purchases-footer">
+            <span id="purchasesCount">Showing 0 purchases</span>
+
+            <div class="purchases-pagination">
+              <button type="button" class="pagination-button" id="previousPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+              <span id="pageNumber">1</span>
+              <button type="button" class="pagination-button" id="nextPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Purchase Modal -->
+  <div class="modal-overlay" id="purchaseModal" hidden>
+    <div class="modal purchase-modal" role="dialog" aria-modal="true" aria-labelledby="purchaseModalTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-cart-plus"></i>
+          </div>
+          <div>
+            <h2 id="purchaseModalTitle">New Purchase</h2>
+            <p>Record raw materials received from a supplier.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closePurchaseModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="purchaseForm" novalidate>
+        <div class="purchase-form-grid">
+
+          <div class="form-group">
+            <label for="supplierId">Supplier <span>*</span></label>
+            <select id="supplierId" required>
+              <option value="">Select Supplier</option>
+            </select>
+            <small class="form-error" data-error-for="supplier"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="purchaseDate">Purchase Date <span>*</span></label>
+            <input id="purchaseDate" type="date" required>
+            <small class="form-error" data-error-for="date"></small>
+          </div>
+
+          <div class="form-group">
+            <label for="invoiceNo">Invoice No.</label>
+            <input id="invoiceNo" type="text" maxlength="100" placeholder="Supplier invoice number">
+          </div>
+
+          <div class="form-group">
+            <label for="invoiceDate">Invoice Date</label>
+            <input id="invoiceDate" type="date">
+          </div>
+
+          <div class="form-group">
+            <label for="vehicleNo">Vehicle No.</label>
+            <input id="vehicleNo" type="text" maxlength="13" placeholder="e.g. GJ-01-AB-1234" autocomplete="off">
+          </div>
+
+          <div class="form-group">
+            <label for="driverName">Driver Name</label>
+            <input id="driverName" type="text" maxlength="150">
+          </div>
+
+          <div class="form-group">
+            <label for="driverMobile">Driver Mobile</label>
+            <input id="driverMobile" type="text" maxlength="10">
+          </div>
+
+          <div class="form-group">
+            <label for="paymentStatus">Payment Status</label>
+            <select id="paymentStatus">
+              <option value="PENDING">Pending</option>
+              <option value="PARTIAL">Partial</option>
+              <option value="PAID">Paid</option>
+            </select>
+          </div>
+
+        </div>
+
+        <div class="items-section">
+          <div class="items-section-header">
+            <div>
+              <h3>Purchase Items</h3>
+              <p>Only active raw materials can be purchased.</p>
+            </div>
+
+            <button class="secondary-button small" id="addItemButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+              Add Item
+            </button>
+          </div>
+
+          <div class="purchase-items-table-wrap">
+            <table class="purchase-items-table">
+              <thead>
+                <tr>
+                  <th>Raw Material</th>
+                  <th>Unit</th>
+                  <th>Quantity</th>
+                  <th>Rate</th>
+                  <th>Amount</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="purchaseItemsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="items-error" id="itemsError"></div>
+        </div>
+
+        <div class="purchase-total-grid">
+          <div class="form-group">
+            <label for="discount">Discount</label>
+            <div class="currency-input">
+              <span>₹</span>
+              <input id="discount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="freightAmount">Freight</label>
+            <div class="currency-input">
+              <span>₹</span>
+              <input id="freightAmount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="taxAmount">Tax Amount</label>
+            <div class="currency-input">
+              <span>₹</span>
+              <input id="taxAmount" type="number" min="0" step="0.01" value="0">
+            </div>
+          </div>
+
+          <div class="purchase-grand-total">
+            <span>Grand Total</span>
+            <strong id="grandTotal">₹0.00</strong>
+          </div>
+        </div>
+
+        <div class="form-group remarks-group">
+          <label for="remarks">Remarks</label>
+          <textarea id="remarks" rows="2" maxlength="1000" placeholder="Optional notes..."></textarea>
+        </div>
+
+        <div class="form-note">
+          <i class="fa-solid fa-circle-info"></i>
+          <span>
+            Saving this purchase will automatically create
+            <strong>RAW_MATERIAL / IN</strong> stock movements for every item.
+          </span>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelPurchase" type="button">
+            Cancel
+          </button>
+          <button class="primary-button" id="savePurchase" type="submit">
+            <i class="fa-solid fa-check"></i>
+            <span>Save Purchase</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- View Purchase Modal -->
+  <div class="modal-overlay" id="viewPurchaseModal" hidden>
+    <div class="modal purchase-view-modal" role="dialog" aria-modal="true" aria-labelledby="viewPurchaseTitle">
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+          <div>
+            <h2 id="viewPurchaseTitle">Purchase</h2>
+            <p id="viewPurchaseSubtitle"></p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeViewPurchaseModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="purchaseDetailsContent" class="purchase-details-content"></div>
+
+      <div class="modal-footer">
+        <button class="secondary-button" id="closeViewPurchase" type="button">Close</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ================== Delete Modal ============================ -->
+  <div class="modal-overlay" id="deleteModal" aria-hidden="true" hidden>
+    <div class="modal confirmation-modal">
+      <div class="confirmation-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+      <h2>Delete Purchase?</h2>
+      <p id="deleteMessage">
+        This will remove its purchase record and reverse the related RAW_MATERIAL stock IN movement.
+      </p>
+      <div class="modal-footer">
+        <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
+        <button class="danger-button" id="confirmDeleteButton" type="button">
+          <i class="fa-solid fa-trash-can"></i>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/purchase.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("purchase"),
+        loadHeader({
+          title: "Purchase",
+          description: "Manage raw material purchases and stock inward entries",
+        }),
+      ]);
+
+      if (typeof initPurchasePage === "function") {
+        initPurchasePage();
+      }
+    });
+  </script>
+</body>
+
+</html>

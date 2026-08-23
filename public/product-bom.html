@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Product BOM | Jay Products</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/product-bom.css" />
+
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
+
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+  <div id="sidebar-container"></div>
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+    <main class="main-content">
+      <section class="product-bom-page">
+        <div class="bom-page-header">
+          <div></div>
+          <button type="button" class="bom-primary-btn" id="addBomButton">
+            <i class="fa-solid fa-plus"></i>
+            <span>New BOM</span>
+          </button>
+        </div>
+        <section class="bom-summary-grid">
+          <div class="bom-summary-card">
+            <div class="bom-summary-icon blue">
+              <i class="fa-solid fa-sitemap"></i>
+            </div>
+
+            <div>
+              <span>Total BOMs</span>
+              <strong id="totalBoms">0</strong>
+            </div>
+          </div>
+
+          <div class="bom-summary-card">
+            <div class="bom-summary-icon green">
+              <i class="fa-solid fa-circle-check"></i>
+            </div>
+
+            <div>
+              <span>Active BOMs</span>
+              <strong id="activeBoms">0</strong>
+            </div>
+          </div>
+
+          <div class="bom-summary-card">
+            <div class="bom-summary-icon purple">
+              <i class="fa-solid fa-box"></i>
+            </div>
+
+            <div>
+              <span>Products Covered</span>
+              <strong id="productsCovered">0</strong>
+            </div>
+          </div>
+          <div class="bom-summary-card">
+            <div class="bom-summary-icon orange">
+              <i class="fa-solid fa-cubes"></i>
+            </div>
+
+            <div>
+              <span>Raw Materials Used</span>
+              <strong id="rawMaterialsUsed">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="content-card bom-list-card">
+          <div class="card-header">
+            <div>
+              <h2>Product Bill of Materials</h2>
+              <p>
+                Manage standard raw material requirements for your products.
+              </p>
+            </div>
+
+            <div class="bom-toolbar">
+              <div class="bom-search">
+                <i class="fa-solid fa-magnifying-glass"></i>
+                <input type="search" id="bomSearch" placeholder="Search product or BOM..." autocomplete="off" />
+              </div>
+              <select id="bomStatusFilter" class="bom-filter">
+                <option value="all">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="data-table bom-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Product</th>
+                  <th>BOM Name</th>
+                  <th>Materials</th>
+                  <th>Status</th>
+                  <th>Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+
+              <tbody id="bomTableBody">
+                <tr>
+                  <td colspan="7" class="table-loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Loading BOMs...
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="bom-empty-state" id="bomEmptyState" hidden>
+            <div class="bom-empty-icon">
+              <i class="fa-solid fa-sitemap"></i>
+            </div>
+            <h3>No BOMs found</h3>
+            <p>
+              Create a BOM to define the raw materials required for a product.
+            </p>
+            <button type="button" class="bom-primary-btn" id="emptyAddBomButton">
+              <i class="fa-solid fa-plus"></i>
+              Create BOM
+            </button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Create / Edit BOM Modal -->
+  <div class="modal-overlay" id="bomModal" hidden>
+    <div class="modal bom-modal" role="dialog" aria-modal="true" aria-labelledby="bomModalTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-sitemap"></i>
+          </div>
+
+          <div>
+            <h2 id="bomModalTitle">Create Product BOM</h2>
+
+            <p>Define standard materials required for this product.</p>
+          </div>
+        </div>
+
+        <button type="button" class="modal-close" id="closeBomModal" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="bomForm">
+        <input type="hidden" id="bomId" value="" />
+
+        <!-- Product / BOM Name -->
+
+        <div class="bom-form-grid">
+          <div class="bom-form-group">
+            <label for="productId">
+              Product
+              <span>*</span>
+            </label>
+
+            <select id="productId" name="product_id" required>
+              <option value="">Select Product</option>
+            </select>
+          </div>
+
+          <div class="bom-form-group">
+            <label for="bomName">
+              BOM Name
+              <span>*</span>
+            </label>
+
+            <input type="text" id="bomName" name="name" placeholder="e.g. Standard RCC Pipe BOM" maxlength="150"
+              required />
+          </div>
+        </div>
+
+        <!-- Raw Materials -->
+
+        <div class="bom-material-section">
+          <div class="bom-section-header">
+            <div>
+              <h3>Raw Materials</h3>
+
+              <p>
+                Add the standard quantity required to manufacture one unit of
+                this product.
+              </p>
+            </div>
+
+            <button type="button" class="secondary-button small" id="addMaterialButton">
+              <i class="fa-solid fa-plus"></i>
+              Add Material
+            </button>
+          </div>
+
+          <div class="bom-material-list" id="bomMaterialList">
+            <div class="bom-material-empty" id="materialEmptyState">
+              <i class="fa-solid fa-cubes"></i>
+
+              <span> No raw materials added yet. </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status -->
+
+        <div class="bom-status-row">
+          <label class="bom-switch">
+            <input type="checkbox" id="bomIsActive" name="is_active" checked />
+
+            <span class="bom-switch-slider"></span>
+          </label>
+
+          <div>
+            <strong>Active BOM</strong>
+
+            <p>Use this BOM automatically during production.</p>
+          </div>
+        </div>
+
+        <div class="bom-form-message" id="bomFormMessage"></div>
+
+        <!-- Footer -->
+
+        <div class="modal-footer">
+          <button type="button" class="secondary-button" id="cancelBomButton">
+            Cancel
+          </button>
+
+          <button type="submit" class="primary-button" id="saveBomButton">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Save BOM</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="bom-confirm-modal" id="deleteBomModal" hidden>
+    <div class="bom-confirm-overlay"></div>
+    <div class="bom-confirm-content">
+      <div class="bom-confirm-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+
+      <h3>Delete BOM?</h3>
+
+      <p>This will remove the selected BOM and its material requirements.</p>
+
+      <div class="bom-confirm-actions">
+        <button type="button" class="bom-secondary-btn" id="cancelDeleteButton">
+          Cancel
+        </button>
+
+        <button type="button" class="bom-danger-btn" id="confirmDeleteButton">
+          <i class="fa-solid fa-trash-can"></i>
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/product-bom.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("product-bom"),
+
+        loadHeader({
+          title: "Product Mix Design Master",
+          description:
+            "Define raw materials required for manufacturing each product",
+        }),
+      ]);
+
+      if (typeof initProductBomPage === "function") {
+        initProductBomPage();
+      }
+    });
+  </script>
+</body>
+
+</html>
