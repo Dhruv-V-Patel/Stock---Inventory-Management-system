@@ -961,7 +961,7 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
         Freight: number(row.freight_amount),
         Total: number(row.total_amount),
         Return: number(row.purchase_return_amount),
-        Net_Total: number(row.net_purchase_amount),
+        "Net Total": number(row.net_purchase_amount),
       }));
 
       const supplierSheet = XLSX.utils.json_to_sheet(supplierRows);
@@ -997,6 +997,7 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
        * SHEET 3
        * Purchase Entries
        */
+      console.log("Purchase Row:",state.rows);
       const purchaseRows = state.rows.map((row, index) => ({
         "#": index + 1,
         "Purchase No.": row.purchase_no,
@@ -1010,10 +1011,11 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
         Freight: number(row.freight_amount),
         Total: number(row.total_amount),
         Return: number(row.purchase_return_amount),
-        Net_Total: number(row.net_purchase_amount),
+        "Net Total": number(row.net_purchase_amount),
         Paid: number(row.paid_amount),
         Due: number(row.due_amount),
         "Payment Status": row.payment_status,
+        Remark:row.remarks,
       }));
 
       const purchaseSheet = XLSX.utils.json_to_sheet(purchaseRows);
@@ -1032,7 +1034,10 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
         { wch: 18 },
         { wch: 16 },
         { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
         { wch: 18 },
+        { wch: 30 },
       ];
 
       if (purchaseRows.length) {

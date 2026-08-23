@@ -508,25 +508,11 @@ CREATE TABLE IF NOT EXISTS user_permissions (
         UNIQUE (user_id, permission_id)
 );
 
-ALTER TABLE purchase_return_items
-ADD COLUMN IF NOT EXISTS reason VARCHAR(100);
-
-ALTER TABLE sales_return_items
-ADD COLUMN IF NOT EXISTS reason VARCHAR(100);
-
-ALTER TABLE purchase_returns
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW();
-
-ALTER TABLE sales_returns
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW();
-
 INSERT INTO roles (name, description)
 VALUES
     ('admin', 'Full system access'),
     ('member', 'Standard system access')
 ON CONFLICT (name) DO NOTHING;
-
-
 
 INSERT INTO permissions (module, action, name, description)
 VALUES

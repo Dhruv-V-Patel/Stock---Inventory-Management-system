@@ -658,7 +658,6 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
 
   const loadAllSalesReturnItemsForExport = async () => {
   const sales = state.rows;
-  console.log("Sales:", sales);
 
   if (!sales.length) {
     return;
@@ -841,7 +840,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         Freight: number(row.freight_amount),
         Total: number(row.total_amount),
         Return: number(row.sales_return_amount),
-        Net_Total: number(row.net_sales_amount),
+        "Net Total": number(row.net_sales_amount),
       }));
 
       const customerSheet = XLSX.utils.json_to_sheet(customerRows);
@@ -884,10 +883,11 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         Freight: number(row.freight_amount),
         Total: number(row.total_amount),
         Return: number(row.sales_return_amount),
-        Net_Total: number(row.net_sales_amount),
+        "Net Total": number(row.net_sales_amount),
         Paid: number(row.paid_amount),
         Due: number(row.due_amount),
         "Payment Status": row.payment_status,
+        Remark:row.remarks,
       }));
 
       const saleSheet = XLSX.utils.json_to_sheet(saleRows);
@@ -905,7 +905,10 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         { wch: 18 },
         { wch: 16 },
         { wch: 16 },
+        { wch: 16 },
+        { wch: 16 },
         { wch: 18 },
+        { wch: 30 },
       ];
 
       if (saleRows.length) {
