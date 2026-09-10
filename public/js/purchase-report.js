@@ -5,7 +5,7 @@ const PurchaseReportPage = (() => {
     supplierWise: [],
     suppliers: [],
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
   };
 
   const elements = {};

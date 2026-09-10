@@ -5,7 +5,7 @@ const ProductionPage = (() => {
     products: [],
     boms: [],
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
     editingId: null,
     deletingId: null,
   };

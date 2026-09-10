@@ -7,7 +7,7 @@ const RawMaterialStockPage = (() => {
         rows: [],
         filteredRows: [],
         page: 1,
-        pageSize: 10,
+        pageSize: 30,
         currentHistoryId: null,
     };
 

@@ -6,7 +6,7 @@ const SalesPage = (() => {
     products: [],
     items: [],
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
     editingId: null,
     deletingId: null,
   };

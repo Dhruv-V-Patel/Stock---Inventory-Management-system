@@ -5,7 +5,7 @@ const ProductionReportPage = (() => {
     products: [],
     shifts: [],
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
   };
 
   const qs = (selector) => document.querySelector(selector);

@@ -6,7 +6,7 @@
     filtered: [],
     productWise: [],
     page: 1,
-    pageSize: 10,
+    pageSize: 30,
   };
   const $ = (s) => document.querySelector(s);
   const el = {};
