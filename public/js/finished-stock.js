@@ -1,6 +1,5 @@
 /* ========================================
    FINISHED STOCK PAGE
-   Jay Products
 ======================================== */
 
 const FinishedStockPage = (() => {

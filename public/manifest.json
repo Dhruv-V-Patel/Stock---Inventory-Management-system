@@ -1,7 +1,7 @@
 {
-  "name": "Jay Products",
-  "short_name": "Jay Products",
-  "description": "Jay Products is a complete manufacturing and inventory management system for managing raw materials, products, production, stock, sales, purchases, and business operations.",
+  "name": "Someshwar AI ERP",
+  "short_name": "Someshwar AI ERP",
+  "description": "Someshwar AI ERP is a complete manufacturing and inventory management system for managing raw materials, products, production, stock, sales, purchases, and business operations.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -41,7 +41,7 @@ const getForgotPasswordTemplate = ({
                    font-size:28px;
                    font-weight:700;
                  ">
-                   Jay Products Stock Management System
+                  Someshwar AI ERP Stock Management System
                  </h1>
    
                  <p style="

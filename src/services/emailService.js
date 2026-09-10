@@ -18,7 +18,7 @@ const sendForgotPasswordEmail = async ({ email, code }) => {
   });
 
   await transporter.sendMail({
-    from: `"Jay Products" <${process.env.COMPANY_EMAIL}>`,
+    from: `"Someshwar AI ERP" <${process.env.COMPANY_EMAIL}>`,
 
     to: email,
 
