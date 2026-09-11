@@ -514,88 +514,92 @@ VALUES
     ('member', 'Standard system access')
 ON CONFLICT (name) DO NOTHING;
 
-INSERT INTO permissions (module, action, name, description)
-VALUES
+
+INSERT INTO permissions (module, action, name, description) VALUES
 
 -- Dashboard
 ('dashboard', 'view', 'View Dashboard', 'View dashboard'),
 
 -- Master
 ('products', 'view', 'View Products', 'View products'),
-('products', 'edit', 'Edit Products', 'Create and update products'),
+('products', 'add', 'Add Products', 'Create new products'),
+('products', 'edit', 'Edit Products', 'Update products'),
 ('products', 'delete', 'Delete Products', 'Delete products'),
 
-
 ('raw-materials', 'view', 'View Raw Materials', 'View raw materials'),
-('raw-materials', 'edit', 'Edit Raw Materials', 'Create and update raw materials'),
+('raw-materials', 'add', 'Add Raw Materials', 'Create new raw materials'),
+('raw-materials', 'edit', 'Edit Raw Materials', 'Update raw materials'),
 ('raw-materials', 'delete', 'Delete Raw Materials', 'Delete raw materials'),
 
-
 ('customers', 'view', 'View Customers', 'View customers'),
-('customers', 'edit', 'Edit Customers', 'Create and update customers'),
+('customers', 'add', 'Add Customers', 'Create new customers'),
+('customers', 'edit', 'Edit Customers', 'Update customers'),
 ('customers', 'delete', 'Delete Customers', 'Delete customers'),
 
-
 ('suppliers', 'view', 'View Suppliers', 'View suppliers'),
-('suppliers', 'edit', 'Edit Suppliers', 'Create and update suppliers'),
+('suppliers', 'add', 'Add Suppliers', 'Create new suppliers'),
+('suppliers', 'edit', 'Edit Suppliers', 'Update suppliers'),
 ('suppliers', 'delete', 'Delete Suppliers', 'Delete suppliers'),
 
-
 ('product-bom', 'view', 'View Product Mix Design', 'View product mix design'),
-('product-bom', 'edit', 'Edit Product Mix Design', 'Create and update product mix design'),
+('product-bom', 'add', 'Add Product Mix Design', 'Create new product mix design'),
+('product-bom', 'edit', 'Edit Product Mix Design', 'Update product mix design'),
 ('product-bom', 'delete', 'Delete Product Mix Design', 'Delete product mix design'),
 
 -- Inventory
 ('raw-material-stock', 'view', 'View Raw Material Stock', 'View raw material stock'),
+('raw-material-stock', 'add', 'Add Raw Material Stock', 'Add raw material stock'),
 ('raw-material-stock', 'edit', 'Edit Raw Material Stock', 'Update raw material stock'),
 ('raw-material-stock', 'delete', 'Delete Raw Material Stock', 'Delete raw material stock'),
 
 ('ready-stock', 'view', 'View Ready Stock', 'View ready stock'),
+('ready-stock', 'add', 'Add Ready Stock', 'Add ready stock'),
 ('ready-stock', 'edit', 'Edit Ready Stock', 'Update ready stock'),
 ('ready-stock', 'delete', 'Delete Ready Stock', 'Delete ready stock'),
 
 -- Purchase
 ('purchases', 'view', 'View Purchase', 'View purchases'),
-('purchases', 'edit', 'Edit Purchase', 'Create and update purchases'),
+('purchases', 'add', 'Add Purchase', 'Create new purchases'),
+('purchases', 'edit', 'Edit Purchase', 'Update purchases'),
 ('purchases', 'delete', 'Delete Purchase', 'Delete purchases'),
 
-
 ('purchase-returns', 'view', 'View Purchase Returns', 'View purchase returns'),
-('purchase-returns', 'edit', 'Edit Purchase Returns', 'Create and update purchase returns'),
+('purchase-returns', 'add', 'Add Purchase Returns', 'Create new purchase returns'),
+('purchase-returns', 'edit', 'Edit Purchase Returns', 'Update purchase returns'),
 ('purchase-returns', 'delete', 'Delete Purchase Returns', 'Delete purchase returns'),
-
 
 -- Production
 ('production', 'view', 'View Daily Production', 'View daily production'),
-('production', 'edit', 'Edit Daily Production', 'Create and update daily production'),
+('production', 'add', 'Add Daily Production', 'Create new daily production'),
+('production', 'edit', 'Edit Daily Production', 'Update daily production'),
 ('production', 'delete', 'Delete Daily Production', 'Delete daily production'),
 
-
 ('production-wastage', 'view', 'View Production Wastage', 'View production wastage'),
-('production-wastage', 'edit', 'Edit Production Wastage', 'Create and update production wastage'),
+('production-wastage', 'add', 'Add Production Wastage', 'Create new production wastage'),
+('production-wastage', 'edit', 'Edit Production Wastage', 'Update production wastage'),
 ('production-wastage', 'delete', 'Delete Production Wastage', 'Delete production wastage'),
-
 
 -- Sales
 ('sales', 'view', 'View Sales', 'View sales'),
-('sales', 'edit', 'Edit Sales', 'Create and update sales'),
+('sales', 'add', 'Add Sales', 'Create new sales'),
+('sales', 'edit', 'Edit Sales', 'Update sales'),
 ('sales', 'delete', 'Delete Sales', 'Delete sales'),
 
-
 ('sales-returns', 'view', 'View Sales Returns', 'View sales returns'),
-('sales-returns', 'edit', 'Edit Sales Returns', 'Create and update sales returns'),
+('sales-returns', 'add', 'Add Sales Returns', 'Create new sales returns'),
+('sales-returns', 'edit', 'Edit Sales Returns', 'Update sales returns'),
 ('sales-returns', 'delete', 'Delete Sales Returns', 'Delete sales returns'),
 
 ('dispatch', 'view', 'View Dispatch', 'View dispatch'),
-('dispatch', 'edit', 'Edit Dispatch', 'Create and update dispatch'),
+('dispatch', 'add', 'Add Dispatch', 'Create new dispatch'),
+('dispatch', 'edit', 'Edit Dispatch', 'Update dispatch'),
 ('dispatch', 'delete', 'Delete Dispatch', 'Delete dispatch'),
-
 
 -- Payments
 ('payments', 'view', 'View Payments', 'View payments'),
-('payments', 'edit', 'Edit Payments', 'Create and update payments'),
+('payments', 'add', 'Add Payments', 'Create new payments'),
+('payments', 'edit', 'Edit Payments', 'Update payments'),
 ('payments', 'delete', 'Delete Payments', 'Delete payments'),
-
 
 -- Reports
 ('stock-report', 'view', 'View Stock Report', 'View stock report'),
@@ -610,7 +614,8 @@ VALUES
 
 -- Administration
 ('manage-users', 'view', 'View Manage Users', 'View users'),
-('manage-users', 'edit', 'Edit Manage Users', 'Create and update users'),
+('manage-users', 'add', 'Add Manage Users', 'Create new users'),
+('manage-users', 'edit', 'Edit Manage Users', 'Update users'),
 ('manage-users', 'delete', 'Delete Manage Users', 'Delete users'),
 
 ('audit-logs', 'view', 'View Audit Logs', 'View audit logs')
@@ -637,3 +642,33 @@ INNER JOIN permissions p
     ON p.action = 'view'
 WHERE r.name = 'member'
 ON CONFLICT (role_id, permission_id) DO NOTHING;
+
+
+--------------- New Added
+
+INSERT INTO permissions (
+    module,
+    action,
+    name,
+    description
+)
+SELECT
+    module,
+    'add',
+    REPLACE(name, 'Edit ', 'Add '),
+    CASE
+        WHEN module = 'raw-material-stock'
+            THEN 'Add raw material stock'
+        WHEN module = 'ready-stock'
+            THEN 'Add ready stock'
+        WHEN module = 'manage-users'
+            THEN 'Create new users'
+        ELSE
+            'Create new ' || REPLACE(module, '-', ' ')
+    END
+FROM permissions
+WHERE action = 'edit'
+ON CONFLICT (module, action) DO NOTHING;
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS gst_tax_rate NUMERIC(5, 2) NOT NULL DEFAULT 0;

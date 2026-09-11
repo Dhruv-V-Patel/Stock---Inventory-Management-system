@@ -19,7 +19,7 @@ router.get("/", requirePermission("products.view"), listProducts);
 router.get("/summary", requirePermission("products.view"), getProductSummary);
 router.get("/:id",requirePermission("products.view"), getProduct);
 
-router.post("/", requirePermission("products.edit"), createProduct);
+router.post("/", requirePermission("products.add"), createProduct);
 
 router.put("/:id", requirePermission("products.edit"), updateProduct);
 

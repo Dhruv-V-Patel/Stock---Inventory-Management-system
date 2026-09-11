@@ -33,7 +33,7 @@ router.get(
 
 router.post(
   "/",
-  requirePermission("sales_returns.create"),
+  requirePermission("sales_returns.add"),
   controller.createReturn,
 );
 

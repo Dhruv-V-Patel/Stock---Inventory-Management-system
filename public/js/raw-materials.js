@@ -612,9 +612,9 @@
     elements.cancelDeleteButton.addEventListener("click", closeDeleteModal);
     elements.confirmDeleteButton.addEventListener("click", deactivateMaterial);
 
-    elements.modal.addEventListener("click", (event) => {
-      if (event.target === elements.modal) closeModal();
-    });
+    // elements.modal.addEventListener("click", (event) => {
+    //   if (event.target === elements.modal) closeModal();
+    // });
 
     elements.deleteModal.addEventListener("click", (event) => {
       if (event.target === elements.deleteModal) closeDeleteModal();

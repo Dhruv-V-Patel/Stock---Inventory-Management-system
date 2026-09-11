@@ -780,9 +780,9 @@
     $("closeUserModal").addEventListener("click", closeModal);
     $("cancelUser").addEventListener("click", closeModal);
 
-    $("userModal").addEventListener("click", (event) => {
-      if (event.target === $("userModal")) closeModal();
-    });
+    // $("userModal").addEventListener("click", (event) => {
+    //   if (event.target === $("userModal")) closeModal();
+    // });
 
     $("closeUserView").addEventListener("click", closeViewModal);
     $("closeUserViewButton").addEventListener("click", closeViewModal);

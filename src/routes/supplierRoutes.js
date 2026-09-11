@@ -10,7 +10,7 @@ router.use(authenticateToken);
 router.get("/summary", requirePermission("suppliers.view"), supplierController.getSummary);
 router.get("/", requirePermission("suppliers.view"), supplierController.getSuppliers);
 router.get("/:id", requirePermission("suppliers.view"), supplierController.getSupplier);
-router.post("/", requirePermission("suppliers.edit"), supplierController.createSupplier);
+router.post("/", requirePermission("suppliers.add"), supplierController.createSupplier);
 router.put("/:id", requirePermission("suppliers.edit"), supplierController.updateSupplier);
 router.delete("/:id", requirePermission("suppliers.delete"), supplierController.removeSupplier);
 

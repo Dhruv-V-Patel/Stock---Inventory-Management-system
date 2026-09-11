@@ -33,7 +33,9 @@ const normalizeItems = (items) => {
     const rate = toNumber(rawItem?.rate, NaN);
 
     if (!Number.isFinite(quantity) || quantity <= 0) {
-      const error = new Error("Every sale item must have a quantity greater than zero.");
+      const error = new Error(
+        "Every sale item must have a quantity greater than zero.",
+      );
       error.statusCode = 400;
       throw error;
     }
@@ -205,8 +207,8 @@ const validateProductsAndStock = async (
     if (usableStock + EPSILON < item.quantity) {
       const error = new Error(
         `Insufficient finished stock for "${product.name}". ` +
-        `Available ${usableStock} ${product.unit}, ` +
-        `required ${item.quantity} ${product.unit}.`,
+          `Available ${usableStock} ${product.unit}, ` +
+          `required ${item.quantity} ${product.unit}.`,
       );
       error.statusCode = 400;
       throw error;
@@ -223,20 +225,10 @@ const validateProductsAndStock = async (
   return validated;
 };
 
-const calculateTotals = ({
-  items,
-  discount,
-  taxAmount,
-}) => {
-  const subtotal = items.reduce(
-    (sum, item) => sum + item.amount,
-    0,
-  );
+const calculateTotals = ({ items, discount, taxAmount }) => {
+  const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
 
-  const total = Math.max(
-    0,
-    subtotal - discount + taxAmount,
-  );
+  const total = Math.max(0, subtotal - discount + taxAmount);
 
   return {
     subtotal,
@@ -273,6 +265,7 @@ const insertStockMovement = async (
     quantity,
     movementType,
     saleId,
+    movementDate,
     remarks,
     userId,
   },
@@ -299,9 +292,9 @@ const insertStockMovement = async (
         $4,
         'SALE',
         $5,
-        NOW(),
-        $6,
-        $7
+        COALESCE($6::TIMESTAMP, NOW()),
+        $7,
+        $8
       )
     `,
     [
@@ -310,6 +303,7 @@ const insertStockMovement = async (
       quantity,
       movementType,
       saleId,
+      movementDate,
       remarks,
       userId || null,
     ],
@@ -433,7 +427,6 @@ const insertStockMovement = async (
 //     total_amount: Number(row.total_amount || 0),
 //   }));
 // };
-
 
 const getSaleById = async (id, client = pool) => {
   const saleId = assertId(id, "sale id");
@@ -569,27 +562,18 @@ const getSaleById = async (id, client = pool) => {
 
   const row = result.rows[0];
 
-  const returnAmount = Number(
-    row.return_amount || 0,
-  );
+  const returnAmount = Number(row.return_amount || 0);
 
-  const netTotal = Math.max(
-    0,
-    Number(row.total_amount || 0) - returnAmount,
-  );
+  const netTotal = Math.max(0, Number(row.total_amount || 0) - returnAmount);
 
   const items = (row.items || []).map((item) => {
     const quantity = Number(item.quantity || 0);
 
-    const returnedQuantity = Number(
-      item.returned_quantity || 0,
-    );
+    const returnedQuantity = Number(item.returned_quantity || 0);
 
     const amount = Number(item.amount || 0);
 
-    const returnedAmount = Number(
-      item.returned_amount || 0,
-    );
+    const returnedAmount = Number(item.returned_amount || 0);
 
     return {
       ...item,
@@ -601,10 +585,7 @@ const getSaleById = async (id, client = pool) => {
 
       returned_quantity: returnedQuantity,
 
-      remaining_quantity: Math.max(
-        0,
-        quantity - returnedQuantity,
-      ),
+      remaining_quantity: Math.max(0, quantity - returnedQuantity),
 
       rate: Number(item.rate || 0),
 
@@ -612,10 +593,7 @@ const getSaleById = async (id, client = pool) => {
 
       returned_amount: returnedAmount,
 
-      net_amount: Math.max(
-        0,
-        amount - returnedAmount,
-      ),
+      net_amount: Math.max(0, amount - returnedAmount),
     };
   });
 
@@ -767,7 +745,7 @@ const getOptions = async () => {
   };
 };
 
-const createSale = async (payload, {userId = null, ipAddress}) => {
+const createSale = async (payload, { userId = null, ipAddress }) => {
   const client = await pool.connect();
 
   try {
@@ -778,10 +756,7 @@ const createSale = async (payload, {userId = null, ipAddress}) => {
 
     await validateCustomer(client, header.customerId);
 
-    const validatedItems = await validateProductsAndStock(
-      client,
-      items,
-    );
+    const validatedItems = await validateProductsAndStock(client, items);
 
     const totals = calculateTotals({
       items: validatedItems,
@@ -857,12 +832,15 @@ const createSale = async (payload, {userId = null, ipAddress}) => {
         ],
       );
 
+      // console.log("Header:",header);
+
       await insertStockMovement(client, {
         productId: item.product_id,
         direction: "OUT",
         quantity: item.quantity,
         movementType: "SALE",
         saleId,
+        movementDate: header.saleDate ? `${header.saleDate} 00:00:00` : null,
         remarks: `Finished stock sold through ${saleNo}.`,
         userId,
       });
@@ -871,7 +849,7 @@ const createSale = async (payload, {userId = null, ipAddress}) => {
     await client.query("COMMIT");
 
     const newReturn = await getSaleById(record.id);
-    
+
     await createAuditLog({
       userId: userId || null,
       module: "SALES",
@@ -891,7 +869,7 @@ const createSale = async (payload, {userId = null, ipAddress}) => {
   }
 };
 
-const updateSale = async (id, payload, {userId = null, ipAddress}) => {
+const updateSale = async (id, payload, { userId = null, ipAddress }) => {
   const saleId = assertId(id, "sale id");
   const client = await pool.connect();
 
@@ -1010,10 +988,9 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
       );
     }
 
-    const productIds = [...new Set([
-      ...oldByProduct.keys(),
-      ...newByProduct.keys(),
-    ])];
+    const productIds = [
+      ...new Set([...oldByProduct.keys(), ...newByProduct.keys()]),
+    ];
 
     for (const productId of productIds) {
       const currentStock = await getProductStock(client, productId);
@@ -1031,7 +1008,7 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
 
         const error = new Error(
           `Cannot update sale. "${product?.name || "Product"}" ` +
-          `would become negative stock (${finalStock} ${product?.unit || ""}).`,
+            `would become negative stock (${finalStock} ${product?.unit || ""}).`,
         );
         error.statusCode = 400;
         throw error;
@@ -1051,6 +1028,7 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
         quantity: item.quantity,
         movementType: "SALE_EDIT_REVERSAL",
         saleId,
+        movementDate: existing.sale_date ? `${existing.sale_date}` : null,
         remarks: `Previous quantity restored while editing sale ${existing.sale_no}.`,
         userId,
       });
@@ -1063,6 +1041,7 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
         quantity: item.quantity,
         movementType: "SALE_EDIT",
         saleId,
+        movementDate: header.saleDate ? `${header.saleDate}` : null,
         remarks: `Updated finished-stock quantity for sale ${existing.sale_no}.`,
         userId,
       });
@@ -1102,10 +1081,7 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
       ],
     );
 
-    await client.query(
-      `DELETE FROM sale_items WHERE sale_id = $1`,
-      [saleId],
-    );
+    await client.query(`DELETE FROM sale_items WHERE sale_id = $1`, [saleId]);
 
     for (const item of validatedItems) {
       await client.query(
@@ -1154,7 +1130,7 @@ const updateSale = async (id, payload, {userId = null, ipAddress}) => {
   }
 };
 
-const deleteSale = async (id, {userId = null, ipAddress}) => {
+const deleteSale = async (id, { userId = null, ipAddress }) => {
   const saleId = assertId(id, "sale id");
   const client = await pool.connect();
 
@@ -1180,34 +1156,62 @@ const deleteSale = async (id, {userId = null, ipAddress}) => {
     const sale = saleResult.rows[0];
     const oldSale = await getSaleById(saleId, client);
 
-    const [paymentResult, dispatchResult, returnResult] =
-      await Promise.all([
-        client.query(
-          `
-            SELECT COUNT(*)::int AS count
-            FROM payments
-            WHERE payment_type = 'CUSTOMER'
-              AND sale_id = $1
-          `,
+    // const [paymentResult, dispatchResult, returnResult] =
+    //   await Promise.all([
+    //     client.query(
+    //       `
+    //         SELECT COUNT(*)::int AS count
+    //         FROM payments
+    //         WHERE payment_type = 'CUSTOMER'
+    //           AND sale_id = $1
+    //       `,
+    //       [saleId],
+    //     ),
+    //     client.query(
+    //       `
+    //         SELECT COUNT(*)::int AS count
+    //         FROM dispatches
+    //         WHERE sale_id = $1
+    //       `,
+    //       [saleId],
+    //     ),
+    //     client.query(
+    //       `
+    //         SELECT COUNT(*)::int AS count
+    //         FROM sales_returns
+    //         WHERE sale_id = $1
+    //       `,
+    //       [saleId],
+    //     ),
+    //   ]);
+
+    const paymentResult = await client.query(
+      `
+    SELECT COUNT(*)::int AS count
+    FROM payments
+    WHERE payment_type = 'CUSTOMER'
+      AND sale_id = $1
+  `,
+      [saleId],
+    );
+
+    const dispatchResult = await client.query(
+      `
+    SELECT COUNT(*)::int AS count
+    FROM dispatches
+    WHERE sale_id = $1
+  `,
+      [saleId],
+    );
+
+    const returnResult = await client.query(
+      `
+        SELECT COUNT(*)::int AS count
+        FROM sales_returns
+        WHERE sale_id = $1
+      `,
           [saleId],
-        ),
-        client.query(
-          `
-            SELECT COUNT(*)::int AS count
-            FROM dispatches
-            WHERE sale_id = $1
-          `,
-          [saleId],
-        ),
-        client.query(
-          `
-            SELECT COUNT(*)::int AS count
-            FROM sales_returns
-            WHERE sale_id = $1
-          `,
-          [saleId],
-        ),
-      ]);
+        );
 
     if (Number(paymentResult.rows[0]?.count || 0) > 0) {
       const error = new Error(
@@ -1259,15 +1263,13 @@ const deleteSale = async (id, {userId = null, ipAddress}) => {
         quantity: item.quantity,
         movementType: "SALE_DELETE_REVERSAL",
         saleId,
+        movementDate: sale.sale_date ? `${sale.sale_date}` : null,
         remarks: `Finished stock restored after deleting sale ${sale.sale_no}.`,
         userId,
       });
     }
 
-    await client.query(
-      `DELETE FROM sales WHERE id = $1`,
-      [saleId],
-    );
+    await client.query(`DELETE FROM sales WHERE id = $1`, [saleId]);
 
     await client.query("COMMIT");
 

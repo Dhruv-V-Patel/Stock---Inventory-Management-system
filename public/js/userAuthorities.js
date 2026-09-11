@@ -415,6 +415,8 @@
 
       const viewPermission = getPermission(module, "view");
 
+      const addPermission = getPermission(module, "add");
+
       const editPermission = getPermission(module, "edit");
 
       const deletePermission = getPermission(module, "delete");
@@ -444,25 +446,20 @@
             </div>
           </td>
 
-
           <td class="permission-action-column">
-
             ${renderCheckbox(viewPermission, module, "view")}
-
           </td>
 
+          <td class="permission-action-column">
+            ${renderCheckbox(addPermission, module, "add")}
+          </td>
 
           <td class="permission-action-column">
-
             ${renderCheckbox(editPermission, module, "edit")}
-
           </td>
 
-
           <td class="permission-action-column">
-
             ${renderCheckbox(deletePermission, module, "delete")}
-
           </td>
 
         </tr>
@@ -707,7 +704,7 @@
     $("permissionsTableBody").innerHTML = `
       <tr>
 
-        <td colspan="4">
+        <td colspan="5">
 
           <div class="authorization-empty">
 
@@ -741,7 +738,7 @@
     $("permissionsTableBody").innerHTML = `
       <tr>
 
-        <td colspan="4">
+        <td colspan="5">
 
           <div class="authorization-loading">
 
@@ -767,7 +764,7 @@
     $("permissionsTableBody").innerHTML = `
       <tr>
 
-        <td colspan="4">
+        <td colspan="5">
 
           <div class="authorization-empty">
 

@@ -1084,13 +1084,13 @@ const PurchasePage = (() => {
       });
     }
 
-    if (elements.modal) {
-      elements.modal.addEventListener("click", (event) => {
-        if (event.target === elements.modal) {
-          closeModal();
-        }
-      });
-    }
+    // if (elements.modal) {
+    //   elements.modal.addEventListener("click", (event) => {
+    //     if (event.target === elements.modal) {
+    //       closeModal();
+    //     }
+    //   });
+    // }
 
     // ========================================
     // PURCHASE FORM

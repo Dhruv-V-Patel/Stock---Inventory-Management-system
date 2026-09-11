@@ -9,7 +9,7 @@ router.use(authenticateToken);
 
 router.get("/options", requirePermission("purchases.view"), purchaseController.getOptions);
 router.get("/", requirePermission("purchases.view"),  purchaseController.getPurchases);
-router.post("/", requirePermission("purchases.view"), purchaseController.createPurchase);
+router.post("/", requirePermission("purchases.add"), purchaseController.createPurchase);
 router.get("/:id", requirePermission("purchases.edit"), purchaseController.getPurchase);
 router.put("/:id", requirePermission("purchases.edit"), purchaseController.updatePurchase);
 router.delete("/:id", requirePermission("purchases.delete"), purchaseController.deletePurchase);

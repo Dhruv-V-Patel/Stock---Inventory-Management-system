@@ -722,11 +722,11 @@ const ProductsPage = (() => {
     elements.closeModal.addEventListener("click", closeModal);
     elements.cancel.addEventListener("click", closeModal);
 
-    elements.modal.addEventListener("click", (event) => {
-      if (event.target === elements.modal) {
-        closeModal();
-      }
-    });
+    // elements.modal.addEventListener("click", (event) => {
+    //   if (event.target === elements.modal) {
+    //     closeModal();
+    //   }
+    // });
 
     elements.form.addEventListener("submit", saveProduct);
 

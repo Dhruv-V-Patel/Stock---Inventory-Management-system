@@ -1034,11 +1034,11 @@
 
     $("closeDispatchViewButton").addEventListener("click", closeViewModal);
 
-    $("dispatchModal").addEventListener("click", (event) => {
-      if (event.target === $("dispatchModal")) {
-        closeModal();
-      }
-    });
+    // $("dispatchModal").addEventListener("click", (event) => {
+    //   if (event.target === $("dispatchModal")) {
+    //     closeModal();
+    //   }
+    // });
 
     $("dispatchViewModal").addEventListener("click", (event) => {
       if (event.target === $("dispatchViewModal")) {

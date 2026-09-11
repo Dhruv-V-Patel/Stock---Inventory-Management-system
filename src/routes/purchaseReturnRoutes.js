@@ -29,7 +29,7 @@ router.get(
 );
 router.post(
   "/",
-  requirePermission("purchase_returns.create"),
+  requirePermission("purchase_returns.add"),
   controller.createReturn,
 );
 router.get(

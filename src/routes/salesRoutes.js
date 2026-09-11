@@ -14,7 +14,7 @@ router.get("/options", requirePermission("sales.view"), salesController.getOptio
 
 router.get("/:id",requirePermission("sales.view"), salesController.getSaleById);
 
-router.post("/",requirePermission("sales.edit"), salesController.createSale);
+router.post("/",requirePermission("sales.add"), salesController.createSale);
 
 router.put("/:id",requirePermission("sales.edit"), salesController.updateSale);
 

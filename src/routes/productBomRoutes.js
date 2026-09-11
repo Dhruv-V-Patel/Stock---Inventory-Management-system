@@ -16,7 +16,7 @@ router.use(authenticateToken);
     
 router.get("/", requirePermission("product-bom.view"), getProductBoms);
 router.get("/:id", requirePermission("product-bom.view"), getProductBomById);
-router.post("/", requirePermission("product-bom.edit"), createProductBom);
+router.post("/", requirePermission("product-bom.add"), createProductBom);
 router.put("/:id", requirePermission("product-bom.edit"), updateProductBom);
 router.delete("/:id", requirePermission("product-bom.delete"), deleteProductBom);
 

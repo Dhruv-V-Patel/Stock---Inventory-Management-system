@@ -10,7 +10,7 @@ router.get("/",requirePermission("production.view"), productionController.getPro
 router.get("/products", requirePermission("production.view"), productionController.getProducts);
 // router.get("/boms/:productId", productionController.getProductBoms);
 router.get("/:id", requirePermission("production.view"), productionController.getProductionById);
-router.post("/", requirePermission("production.edit"), productionController.createProduction);
+router.post("/", requirePermission("production.add"), productionController.createProduction);
 router.put("/:id", requirePermission("production.edit"), productionController.updateProduction);
 router.delete("/:id", requirePermission("production.delete"), productionController.deleteProduction);
 

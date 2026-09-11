@@ -91,10 +91,9 @@ const getAllPermissions = async () => {
       module ASC,
       CASE action
         WHEN 'view' THEN 1
-        WHEN 'edit' THEN 2
-        WHEN 'delete' THEN 3
-        WHEN 'export' THEN 4
-        WHEN 'print' THEN 5
+        WHEN 'add' THEN 2
+        WHEN 'edit' THEN 3
+        WHEN 'delete' THEN 4
         ELSE 99
       END,
       id ASC

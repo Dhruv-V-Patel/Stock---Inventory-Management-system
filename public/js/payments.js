@@ -677,9 +677,9 @@ elements.confirmDeleteButton = qs("#confirmDeleteButton");
     elements.emptyAdd.onclick = () => openModal();
     elements.closeModal.onclick = closeModal;
     elements.cancel.onclick = closeModal;
-    elements.modal.onclick = (e) => {
-      if (e.target === elements.modal) closeModal();
-    };
+    // elements.modal.onclick = (e) => {
+    //   if (e.target === elements.modal) closeModal();
+    // };
     elements.form.onsubmit = save;
     document
       .querySelectorAll(".payment-type-option")
