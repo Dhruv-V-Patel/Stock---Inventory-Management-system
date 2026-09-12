@@ -73,6 +73,29 @@ const SalesPage = (() => {
       maximumFractionDigits: 3,
     });
 
+  const calculateRoundOff = (amount) => {
+  const value = Number(amount || 0);
+
+  if (!Number.isFinite(value)) {
+    return {
+      roundOff: 0,
+      roundedTotal: 0,
+    };
+  }
+
+  // Round to nearest rupee
+  const roundedTotal = Math.round(value);
+
+  const roundOff = Number(
+    (roundedTotal - value).toFixed(2),
+  );
+
+  return {
+    roundOff,
+    roundedTotal,
+  };
+};
+
   const formatDate = (value) => {
     if (!value) return "—";
     const date = new Date(value);
@@ -728,9 +751,21 @@ const SalesPage = (() => {
 
     const tax = Math.max(0, Number(elements.taxAmount.value || 0));
 
-    const total = Math.max(0, subtotal - discount + tax);
+    // const total = Math.max(0, subtotal - discount + tax);
+    // elements.grandTotal.textContent = formatCurrency(total);
 
-    elements.grandTotal.textContent = formatCurrency(total);
+    const netTotal = Math.max(0, subtotal - discount + tax);
+
+    // Calculate round off
+    const { roundOff, roundedTotal } = calculateRoundOff(netTotal);
+
+    // Show round off
+    if (elements.roundOff) { 
+      elements.roundOff.value = roundOff.toFixed(2);
+    }
+
+    elements.grandTotal.textContent = formatCurrency(roundedTotal);
+
   };
 
   const validateForm = () => {
@@ -1476,6 +1511,7 @@ const SalesPage = (() => {
     elements.addItem = qs("#addSaleItemButton");
     elements.discount = qs("#discount");
     elements.taxAmount = qs("#taxAmount");
+    elements.roundOff = qs("#roundOff");
     elements.grandTotal = qs("#grandTotal");
     elements.remarks = qs("#remarks");
     elements.saveSale = qs("#saveSale");

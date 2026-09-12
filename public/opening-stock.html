@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Opening Stock | Someshwar AI ERP</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link
+    rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+  />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/opening-stock.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
+
+<body>
+  <div class="app-layout">
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <div id="header-container"></div>
+
+      <main class="main-content">
+        <section class="opening-stock-page">
+          <section class="content-card opening-stock-card">
+
+            <div class="opening-stock-filters">
+              <div class="opening-filter-field date-field">
+                <label for="openingDate">Opening Date</label>
+                <div class="date-input-wrap">
+                  <input id="openingDate" type="date" />
+                </div>
+              </div>
+
+              <div class="opening-filter-field type-field">
+                <label for="typeFilter">Filter by Type</label>
+                <select id="typeFilter" class="opening-filter-control">
+                  <option value="">All Items</option>
+                  <option value="PRODUCT">Product</option>
+                  <option value="RAW_MATERIAL">Raw Material</option>
+                </select>
+              </div>
+
+              <div class="opening-filter-field search-field">
+                <label for="itemSearch">Search Item</label>
+                <div class="opening-search-box">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                  <input
+                    id="itemSearch"
+                    type="search"
+                    placeholder="Search item..."
+                    autocomplete="off"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="opening-section-header">
+              <div>
+                <h2>Opening Stock Items</h2>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table opening-stock-table">
+                <thead>
+                  <tr>
+                    <th>Opening Date</th>
+                    <th>Type</th>
+                    <th>Item Name</th>
+                    <th>Opening Stock</th>
+                    <th>Unit</th>
+                    <th>Rate</th>
+                    <th class="opening-action-column">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="openingStockTableBody">
+                  <tr>
+                    <td colspan="7">
+                      <div class="opening-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+                        Loading opening stock...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="opening-empty" id="openingEmpty" hidden>
+              <div class="opening-empty-icon">
+                <i class="fa-solid fa-box-open"></i>
+              </div>
+              <h3>No opening stock items found</h3>
+              <p>Try changing the date, type filter or search keyword.</p>
+            </div>
+
+            <div class="opening-stock-footer">
+              <span id="openingStockCount">Showing 0 of 0 items</span>
+
+              <div class="opening-pagination">
+                <button type="button" class="opening-page-button" id="previousPage" disabled>
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <span id="pageNumber">1</span>
+
+                <button type="button" class="opening-page-button" id="nextPage" disabled>
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- <section class="opening-notes-card">
+            <div class="opening-notes-title">
+              <i class="fa-regular fa-note-sticky"></i>
+              <span>Notes</span>
+            </div>
+
+            <textarea
+              id="openingNotes"
+              class="opening-notes"
+              rows="3"
+              placeholder="Physical stock verified before ERP implementation..."
+            ></textarea>
+          </section> -->
+
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="/js/sidebar.js"></script>
+  <script src="/js/header.js"></script>
+  <script src="/js/opening-stock.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      const today = new Date();
+      const localDate = new Date(today.getTime() - today.getTimezoneOffset() * 60000)
+        .toISOString()
+        .slice(0, 10);
+
+      const openingDate = document.getElementById("openingDate");
+      if (openingDate) openingDate.value = localDate;
+
+      await Promise.all([
+        loadSidebar("opening-stock"),
+        loadHeader({
+          title: "Opening Stock",
+          description: "Enter the existing physical stock available before starting the ERP.",
+        }),
+      ]);
+
+      if (typeof initOpeningStockPage === "function") {
+        initOpeningStockPage();
+      }
+    });
+  </script>
+</body>
+</html>

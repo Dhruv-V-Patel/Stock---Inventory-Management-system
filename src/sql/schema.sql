@@ -34,10 +34,19 @@ CREATE TABLE IF NOT EXISTS products (
     unit VARCHAR(20) NOT NULL DEFAULT 'PCS',
     minimum_stock NUMERIC(14, 3) NOT NULL DEFAULT 0,
     selling_rate NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    gst_tax_rate NUMERIC(5, 2) NOT NULL DEFAULT 0,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE products
+ADD CONSTRAINT products_gst_tax_rate_check
+CHECK (
+  gst_tax_rate >= 0
+  AND gst_tax_rate <= 100
+);
+
 
 CREATE TABLE IF NOT EXISTS raw_materials (
     id BIGSERIAL PRIMARY KEY,
@@ -260,6 +269,7 @@ CREATE TABLE IF NOT EXISTS sales (
     discount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    round_off NUMERIC(12,2) NOT NULL DEFAULT 0,
     payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (
             payment_status IN (
@@ -429,6 +439,43 @@ WHERE gstin IS NOT NULL
 CREATE UNIQUE INDEX IF NOT EXISTS uq_suppliers_name_normalized
 ON suppliers (LOWER(TRIM(name)));
 
+
+CREATE TABLE IF NOT EXISTS opening_stock (
+    id BIGSERIAL PRIMARY KEY,
+
+    item_type VARCHAR(30) NOT NULL
+        CHECK (item_type IN ('RAW_MATERIAL', 'PRODUCT')),
+
+    item_id BIGINT NOT NULL,
+
+    opening_date DATE NOT NULL,
+
+    quantity NUMERIC(14, 3) NOT NULL DEFAULT 0
+        CHECK (quantity >= 0),
+
+    rate NUMERIC(14, 2) NOT NULL DEFAULT 0
+        CHECK (rate >= 0),
+
+    remarks TEXT,
+
+    created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT uq_opening_stock_item
+        UNIQUE (item_type, item_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_opening_stock_date
+    ON opening_stock(opening_date);
+
+CREATE INDEX IF NOT EXISTS idx_opening_stock_item
+    ON opening_stock(item_type, item_id);
+
+CREATE INDEX IF NOT EXISTS idx_stock_movements_opening_stock
+    ON stock_movements(reference_type, reference_id)
+    WHERE reference_type = 'OPENING_STOCK';
+
 -- CREATE TABLE IF NOT EXISTS vehicles (
 --     id BIGSERIAL PRIMARY KEY,
 --     vehicle_number VARCHAR(30) UNIQUE NOT NULL,
@@ -557,6 +604,11 @@ INSERT INTO permissions (module, action, name, description) VALUES
 ('ready-stock', 'edit', 'Edit Ready Stock', 'Update ready stock'),
 ('ready-stock', 'delete', 'Delete Ready Stock', 'Delete ready stock'),
 
+('opening-stock', 'view', 'View Opening Stock', 'View opening stock'),
+('opening-stock', 'add', 'Add Opening Stock', 'Create opening stock'),
+('opening-stock', 'edit', 'Edit Opening Stock', 'Update opening stock'),
+('opening-stock', 'delete', 'Delete Opening Stock', 'Delete opening stock')
+
 -- Purchase
 ('purchases', 'view', 'View Purchase', 'View purchases'),
 ('purchases', 'add', 'Add Purchase', 'Create new purchases'),
@@ -646,29 +698,26 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 --------------- New Added
 
-INSERT INTO permissions (
-    module,
-    action,
-    name,
-    description
-)
-SELECT
-    module,
-    'add',
-    REPLACE(name, 'Edit ', 'Add '),
-    CASE
-        WHEN module = 'raw-material-stock'
-            THEN 'Add raw material stock'
-        WHEN module = 'ready-stock'
-            THEN 'Add ready stock'
-        WHEN module = 'manage-users'
-            THEN 'Create new users'
-        ELSE
-            'Create new ' || REPLACE(module, '-', ' ')
-    END
-FROM permissions
-WHERE action = 'edit'
-ON CONFLICT (module, action) DO NOTHING;
-
-ALTER TABLE products
-ADD COLUMN IF NOT EXISTS gst_tax_rate NUMERIC(5, 2) NOT NULL DEFAULT 0;
+-- INSERT INTO permissions (
+--     module,
+--     action,
+--     name,
+--     description
+-- )
+-- SELECT
+--     module,
+--     'add',
+--     REPLACE(name, 'Edit ', 'Add '),
+--     CASE
+--         WHEN module = 'raw-material-stock'
+--             THEN 'Add raw material stock'
+--         WHEN module = 'ready-stock'
+--             THEN 'Add ready stock'
+--         WHEN module = 'manage-users'
+--             THEN 'Create new users'
+--         ELSE
+--             'Create new ' || REPLACE(module, '-', ' ')
+--     END
+-- FROM permissions
+-- WHERE action = 'edit'
+-- ON CONFLICT (module, action) DO NOTHING;

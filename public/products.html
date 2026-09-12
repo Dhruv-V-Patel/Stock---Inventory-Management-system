@@ -132,7 +132,8 @@
                     <th>Size / Specification</th>
                     <th>Unit</th>
                     <th>Min. Stock</th>
-                    <th>Selling Rate</th>
+                    <!-- <th>Selling Rate</th> -->
+                    <th>GST Tax Slab</th>
                     <th>Status</th>
                     <th class="action-column">Action</th>
                   </tr>
@@ -314,7 +315,7 @@
               />
             </div>
 
-            <div class="form-group">
+            <!-- <div class="form-group">
               <label for="sellingRate">Selling Rate</label>
               <div class="currency-input">
                 <span>₹</span>
@@ -328,7 +329,30 @@
                   placeholder="0.00"
                 />
               </div>
-            </div>
+            </div> -->
+
+            <div class="form-group">
+  <label for="gstTaxRate">
+    GST Tax Slab <span>*</span>
+  </label>
+
+  <select
+    id="gstTaxRate"
+    name="gst_tax_rate"
+    required
+  >
+    <option value="0">0% (Exempt)</option>
+    <option value="5">5%</option>
+    <option value="12">12%</option>
+    <option value="18">18%</option>
+    <option value="28">28%</option>
+  </select>
+
+  <small
+    class="form-error"
+    data-error-for="gstTaxRate"
+  ></small>
+</div>
 
             <div class="form-group">
               <label for="productStatus">Status <span>*</span></label>

@@ -187,6 +187,21 @@ const validateProductPayload = (
       );
   }
 
+  if (!partial || body.gst_tax_rate !== undefined) {
+  const gstTaxRate = parseNonNegativeNumber(
+    body.gst_tax_rate,
+    "GST tax rate",
+  );
+
+  if (gstTaxRate > 100) {
+    throw validationError(
+      "GST tax rate cannot exceed 100%.",
+    );
+  }
+
+  payload.gst_tax_rate = gstTaxRate;
+}
+
 
   if (!partial || body.is_active !== undefined) {
     payload.is_active =
@@ -221,6 +236,8 @@ const mapProduct = (row) => ({
   minimum_stock: Number(row.minimum_stock),
 
   selling_rate: Number(row.selling_rate),
+
+  gst_tax_rate: Number(row.gst_tax_rate),
 
   is_active: row.is_active,
 
@@ -274,20 +291,7 @@ const createAuditLog = async (
 
 const listProducts = async () => {
   const result = await pool.query(`
-    SELECT
-      p.id,
-      p.code,
-      p.name,
-      p.category_id,
-      pc.name AS category_name,
-      p.size,
-      p.unit,
-      p.minimum_stock,
-      p.selling_rate,
-      p.is_active,
-      p.created_at,
-      p.updated_at
-    FROM products p
+    SELECT * FROM products p
     LEFT JOIN product_categories pc
       ON pc.id = p.category_id
     ORDER BY
@@ -318,6 +322,7 @@ const getProduct = async (idValue) => {
         p.unit,
         p.minimum_stock,
         p.selling_rate,
+        p.gst_tax_rate,
         p.is_active,
         p.created_at,
         p.updated_at
@@ -346,7 +351,8 @@ const getProduct = async (idValue) => {
     size: row.size || "",
     unit: row.unit || "PCS",
     minimum_stock: Number(row.minimum_stock || 0),
-    selling_rate: Number(row.selling_rate || 0),
+    // selling_rate: Number(row.selling_rate || 0),
+    gst_tax_rate: row.gst_tax_rate,
     is_active: Boolean(row.is_active),
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -394,7 +400,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             size,
             unit,
             minimum_stock,
-            selling_rate,
+            gst_tax_rate,
             is_active
           )
           VALUES (
@@ -415,7 +421,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             size,
             unit,
             minimum_stock,
-            selling_rate,
+            gst_tax_rate,
             is_active,
             created_at,
             updated_at
@@ -427,7 +433,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
         payload.size,
         payload.unit,
         payload.minimum_stock,
-        payload.selling_rate,
+        payload.gst_tax_rate,
         payload.is_active,
       ],
     );
@@ -473,23 +479,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
     /* Current product */
 
     const currentResult = await client.query(
-      `
-          SELECT
-            id,
-            code,
-            name,
-            category_id,
-            size,
-            unit,
-            minimum_stock,
-            selling_rate,
-            is_active,
-            created_at,
-            updated_at
-          FROM products
-          WHERE id = $1
-          FOR UPDATE
-        `,
+      ` SELECT * FROM products WHERE id = $1 FOR UPDATE `,
       [id],
     );
 
@@ -543,9 +533,13 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         payload.minimum_stock ??
         current.minimum_stock,
 
-      selling_rate:
-        payload.selling_rate ??
-        current.selling_rate,
+      // selling_rate:
+      //   payload.selling_rate ??
+      //   current.selling_rate,
+
+      gst_tax_rate:
+        payload.gst_tax_rate ??
+        current.gst_tax_rate,
 
       is_active:
         payload.is_active ??
@@ -564,7 +558,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
             size = $4,
             unit = $5,
             minimum_stock = $6,
-            selling_rate = $7,
+            gst_tax_rate = $7,
             is_active = $8,
             updated_at = NOW()
           WHERE id = $9
@@ -576,7 +570,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
             size,
             unit,
             minimum_stock,
-            selling_rate,
+            gst_tax_rate,
             is_active,
             created_at,
             updated_at
@@ -588,7 +582,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         next.size,
         next.unit,
         next.minimum_stock,
-        next.selling_rate,
+        next.gst_tax_rate,
         next.is_active,
         id,
       ],

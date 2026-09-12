@@ -50,7 +50,8 @@ const ProductsPage = (() => {
     size: product.size ?? "",
     unit: product.unit ?? "PCS",
     minimum_stock: Number(product.minimum_stock ?? 0),
-    selling_rate: Number(product.selling_rate ?? 0),
+    // selling_rate: Number(product.selling_rate ?? 0),
+    gst_tax_rate: Number(product.gst_tax_rate ?? 0),
     is_active: Boolean(product.is_active),
   });
 
@@ -310,6 +311,10 @@ const ProductsPage = (() => {
     }
 
     elements.empty.hidden = true;
+  
+  // <span class="rate">
+  // ${formatCurrency(product.selling_rate)}
+  // </span>
 
     elements.tableBody.innerHTML = pageRows
       .map((product) => {
@@ -364,9 +369,11 @@ const ProductsPage = (() => {
 
             <td>
               <span class="rate">
-                ${formatCurrency(product.selling_rate)}
+                ${Number(product.gst_tax_rate ?? 0).toLocaleString("en-IN", {
+                  maximumFractionDigits: 2,
+                })}%
               </span>
-            </td>
+            </td>     
 
             <td>
               <span class="status-badge ${statusClass}">
@@ -425,7 +432,8 @@ const ProductsPage = (() => {
     elements.form.reset();
     elements.id.value = "";
     elements.minimumStock.value = "0";
-    elements.sellingRate.value = "0";
+    // elements.sellingRate.value = "0";
+    elements.gstTaxRate.value = "0";
     elements.unit.value = "PCS";
     elements.status.value = "true";
     state.editingId = null;
@@ -487,7 +495,8 @@ const ProductsPage = (() => {
       elements.size.value = product.size;
       elements.unit.value = product.unit;
       elements.minimumStock.value = product.minimum_stock;
-      elements.sellingRate.value = product.selling_rate;
+      // elements.sellingRate.value = product.selling_rate;
+      elements.gstTaxRate.value = String(product.gst_tax_rate ?? 0);
       elements.status.value = String(product.is_active);
       elements.saveProduct.querySelector("span").textContent = "Update Product";
     } else {
@@ -552,7 +561,8 @@ const ProductsPage = (() => {
     size: elements.size.value.trim() || null,
     unit: elements.unit.value,
     minimum_stock: Number(elements.minimumStock.value || 0),
-    selling_rate: Number(elements.sellingRate.value || 0),
+    // selling_rate: Number(elements.sellingRate.value || 0),
+    gst_tax_rate: Number(elements.gstTaxRate.value || 0),
     is_active: elements.status.value === "true",
   });
 
@@ -975,7 +985,8 @@ const ProductsPage = (() => {
     elements.size = qs("#productSize");
     elements.unit = qs("#productUnit");
     elements.minimumStock = qs("#minimumStock");
-    elements.sellingRate = qs("#sellingRate");
+    // elements.sellingRate = qs("#sellingRate");
+    elements.gstTaxRate = qs("#gstTaxRate");
     elements.status = qs("#productStatus");
 
     elements.modalTitle = qs("#productModalTitle");
