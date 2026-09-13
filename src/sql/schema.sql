@@ -607,7 +607,7 @@ INSERT INTO permissions (module, action, name, description) VALUES
 ('opening-stock', 'view', 'View Opening Stock', 'View opening stock'),
 ('opening-stock', 'add', 'Add Opening Stock', 'Create opening stock'),
 ('opening-stock', 'edit', 'Edit Opening Stock', 'Update opening stock'),
-('opening-stock', 'delete', 'Delete Opening Stock', 'Delete opening stock')
+('opening-stock', 'delete', 'Delete Opening Stock', 'Delete opening stock'),
 
 -- Purchase
 ('purchases', 'view', 'View Purchase', 'View purchases'),

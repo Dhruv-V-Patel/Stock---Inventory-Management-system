@@ -8,7 +8,6 @@ const {
   verifyResetCode,
   resetPassword
 } = require("../controllers/authController");
-const { authenticateToken } = require("../middleware/authenticateToken");
 
 const router = express.Router();
 
