@@ -16,6 +16,27 @@
 
     <!-- Right -->
     <div class="header-right">
+        <div class="notification-wrapper">
+
+            <button type="button" class="header-action-button" id="notificationButton" title="Notifications">
+                <i class="fa-regular fa-bell"></i>
+
+                <span class="notification-dot hidden" id="notificationDot"></span>
+            </button>
+
+            <div id="notificationDropdown" class="notification-dropdown">
+                <div class="notification-dropdown-header">
+                    <h3>Notifications</h3>
+                </div>
+
+                <div id="notificationList" class="notification-list">
+                    <div class="notification-loading">
+                        Loading...
+                    </div>
+                </div>
+            </div>
+
+        </div>
         <!-- User -->
         <div class="header-user">
             <div class="header-avatar" id="headerUserAvatar">

@@ -1,6 +1,8 @@
 const pool = require("../config/db");
 const { createAuditLog } = require("./auditLogService");
- 
+const { sendPushNotification } = require("./pushService");
+const { createNotification } = require("./notificationService");
+
 const generatePurchaseNo = async (client) => {
   const { rows } = await client.query(`
     SELECT COALESCE(
@@ -604,6 +606,24 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
       ipAddress: ipAddress || null,
     });
 
+    await createNotification({
+      title: "New Purchase Added",
+      message: `${newPurchase.supplier_name} - ₹${Number(newPurchase.total_amount || 0).toLocaleString("en-IN")}.<br> Purchase: ${newPurchase.purchase_no}`,
+      type: "purchase_created",
+      referenceType: "purchase",
+      referenceId: Number(purchase.id),
+      createdBy: userId || null,
+    });
+
+    sendPushNotification({
+      title: "New Purchase Added",
+      body: `${newPurchase.supplier_name} - ₹${Number(
+        newPurchase.total_amount || 0
+      ).toLocaleString("en-IN")}. Purchase: ${newPurchase.purchase_no}`,
+      icon: "/images/cart-plus-solid.png",
+      url: `/purchases`,
+    }).catch(console.error);
+
     return newPurchase;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -815,6 +835,30 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
       ipAddress: ipAddress || null,
     });
 
+    await createNotification({
+  title: "Purchase Updated",
+  message: `${newPurchase.supplier_name} - ₹${Number(
+    newPurchase.total_amount || 0
+  ).toLocaleString("en-IN")}. <br> Purchase: ${newPurchase.purchase_no}`,
+  type: "purchase_updated",
+  referenceType: "purchase",
+  referenceId: Number(id),
+  createdBy: userId || null,
+});
+
+sendPushNotification({
+  title: "Purchase Updated",
+  body: `${newPurchase.supplier_name} - ₹${Number(
+    newPurchase.total_amount || 0
+  ).toLocaleString("en-IN")}. Purchase: ${newPurchase.purchase_no}`,
+  icon: "/images/cart-shopping-solid.png",
+  badge: "/images/icon-192.png",
+  url: "/purchases",
+}).catch((error) => {
+  console.error("Purchase update push notification error:", error);
+});
+
+
     return newPurchase;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -868,6 +912,29 @@ const deletePurchase = async (id,{userId = null, ipAddress}) => {
       newData: null,
       ipAddress: ipAddress || null,
     });
+
+    await createNotification({
+  title: "Purchase Deleted",
+  message: `${oldPurchase.supplier_name} - ₹${Number(
+    oldPurchase.total_amount || 0
+  ).toLocaleString("en-IN")}.<br> Purchase: ${oldPurchase.purchase_no} deleted.`,
+  type: "purchase_deleted",
+  referenceType: "purchase",
+  referenceId: Number(id),
+  createdBy: userId || null,
+});
+
+sendPushNotification({
+  title: "Purchase Deleted",
+  body: `${oldPurchase.supplier_name} - ₹${Number(
+    oldPurchase.total_amount || 0
+  ).toLocaleString("en-IN")}. Purchase: ${oldPurchase.purchase_no} deleted.`,
+  icon: "/images/cart-shopping-solid.png",
+  badge: "/images/icon-192.png",
+  url: "/purchases",
+}).catch((error) => {
+  console.error("Purchase delete push notification error:", error);
+});
 
     return purchase;
   } catch (error) {

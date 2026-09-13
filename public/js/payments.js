@@ -41,12 +41,12 @@ const PaymentsPage = (() => {
     let payload = null;
     try {
       payload = await response.json();
-    } catch {}
+    } catch { }
     if (!response.ok)
       throw new Error(
         payload?.message ||
-          payload?.error ||
-          `Request failed with status ${response.status}.`,
+        payload?.error ||
+        `Request failed with status ${response.status}.`,
       );
     return payload;
   };
@@ -64,10 +64,10 @@ const PaymentsPage = (() => {
     return Number.isNaN(d.getTime())
       ? String(v)
       : new Intl.DateTimeFormat("en-IN", {
-          day: "2-digit",
-          month: "short",
-          year: "numeric",
-        }).format(d);
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }).format(d);
   };
   const today = () => {
     const d = new Date();
@@ -287,6 +287,7 @@ const PaymentsPage = (() => {
     elements.supplierGroup.hidden = type !== "SUPPLIER";
     updateDocuments();
   };
+
   const updateDocuments = () => {
     const type = elements.paymentType.value;
     const partyId = Number(
@@ -297,20 +298,22 @@ const PaymentsPage = (() => {
     state.referenceDocs =
       type === "CUSTOMER"
         ? state.sales.filter(
-            (x) =>
-              Number(x.customer_id) === partyId && Number(x.outstanding) > 0,
-          )
+          (x) =>
+            Number(x.customer_id) === partyId && Number(x.outstanding) > 0,
+        )
         : state.purchases.filter(
-            (x) =>
-              Number(x.supplier_id) === partyId && Number(x.outstanding) > 0,
-          );
+          (x) =>
+            Number(x.supplier_id) === partyId && Number(x.outstanding) > 0,
+        );
     elements.referenceDocument.innerHTML = `<option value="">Select Invoice</option>${state.referenceDocs.map((x) => `<option value="${x.id}">${escapeHtml(x.document_no)} — Due ${currency(x.outstanding)}</option>`).join("")}`;
     updateReferenceBalance();
   };
+
   const selectedDoc = () =>
     state.referenceDocs.find(
       (x) => Number(x.id) === Number(elements.referenceDocument.value),
     );
+
   const updateReferenceBalance = () => {
     const doc = selectedDoc();
     const paidBefore = doc?.paid_before || 0;
@@ -322,37 +325,150 @@ const PaymentsPage = (() => {
       ? `Maximum payable: ${currency(due)}`
       : "";
   };
+
+  // const openModal = async (payment = null) => {
+  //   resetForm();
+  //   elements.modal.hidden = false;
+  //   document.body.style.overflow = "hidden";
+  //   if (payment) {
+  //     state.editingId = payment.id;
+  //     setType(payment.payment_type);
+  //     if (payment.payment_type === "CUSTOMER")
+  //       elements.customerId.value = String(payment.customer_id);
+  //     else elements.supplierId.value = String(payment.supplier_id);
+  //     updateDocuments();
+  //     elements.referenceDocument.value = String(
+  //       payment.sale_id || payment.purchase_id || "",
+  //     );
+  //     elements.paymentDate.value = String(payment.payment_date).slice(0, 10);
+  //     elements.amount.value = payment.amount;
+  //     elements.paymentMethod.value = payment.payment_method || "";
+  //     elements.referenceNo.value = payment.reference_no || "";
+  //     elements.remarks.value = payment.remarks || "";
+  //     elements.paymentModalTitle.textContent = "Edit Payment";
+  //     elements.paymentModalDescription.textContent =
+  //       "Update the payment record.";
+  //     elements.savePayment.querySelector("span").textContent = "Update Payment";
+  //     updateReferenceBalance();
+  //   } else {
+  //     elements.paymentModalTitle.textContent = "New Payment";
+  //     elements.paymentModalDescription.textContent =
+  //       "Record a customer receipt or supplier payment.";
+  //     elements.savePayment.querySelector("span").textContent = "Save Payment";
+  //   }
+  // };
+
   const openModal = async (payment = null) => {
-    resetForm();
-    elements.modal.hidden = false;
-    document.body.style.overflow = "hidden";
-    if (payment) {
-      state.editingId = payment.id;
-      setType(payment.payment_type);
-      if (payment.payment_type === "CUSTOMER")
-        elements.customerId.value = String(payment.customer_id);
-      else elements.supplierId.value = String(payment.supplier_id);
-      updateDocuments();
-      elements.referenceDocument.value = String(
-        payment.sale_id || payment.purchase_id || "",
-      );
-      elements.paymentDate.value = String(payment.payment_date).slice(0, 10);
-      elements.amount.value = payment.amount;
-      elements.paymentMethod.value = payment.payment_method || "";
-      elements.referenceNo.value = payment.reference_no || "";
-      elements.remarks.value = payment.remarks || "";
-      elements.paymentModalTitle.textContent = "Edit Payment";
-      elements.paymentModalDescription.textContent =
-        "Update the payment record.";
-      elements.savePayment.querySelector("span").textContent = "Update Payment";
-      updateReferenceBalance();
+  resetForm();
+
+  elements.modal.hidden = false;
+  document.body.style.overflow = "hidden";
+
+  if (payment) {
+    state.editingId = payment.id;
+
+    // Set payment type first
+    setType(payment.payment_type);
+
+    // Set customer / supplier
+    if (payment.payment_type === "CUSTOMER") {
+      elements.customerId.value = String(payment.customer_id || "");
     } else {
-      elements.paymentModalTitle.textContent = "New Payment";
-      elements.paymentModalDescription.textContent =
-        "Record a customer receipt or supplier payment.";
-      elements.savePayment.querySelector("span").textContent = "Save Payment";
+      elements.supplierId.value = String(payment.supplier_id || "");
     }
-  };
+
+    // Load normal outstanding invoices
+    updateDocuments();
+
+    // Existing invoice ID
+    const documentId = Number(
+      payment.payment_type === "CUSTOMER"
+        ? payment.sale_id
+        : payment.purchase_id,
+    );
+
+    // Check whether existing invoice is already in dropdown
+    const existingOption = [
+      ...elements.referenceDocument.options,
+    ].find((option) => Number(option.value) === documentId);
+
+    // If invoice is not in options, add it manually
+    // This happens when invoice is already fully paid.
+    if (!existingOption && documentId) {
+      const option = document.createElement("option");
+
+      option.value = String(documentId);
+      option.textContent = `${payment.document_no || "Invoice"} — Current Payment`;
+
+      elements.referenceDocument.appendChild(option);
+    }
+
+    // IMPORTANT: select existing invoice
+    elements.referenceDocument.value = String(documentId);
+
+    // Store currently available documents
+    state.referenceDocs = state.referenceDocs || [];
+
+    // If document is missing from referenceDocs,
+    // add a temporary document object for edit mode.
+    if (
+      documentId &&
+      !state.referenceDocs.some(
+        (x) => Number(x.id) === documentId,
+      )
+    ) {
+      state.referenceDocs.push({
+        id: documentId,
+        document_no: payment.document_no || "",
+        customer_id: payment.customer_id || null,
+        supplier_id: payment.supplier_id || null,
+
+        // For edit mode, current payment amount is available.
+        // This allows validation to work correctly even
+        // when invoice is already fully paid.
+        total_amount: Number(payment.amount || 0),
+        paid_before: 0,
+        outstanding: 0,
+      });
+    }
+
+    elements.paymentDate.value =
+      String(payment.payment_date).slice(0, 10);
+
+    elements.amount.value = payment.amount;
+
+    elements.paymentMethod.value =
+      payment.payment_method || "";
+
+    elements.referenceNo.value =
+      payment.reference_no || "";
+
+    elements.remarks.value =
+      payment.remarks || "";
+
+    elements.paymentModalTitle.textContent =
+      "Edit Payment";
+
+    elements.paymentModalDescription.textContent =
+      "Update the payment record.";
+
+    elements.savePayment.querySelector("span").textContent =
+      "Update Payment";
+
+    // Update balance after invoice selection
+    updateReferenceBalance();
+  } else {
+    elements.paymentModalTitle.textContent =
+      "New Payment";
+
+    elements.paymentModalDescription.textContent =
+      "Record a customer receipt or supplier payment.";
+
+    elements.savePayment.querySelector("span").textContent =
+      "Save Payment";
+  }
+};
+
   const closeModal = () => {
     elements.modal.hidden = true;
     document.body.style.overflow = "";
@@ -385,8 +501,8 @@ const PaymentsPage = (() => {
       Number(selectedDoc()?.outstanding || 0) +
       (state.editingId
         ? Number(
-            state.payments.find((p) => p.id === state.editingId)?.amount || 0,
-          )
+          state.payments.find((p) => p.id === state.editingId)?.amount || 0,
+        )
         : 0);
     if (!Number.isFinite(amount) || amount <= 0) {
       qs('[data-error-for="amount"]').textContent = "Enter a valid amount.";
@@ -513,102 +629,91 @@ const PaymentsPage = (() => {
   //     showToast(e.message, "error");
   //   }
   // };
-  
+
   const openDeleteModal = (id) => {
-  const payment = state.payments.find(
-    (x) => Number(x.id) === Number(id),
-  );
+    const payment = state.payments.find((x) => Number(x.id) === Number(id));
 
-  if (!payment) {
-    showToast("Payment not found.", "error");
-    return;
-  }
+    if (!payment) {
+      showToast("Payment not found.", "error");
+      return;
+    }
 
-  state.deletingId = Number(id);
+    state.deletingId = Number(id);
 
-  elements.deleteMessage.textContent =
-    `Delete ${payment.payment_no}? The linked invoice payment status will be recalculated.`;
-
-  elements.confirmDeleteButton.disabled = false;
-
-  elements.confirmDeleteButton.innerHTML = `
-    <i class="fa-solid fa-trash-can"></i>
-    Delete
-  `;
-
-  elements.deleteModal.hidden = false;
-  elements.deleteModal.setAttribute("aria-hidden", "false");
-
-  document.body.style.overflow = "hidden";
-
-  requestAnimationFrame(() => {
-    elements.cancelDeleteButton?.focus();
-  });
-};
-
-const closeDeleteModal = () => {
-  elements.deleteModal.hidden = true;
-  elements.deleteModal.setAttribute("aria-hidden", "true");
-
-  state.deletingId = null;
-
-  document.body.style.overflow = "";
-};
-
-const confirmDeletePayment = async () => {
-  const id = state.deletingId;
-
-  if (!id) {
-    closeDeleteModal();
-    return;
-  }
-
-  const payment = state.payments.find(
-    (x) => Number(x.id) === Number(id),
-  );
-
-  if (!payment) {
-    closeDeleteModal();
-    showToast("Payment not found.", "error");
-    return;
-  }
-
-  try {
-    elements.confirmDeleteButton.disabled = true;
-
-    elements.confirmDeleteButton.innerHTML = `
-      <i class="fa-solid fa-spinner fa-spin"></i>
-      Deleting...
-    `;
-
-    await apiRequest(`/api/payments/${id}`, {
-      method: "DELETE",
-    });
-
-    closeDeleteModal();
-
-    showToast("Payment deleted successfully.");
-
-    await Promise.all([
-      loadOptions(),
-      loadPayments(),
-    ]);
-  } catch (error) {
-    console.error("[Payments] delete error:", error);
+    elements.deleteMessage.textContent = `Delete ${payment.payment_no}? The linked invoice payment status will be recalculated.`;
 
     elements.confirmDeleteButton.disabled = false;
 
     elements.confirmDeleteButton.innerHTML = `
+    <i class="fa-solid fa-trash-can"></i>
+    Delete
+  `;
+
+    elements.deleteModal.hidden = false;
+    elements.deleteModal.setAttribute("aria-hidden", "false");
+
+    document.body.style.overflow = "hidden";
+
+    requestAnimationFrame(() => {
+      elements.cancelDeleteButton?.focus();
+    });
+  };
+
+  const closeDeleteModal = () => {
+    elements.deleteModal.hidden = true;
+    elements.deleteModal.setAttribute("aria-hidden", "true");
+
+    state.deletingId = null;
+
+    document.body.style.overflow = "";
+  };
+
+  const confirmDeletePayment = async () => {
+    const id = state.deletingId;
+
+    if (!id) {
+      closeDeleteModal();
+      return;
+    }
+
+    const payment = state.payments.find((x) => Number(x.id) === Number(id));
+
+    if (!payment) {
+      closeDeleteModal();
+      showToast("Payment not found.", "error");
+      return;
+    }
+
+    try {
+      elements.confirmDeleteButton.disabled = true;
+
+      elements.confirmDeleteButton.innerHTML = `
+      <i class="fa-solid fa-spinner fa-spin"></i>
+      Deleting...
+    `;
+
+      await apiRequest(`/api/payments/${id}`, {
+        method: "DELETE",
+      });
+
+      closeDeleteModal();
+
+      showToast("Payment deleted successfully.");
+
+      await Promise.all([loadOptions(), loadPayments()]);
+    } catch (error) {
+      console.error("[Payments] delete error:", error);
+
+      elements.confirmDeleteButton.disabled = false;
+
+      elements.confirmDeleteButton.innerHTML = `
       <i class="fa-solid fa-trash-can"></i>
       Delete
     `;
 
-    showToast(
-      error.message || "Unable to delete payment.",
-      "error",
-    );
-  }
-};
+      showToast(error.message || "Unable to delete payment.", "error");
+    }
+  };
 
   const actions = (e) => {
     const b = e.target.closest("[data-action]");
@@ -667,9 +772,9 @@ const confirmDeletePayment = async () => {
     elements.viewSubtitle = qs("#viewPaymentSubtitle");
     elements.details = qs("#paymentDetailsContent");
     elements.deleteModal = qs("#deleteModal");
-elements.deleteMessage = qs("#deleteMessage");
-elements.cancelDeleteButton = qs("#cancelDeleteButton");
-elements.confirmDeleteButton = qs("#confirmDeleteButton");
+    elements.deleteMessage = qs("#deleteMessage");
+    elements.cancelDeleteButton = qs("#cancelDeleteButton");
+    elements.confirmDeleteButton = qs("#confirmDeleteButton");
   };
 
   const bind = () => {
@@ -692,8 +797,8 @@ elements.confirmDeleteButton = qs("#confirmDeleteButton");
         Number(selectedDoc()?.outstanding || 0) +
         (state.editingId
           ? Number(
-              state.payments.find((p) => p.id === state.editingId)?.amount || 0,
-            )
+            state.payments.find((p) => p.id === state.editingId)?.amount || 0,
+          )
           : 0);
       elements.amount.classList.toggle(
         "stock-exceeded",
@@ -736,35 +841,31 @@ elements.confirmDeleteButton = qs("#confirmDeleteButton");
 
     elements.cancelDeleteButton.onclick = closeDeleteModal;
 
-elements.confirmDeleteButton.onclick =
-  confirmDeletePayment;
+    elements.confirmDeleteButton.onclick = confirmDeletePayment;
 
-elements.deleteModal.onclick = (e) => {
-  if (e.target === elements.deleteModal) {
-    closeDeleteModal();
-  }
-};
+    elements.deleteModal.onclick = (e) => {
+      if (e.target === elements.deleteModal) {
+        closeDeleteModal();
+      }
+    };
 
-   document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape") return;
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
 
-  if (
-    elements.deleteModal &&
-    !elements.deleteModal.hidden
-  ) {
-    closeDeleteModal();
-    return;
-  }
+      if (elements.deleteModal && !elements.deleteModal.hidden) {
+        closeDeleteModal();
+        return;
+      }
 
-  if (!elements.modal.hidden) {
-    closeModal();
-    return;
-  }
+      if (!elements.modal.hidden) {
+        closeModal();
+        return;
+      }
 
-  if (!elements.viewModal.hidden) {
-    closeView();
-  }
-});
+      if (!elements.viewModal.hidden) {
+        closeView();
+      }
+    });
   };
   const init = async () => {
     cache();

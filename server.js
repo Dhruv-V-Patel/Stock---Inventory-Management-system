@@ -4,6 +4,8 @@ require("dotenv").config();
 const https = require("http");
 const fs = require("fs");
 const app = require("./src/app");
+const { Server } = require("socket.io");
+const notificationService = require("./src/services/notificationService");
 
 // const options = {
 //   key: fs.readFileSync('/etc/letsencrypt/live/jayproducts.in/privkey.pem'),
@@ -30,6 +32,27 @@ const parseCookies = (header = "") => {
     return cookies;
   }, {});
 };
+
+// const io = new Server(server, {
+//     cors: {
+//         origin: true,
+//         credentials: true
+//     }
+// });
+
+
+const io = new Server(server);
+notificationService.setSocketIO(io);
+
+io.on("connection", (socket) => {
+  //console.log("Socket connected:", socket.id);
+
+  socket.on("disconnect", () => {
+    //console.log("Socket disconnected:", socket.id);
+  });
+});
+
+app.set("io", io);
 
 server.listen(process.env.PORT, () => {
   console.log(`server is running ${process.env.PORT}`);

@@ -698,6 +698,52 @@ ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 --------------- New Added
 
+CREATE TABLE IF NOT EXISTS push_subscriptions
+(
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    browser TEXT,
+    device TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS notifications
+(
+    id BIGSERIAL PRIMARY KEY,
+
+    title VARCHAR(150) NOT NULL,
+    message TEXT NOT NULL,
+
+    type VARCHAR(50) NOT NULL,
+
+    reference_type VARCHAR(50),
+    reference_id INTEGER,
+
+    created_by INTEGER REFERENCES users(id),
+
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_notifications_created_at
+ON notifications(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS notification_reads
+(
+    notification_id BIGINT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (notification_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_notification_reads_user
+ON notification_reads(user_id);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
+ON push_subscriptions(user_id);
+
 -- INSERT INTO permissions (
 --     module,
 --     action,

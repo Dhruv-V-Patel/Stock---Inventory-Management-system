@@ -1,4 +1,8 @@
 const pool = require("../config/db");
+const { createAuditLog } = require("./auditLogService");
+const { sendPushNotification } = require("./pushService");
+const { createNotification } = require("./notificationService");
+
 const EPSILON = 0.000001;
 const toNumber = (v, fallback = 0) => {
   const n = Number(v);
@@ -201,7 +205,7 @@ const generatePaymentNo = async (client) => {
   return `PAY-${String(Number(r.rows[0]?.last_no || 0) + 1).padStart(5, "0")}`;
 };
 
-const createPayment = async (body, userId) => {
+const createPayment = async (body, { userId = null, ipAddress }) => {
   const data = validatePayload(body);
   const client = await pool.connect();
   try {
@@ -251,13 +255,64 @@ const createPayment = async (body, userId) => {
     );
     await updateDocumentStatus(client, data.type, data.documentId);
     await client.query("COMMIT");
-    return getPaymentById(
-      (
-        await client.query(`SELECT id FROM payments WHERE payment_no=$1`, [
-          paymentNo,
-        ])
-      ).rows[0].id,
-    );
+
+    const paymentId = (
+      await client.query(`SELECT id FROM payments WHERE payment_no=$1`, [
+        paymentNo,
+      ])
+    ).rows[0].id;
+
+    const newPayment = await getPaymentById(paymentId);
+
+    // Audit Log
+    await createAuditLog({
+      userId: userId || null,
+      module: "PAYMENTS",
+      action: "CREATE",
+      recordId: paymentId,
+      oldData: null,
+      newData: newPayment,
+      ipAddress: ipAddress || null,
+    });
+
+    // In-app Notification
+    const notificationTitle =
+      data.type === "CUSTOMER"
+        ? "Customer Payment Received"
+        : "Supplier Payment Made";
+
+    await createNotification({
+      title: notificationTitle,
+      message: `${newPayment.party_name} - ₹${Number(
+        newPayment.amount || 0,
+      ).toLocaleString("en-IN")}. <br> Payment: ${newPayment.payment_no}`,
+      type: data.type === "CUSTOMER" ? "payment_received" : "payment_made",
+      referenceType: "payment",
+      referenceId: Number(paymentId),
+      createdBy: userId || null,
+    });
+
+    // Push Notification
+    sendPushNotification({
+      title: notificationTitle,
+      body: `${newPayment.party_name} - ₹${Number(
+        newPayment.amount || 0,
+      ).toLocaleString("en-IN")}. Payment: ${newPayment.payment_no}`,
+      icon: "/images/payment.png",
+      badge: "/images/icon-192.png",
+      url: "/payments",
+    }).catch((error) => {
+      console.error("Payment create push notification error:", error);
+    });
+
+    return newPayment;
+    // return getPaymentById(
+    //   (
+    //     await client.query(`SELECT id FROM payments WHERE payment_no=$1`, [
+    //       paymentNo,
+    //     ])
+    //   ).rows[0].id,
+    // );
   } catch (e) {
     await client.query("ROLLBACK");
     throw e;
@@ -266,7 +321,7 @@ const createPayment = async (body, userId) => {
   }
 };
 
-const updatePayment = async (id, body, userId) => {
+const updatePayment = async (id, body, { userId = null, ipAddress }) => {
   const paymentId = assertId(id, "payment id");
   const data = validatePayload(body);
   const client = await pool.connect();
@@ -329,7 +384,54 @@ const updatePayment = async (id, body, userId) => {
     if (oldType !== data.type || Number(oldDoc) !== Number(data.documentId))
       await updateDocumentStatus(client, data.type, data.documentId);
     await client.query("COMMIT");
-    return getPaymentById(paymentId);
+
+    const newPayment = await getPaymentById(paymentId);
+
+    const notificationTitle =
+      data.type === "CUSTOMER"
+        ? "Customer Payment Updated"
+        : "Supplier Payment Updated";
+
+    // Audit Log
+    await createAuditLog({
+      userId: userId || null,
+      module: "PAYMENTS",
+      action: "UPDATE",
+      recordId: paymentId,
+      oldData: previous,
+      newData: newPayment,
+      ipAddress: ipAddress || null,
+    });
+
+    // In-app Notification
+    await createNotification({
+      title: notificationTitle,
+      message: `${newPayment.party_name} - ₹${Number(
+        newPayment.amount || 0,
+      ).toLocaleString("en-IN")}. <br> Payment: ${newPayment.payment_no}`,
+      type:
+        data.type === "CUSTOMER"
+          ? "payment_received_updated"
+          : "payment_made_updated",
+      referenceType: "payment",
+      referenceId: Number(paymentId),
+      createdBy: userId || null,
+    });
+
+    // Push Notification
+    sendPushNotification({
+      title: notificationTitle,
+      body: `${newPayment.party_name} - ₹${Number(
+        newPayment.amount || 0,
+      ).toLocaleString("en-IN")}. Payment: ${newPayment.payment_no}`,
+      icon: "/images/payment.png",
+      badge: "/images/icon-192.png",
+      url: "/payments",
+    }).catch((error) => {
+      console.error("Payment update push notification error:", error);
+    });
+
+    return newPayment;
   } catch (e) {
     await client.query("ROLLBACK");
     throw e;
@@ -338,13 +440,13 @@ const updatePayment = async (id, body, userId) => {
   }
 };
 
-const deletePayment = async (id) => {
+const deletePayment = async (id, { userId = null, ipAddress }) => {
   const paymentId = assertId(id, "payment id");
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
     const r = await client.query(
-      `SELECT payment_no,payment_type,sale_id,purchase_id FROM payments WHERE id=$1 FOR UPDATE`,
+      `SELECT * FROM payments WHERE id=$1 FOR UPDATE`,
       [paymentId],
     );
     if (!r.rows.length) {
@@ -354,9 +456,54 @@ const deletePayment = async (id) => {
     }
     const p = r.rows[0];
     const doc = p.payment_type === "CUSTOMER" ? p.sale_id : p.purchase_id;
+    const oldPayment = await getPaymentById(paymentId, client);
     await client.query(`DELETE FROM payments WHERE id=$1`, [paymentId]);
     await updateDocumentStatus(client, p.payment_type, doc);
     await client.query("COMMIT");
+
+    // Audit Log
+    await createAuditLog({
+      userId: userId || null,
+      module: "PAYMENTS",
+      action: "DELETE",
+      recordId: paymentId,
+      oldData: oldPayment,
+      newData: null,
+      ipAddress: ipAddress || null,
+    });
+
+    // In-app Notification
+    const notificationTitle =
+      p.payment_type === "CUSTOMER"
+        ? "Customer Payment Deleted"
+        : "Supplier Payment Deleted";
+
+    await createNotification({
+      title: notificationTitle,
+      message: `${oldPayment.party_name} - ₹${Number(
+        oldPayment.amount || 0,
+      ).toLocaleString("en-IN")}. <br>Payment: ${oldPayment.payment_no} deleted.`,
+      type:
+        p.payment_type === "CUSTOMER"
+          ? "payment_received_deleted"
+          : "payment_made_deleted",
+      referenceType: "payment",
+      referenceId: Number(paymentId),
+      createdBy: userId || null,
+    });
+
+    // Push Notification
+    sendPushNotification({
+      title: notificationTitle,
+      body: `${oldPayment.party_name} - ₹${Number(
+        oldPayment.amount || 0,
+      ).toLocaleString("en-IN")}. Payment: ${oldPayment.payment_no} deleted.`,
+      icon: "/images/payment.png",
+      badge: "/images/icon-192.png",
+      url: "/payments",
+    }).catch((error) => {
+      console.error("Payment delete push notification error:", error);
+    });
     return { id: paymentId, payment_no: p.payment_no };
   } catch (e) {
     await client.query("ROLLBACK");

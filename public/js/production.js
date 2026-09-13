@@ -241,7 +241,7 @@ const setProductionDateLimit = (input) => {
         ? payload
         : payload?.batches || payload?.productions || payload?.data || [];
 
-      console.log("Rows:",rows);
+      // console.log("Rows:",rows);
       state.batches = rows.map(normalizeBatch);
       state.page = 1;
       populateProductFilter();

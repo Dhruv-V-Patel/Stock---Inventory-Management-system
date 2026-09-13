@@ -31,6 +31,8 @@ const purchaseReturnRoutes = require("./routes/purchaseReturnRoutes");
 const salesReturnRoutes = require("./routes/salesReturnRoutes");
 const auditLogRoutes = require("./routes/auditLogRoutes");
 const openingStockRoutes = require("./routes/openingStockRoutes");
+const pushRoutes = require("./routes/pushRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -49,6 +51,7 @@ app.use(express.static(path.join(__dirname, "../public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+
 // --------------------------------------------------
 // Health API
 // --------------------------------------------------
@@ -60,6 +63,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 
+app.use("/api/push", pushRoutes);
+app.use("/api/notifications", notificationRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/dashboard", dashRoutes);
 app.use("/api/products", productsRoutes);

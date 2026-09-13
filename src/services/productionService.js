@@ -1,5 +1,7 @@
 const pool = require("../config/db");
 const { createAuditLog } = require("./auditLogService");
+const { sendPushNotification } = require("./pushService");
+const { createNotification } = require("./notificationService");
 
 const generateBatchNo = async (client) => {
   const { rows } = await client.query(`
@@ -555,6 +557,22 @@ const createProduction = async (payload, {userId = null, ipAddress}) => {
       newData: newProduction,
       ipAddress: ipAddress || null,
     });
+
+    await createNotification({
+      title: "New Production Added",
+      message: `${product.name} - ${producedQuantity} ${product.unit} produced. <br> Batch: ${batch.batch_no}`,
+      type: "production_created",
+      referenceType: "production",
+      referenceId: Number(batch.id),
+      createdBy: userId || null,
+    });
+
+    sendPushNotification({
+      title: "New Production Added",
+      body: `${product.name} - ${producedQuantity} ${product.unit} produced. Batch: ${batch.batch_no}`,
+      icon: "/images/industry-solid.png",
+      url: `/production`,
+    }).catch(console.error);
 
     return newProduction;
   } catch (error) {
@@ -1154,6 +1172,33 @@ const updateProduction = async (id, payload, {userId = null, ipAddress}) => {
       ipAddress: ipAddress || null,
     });
 
+    await createNotification({
+      title: "Production Updated",
+      message: `${newProduction.product_name} - ${Number(
+        newProduction.produced_quantity || 0
+      )} ${newProduction.product_unit || ""} produced. <br> Batch: ${
+        newProduction.batch_no
+      }`,
+      type: "production_updated",
+      referenceType: "production",
+      referenceId: Number(id),
+      createdBy: userId || null,
+    });
+
+    sendPushNotification({
+      title: "Production Updated",
+      body: `${newProduction.product_name} - ${Number(
+        newProduction.produced_quantity || 0
+      )} ${newProduction.product_unit || ""} produced. Batch: ${
+        newProduction.batch_no
+      }`,
+      icon: "/images/industry-solid.png",
+      url: "/production",
+    }).catch((error) => {
+      console.error("Production update push notification error:", error);
+    });
+
+
     return newProduction;
   } catch (error) {
     await client.query("ROLLBACK");
@@ -1322,6 +1367,33 @@ const deleteProduction = async (id, {userId = null, ipAddress}) => {
       newData: null,
       ipAddress: ipAddress || null,
     });
+
+    await createNotification({
+  title: "Production Deleted",
+  message: `${oldProduction.product_name} - ${Number(
+    oldProduction.produced_quantity || 0
+  )} ${oldProduction.product_unit || ""} production deleted. <br> Batch: ${
+    oldProduction.batch_no
+  }`,
+  type: "production_deleted",
+  referenceType: "production",
+  referenceId: Number(id),
+  createdBy: userId || null,
+});
+
+// 📲 Browser Push Notification
+sendPushNotification({
+  title: "Production Deleted",
+  body: `${oldProduction.product_name} - ${Number(
+    oldProduction.produced_quantity || 0
+  )} ${oldProduction.product_unit || ""} production deleted. Batch: ${
+    oldProduction.batch_no
+  }`,
+  icon: "/images/industry-solid.png",
+  url: "/production",
+}).catch((error) => {
+  console.error("Production delete push notification error:", error);
+});
 
     return {
       id,

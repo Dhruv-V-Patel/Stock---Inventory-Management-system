@@ -1,7 +1,9 @@
 const paymentService = require("../services/paymentService");
+const { getIpAddress, getUserId } = require("../utils/requestUtils");
 
-const getUserId = (req) =>
-  req.user?.id ?? req.user?.userId ?? req.auth?.id ?? null;
+
+// const getUserId = (req) =>
+//   req.user?.id ?? req.user?.userId ?? req.auth?.id ?? null;
 
 const sendError = (res, error) => {
   const statusCode =
@@ -47,7 +49,7 @@ const createPayment = async (req, res) => {
   try {
     const payment = await paymentService.createPayment(
       req.body,
-      getUserId(req),
+      { userId: getUserId(req), ipAddress: getIpAddress(req),}
     );
     return res
       .status(201)
@@ -61,7 +63,7 @@ const updatePayment = async (req, res) => {
     const payment = await paymentService.updatePayment(
       req.params.id,
       req.body,
-      getUserId(req),
+      { userId: getUserId(req), ipAddress: getIpAddress(req),},
     );
     return res.json({ message: "Payment updated successfully.", payment });
   } catch (e) {
@@ -72,7 +74,7 @@ const deletePayment = async (req, res) => {
   try {
     const result = await paymentService.deletePayment(
       req.params.id,
-      getUserId(req),
+      { userId: getUserId(req), ipAddress: getIpAddress(req),}
     );
     return res.json({
       message: `Payment ${result.payment_no} deleted successfully.`,

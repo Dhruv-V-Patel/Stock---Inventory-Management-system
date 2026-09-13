@@ -1,5 +1,7 @@
 const pool = require("../config/db");
 const { createAuditLog } = require("./auditLogService");
+const { sendPushNotification } = require("./pushService");
+const { createNotification } = require("./notificationService");
 
 const EPSILON = 0.000001;
 
@@ -860,6 +862,29 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
       ipAddress: ipAddress || null,
     });
 
+    await createNotification({
+  title: "New Sale Added",
+  message: `${newReturn.customer_name} - ₹${Number(
+    newReturn.total_amount || 0
+  ).toLocaleString("en-IN")}.<br> Sale: ${newReturn.sale_no}`,
+  type: "sale_created",
+  referenceType: "sale",
+  referenceId: saleId,
+  createdBy: userId || null,
+});
+
+sendPushNotification({
+  title: "New Sale Added",
+  body: `${newReturn.customer_name} - ₹${Number(
+    newReturn.total_amount || 0
+  ).toLocaleString("en-IN")}. Sale: ${newReturn.sale_no}`,
+  icon: "/images/truck-regular.png",
+  badge: "/images/icon-192.png",
+  url: "/sales",
+}).catch((error) => {
+  console.error("Sale create push notification error:", error);
+});
+
     return getSaleById(saleId);
   } catch (error) {
     await client.query("ROLLBACK");
@@ -1121,6 +1146,29 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
       ipAddress: ipAddress || null,
     });
 
+    await createNotification({
+  title: "Sale Updated",
+  message: `${newSale.customer_name} - ₹${Number(
+    newSale.total_amount || 0
+  ).toLocaleString("en-IN")}. <br>Sale: ${newSale.sale_no}`,
+  type: "sale_updated",
+  referenceType: "sale",
+  referenceId: saleId,
+  createdBy: userId || null,
+});
+
+sendPushNotification({
+  title: "Sale Updated",
+  body: `${newSale.customer_name} - ₹${Number(
+    newSale.total_amount || 0
+  ).toLocaleString("en-IN")}. Sale: ${newSale.sale_no}`,
+  icon: "/images/truck-regular.png",
+  badge: "/images/icon-192.png",
+  url: "/sales",
+}).catch((error) => {
+  console.error("Sale update push notification error:", error);
+});
+
     return getSaleById(saleId);
   } catch (error) {
     await client.query("ROLLBACK");
@@ -1282,6 +1330,29 @@ const deleteSale = async (id, { userId = null, ipAddress }) => {
       newData: null,
       ipAddress: ipAddress || null,
     });
+
+    await createNotification({
+  title: "Sale Deleted",
+  message: `${oldSale.customer_name} - ₹${Number(
+    oldSale.total_amount || 0
+  ).toLocaleString("en-IN")}.<br> Sale: ${oldSale.sale_no} deleted.`,
+  type: "sale_deleted",
+  referenceType: "sale",
+  referenceId: saleId,
+  createdBy: userId || null,
+});
+
+sendPushNotification({
+  title: "Sale Deleted",
+  body: `${oldSale.customer_name} - ₹${Number(
+    oldSale.total_amount || 0
+  ).toLocaleString("en-IN")}. Sale: ${oldSale.sale_no} deleted.`,
+  icon: "/images/truck-regular.png",
+  badge: "/images/icon-192.png",
+  url: "/sales",
+}).catch((error) => {
+  console.error("Sale delete push notification error:", error);
+});
 
     return {
       id: saleId,
