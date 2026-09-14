@@ -465,7 +465,7 @@ const createReturn = async (
           item.quantity,
           record.id,
           data.returnDate
-            ? `${data.returnDate} 00:00:00`
+            ? `${data.returnDate} ${new Date().toTimeString().slice(0, 8)}`
             : null,
           `Purchase Return ${returnNo} - ${item.reason}`,
           userId,
@@ -705,7 +705,7 @@ const updateReturn = async (
           item.quantity,
           id,
           data.returnDate
-            ? `${data.returnDate} 00:00:00`
+            ? `${data.returnDate} ${new Date().toTimeString().slice(0, 8)}`
             : null,
           `Purchase Return ${existing.rows[0].return_no} - ${item.reason}`,
           userId,

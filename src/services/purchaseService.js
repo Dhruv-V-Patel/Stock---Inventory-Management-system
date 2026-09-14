@@ -2,6 +2,7 @@ const pool = require("../config/db");
 const { createAuditLog } = require("./auditLogService");
 const { sendPushNotification } = require("./pushService");
 const { createNotification } = require("./notificationService");
+const { applyAvailableAdvance } = require("./paymentService");
 
 const generatePurchaseNo = async (client) => {
   const { rows } = await client.query(`
@@ -580,7 +581,7 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
           item.raw_material_id,
           item.quantity,
           purchase.id,
-          payload.purchase_date ? `${payload.purchase_date} 00:00:00` : null,
+          payload.purchase_date ? `${payload.purchase_date} ${new Date().toTimeString().slice(0, 8)}` : null,
           `Purchase ${purchaseNo}`,
           userId,
         ],
@@ -591,6 +592,8 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
         throw new Error("Failed to create purchase item.");
       }
     }
+
+    await applyAvailableAdvance(client, "SUPPLIER", supplierId, purchase.id);
 
     await client.query("COMMIT");
 
@@ -814,8 +817,8 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
           item.quantity,
           id,
           payload.purchase_date
-            ? `${payload.purchase_date} 00:00:00`
-            : `${String(purchase.purchase_date).slice(0, 10)} 00:00:00`,
+            ? `${payload.purchase_date} ${new Date().toTimeString().slice(0, 8)}`
+            : `${String(purchase.purchase_date).slice(0, 10)} ${new Date().toTimeString().slice(0, 8)}`,
           `Purchase ${purchase.purchase_no}`,
           userId,
         ],

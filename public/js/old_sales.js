@@ -201,17 +201,16 @@ const SalesPage = (() => {
     customer_name: sale.customer_name ?? "",
     customer_mobile: sale.customer_mobile ?? "",
     sale_date: sale.sale_date ?? "",
-    challan_lr_no: sale.challan_lr_no ?? "",
     item_count: Number(sale.item_count || 0),
     items: Array.isArray(sale.items)
-  ? sale.items.map((item) => ({
-      product_id: Number(item.product_id || 0),
-      product_name: item.product_name || "",
-      product_code: item.product_code || "",
-      quantity: Number(item.quantity || 0),
-      unit: item.unit || "",
-    }))
-  : [],
+      ? sale.items.map((item) => ({
+          product_id: Number(item.product_id || 0),
+          product_name: item.product_name || "",
+          product_code: item.product_code || "",
+          quantity: Number(item.quantity || 0),
+          unit: item.unit || "",
+        }))
+      : [],
     total_amount: Number(sale.total_amount || 0),
     return_amount: Number(sale.return_amount || 0),
     net_total: Number(
@@ -318,8 +317,6 @@ const SalesPage = (() => {
     const start = (state.page - 1) * state.pageSize;
     const pageRows = rows.slice(start, start + state.pageSize);
 
-    console.log("Sales",pageRows);
-
     elements.tableBody.innerHTML = pageRows
       .map(
         (sale) => `
@@ -380,7 +377,6 @@ const SalesPage = (() => {
       : "—"
   }
 </td>
-
             <td>
               <span class="sale-amount">
                 ${formatCurrency(sale.total_amount)}
@@ -893,8 +889,6 @@ const SalesPage = (() => {
 
     vehicle_no: elements.vehicleNo.value.trim() || null,
 
-    challan_lr_no: elements.challanLrNo.value.trim() || null,
-
     driver_name: elements.driverName.value.trim() || null,
 
     driver_mobile: elements.driverMobile.value.trim() || null,
@@ -989,8 +983,6 @@ const SalesPage = (() => {
       elements.saleDate.value = String(sale.sale_date).slice(0, 10);
 
       elements.vehicleNo.value = sale.vehicle_no || "";
-
-      elements.challanLrNo.value = sale.challan_lr_no || "";
 
       elements.driverName.value = sale.driver_name || "";
 
@@ -1090,13 +1082,6 @@ const SalesPage = (() => {
             <span>Vehicle</span>
             <strong>
               ${escapeHtml(sale.vehicle_no || "—")}
-            </strong>
-          </div>
-
-          <div class="detail-box">
-            <span>Challan / LR No.</span>
-            <strong>
-              ${escapeHtml(sale.challan_lr_no || "—")}
             </strong>
           </div>
 
@@ -1556,7 +1541,6 @@ const SalesPage = (() => {
     elements.saleDate = qs("#saleDate");
     elements.vehicleNo = qs("#vehicleNo");
     elements.driverName = qs("#driverName");
-    elements.challanLrNo = qs("#challanLrNo")
     elements.driverMobile = qs("#driverMobile");
     elements.paymentStatus = qs("#paymentStatus");
     elements.itemsBody = qs("#saleItemsBody");

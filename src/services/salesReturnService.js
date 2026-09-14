@@ -399,7 +399,7 @@ const insertStockMovement = async (
     productId,
     quantity,
     returnId,
-    returnDate ? `${returnDate} 00:00:00` : null,
+    returnDate ? `${returnDate} ${new Date().toTimeString().slice(0, 8)}` : null,
     `Sales Return ${returnNo}`,
     userId,
   ]);

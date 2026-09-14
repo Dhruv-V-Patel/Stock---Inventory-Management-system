@@ -1,42 +1,5 @@
 const pool = require("../config/db");
 
-/*
- * Finished Stock business rules
- *
- * 1. PRODUCT + IN
- *    -> Finished stock received
- *
- * 2. PRODUCT + OUT + SALE
- *    -> Actual customer sale
- *    -> Counts as Stock Out
- *
- * 3. PRODUCT + OUT + DISPATCH
- *    -> Actual dispatch
- *    -> Counts as Stock Out
- *
- * 4. PRODUCT + OUT + PRODUCTION_EDIT_ADJUSTMENT
- *    -> Production correction / damage
- *    -> Reduces Available Stock
- *    -> DOES NOT count as Stock Out
- *
- * 5. PRODUCT + OUT + PRODUCTION_DELETE_REVERSAL
- *    -> Production reversal
- *    -> Reduces Available Stock
- *    -> DOES NOT count as Stock Out
- *
- * Important:
- * ------------------------------------------------------------
- * total_out
- *     = ALL PRODUCT OUT movements
- *
- * stock_out
- *     = ONLY SALE / DISPATCH OUT movements
- *
- * This separation is required because an adjustment can reduce
- * physical stock without being a customer sale.
- * ------------------------------------------------------------
- */
-
 const getFinishedStock = async () => {
     const { rows } = await pool.query(`
         WITH movement_totals AS (
@@ -56,19 +19,6 @@ const getFinishedStock = async () => {
                     ),
                     0
                 ) AS total_in,
-
-                /*
-                 * ALL stock removed from finished stock.
-                 *
-                 * This includes:
-                 * SALE
-                 * DISPATCH
-                 * PRODUCTION_EDIT_ADJUSTMENT
-                 * PRODUCTION_DELETE_REVERSAL
-                 * etc.
-                 *
-                 * Used ONLY for current available stock.
-                 */
                 COALESCE(
                     SUM(
                         CASE
@@ -336,16 +286,6 @@ const getFinishedStock = async () => {
     });
 };
 
-
-/*
- * Recent finished-stock movements.
- *
- * NOTE:
- * We intentionally show ALL movements here.
- *
- * Therefore PRODUCTION_EDIT_ADJUSTMENT will still appear
- * in Recent Stock Movements, which is correct.
- */
 const getRecentMovements = async (limit = 20) => {
     const parsedLimit = Number(limit);
 

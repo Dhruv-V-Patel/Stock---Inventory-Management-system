@@ -54,7 +54,7 @@ const createNotification = async ({
 /**
  * Get notifications for a user
  */
-const getNotifications = async (userId, limit = 20) => {
+const getNotifications = async (userId, limit) => {
     const { rows } = await db.query(
         // `
         // SELECT

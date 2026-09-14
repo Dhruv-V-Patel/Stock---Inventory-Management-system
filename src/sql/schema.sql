@@ -744,6 +744,67 @@ ON notification_reads(user_id);
 CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
 ON push_subscriptions(user_id);
 
+
+ALTER TABLE payments
+ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(20)
+NOT NULL DEFAULT 'INVOICE';
+
+ALTER TABLE payments
+DROP CONSTRAINT IF EXISTS payments_payment_mode_check;
+
+ALTER TABLE payments
+ADD CONSTRAINT payments_payment_mode_check
+CHECK (payment_mode IN ('INVOICE', 'ADVANCE'));
+
+CREATE TABLE IF NOT EXISTS payment_allocations (
+    id BIGSERIAL PRIMARY KEY,
+
+    payment_id BIGINT NOT NULL
+        REFERENCES payments(id)
+        ON DELETE CASCADE,
+
+    sale_id BIGINT
+        REFERENCES sales(id)
+        ON DELETE CASCADE,
+
+    purchase_id BIGINT
+        REFERENCES purchases(id)
+        ON DELETE CASCADE,
+
+    allocated_amount NUMERIC(15,2) NOT NULL
+        CHECK (allocated_amount > 0),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT payment_allocation_document_check
+    CHECK (
+        (sale_id IS NOT NULL AND purchase_id IS NULL)
+        OR
+        (sale_id IS NULL AND purchase_id IS NOT NULL)
+    )
+);
+
+ALTER TABLE payments
+DROP CONSTRAINT IF EXISTS chk_payment_reference;
+
+ALTER TABLE payments
+ADD CONSTRAINT chk_payment_reference
+CHECK (
+    (
+        payment_type = 'CUSTOMER'
+        AND customer_id IS NOT NULL
+        AND supplier_id IS NULL
+        AND purchase_id IS NULL
+    )
+    OR
+    (
+        payment_type = 'SUPPLIER'
+        AND supplier_id IS NOT NULL
+        AND customer_id IS NULL
+        AND sale_id IS NULL
+    )
+);
+
 -- INSERT INTO permissions (
 --     module,
 --     action,

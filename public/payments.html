@@ -1,195 +1,158 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Payments | Someshwar AI ERP</title>
-    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
-    <link rel="manifest" href="/images/site.webmanifest" />
-    <script>
-      (() => {
-        const theme = localStorage.getItem("theme") || "light";
-        document.documentElement.setAttribute("data-theme", theme);
-      })();
-    </script>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="/css/style.css" />
-    <link rel="stylesheet" href="/css/payments.css" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#2563eb" />
-  </head>
 
-  <body>
-    <div class="sidebar-overlay" id="sidebarOverlay"></div>
-    <div id="sidebar-container"></div>
-    <div class="main-wrapper">
-      <div id="header-container"></div>
-      <main class="main-content">
-        <section class="payments-page">
-          <section class="payments-summary-grid">
-            <article class="payments-summary-card">
-              <div class="summary-icon blue">
-                <i class="fa-solid fa-money-bill-transfer"></i>
-              </div>
-              <div>
-                <span>Total Payments</span><strong id="totalPayments">0</strong>
-              </div>
-            </article>
-            <article class="payments-summary-card">
-              <div class="summary-icon green">
-                <i class="fa-solid fa-arrow-down"></i>
-              </div>
-              <div>
-                <span>Received</span><strong id="receivedAmount">₹0</strong>
-              </div>
-            </article>
-            <article class="payments-summary-card">
-              <div class="summary-icon orange">
-                <i class="fa-solid fa-arrow-up"></i>
-              </div>
-              <div>
-                <span>Supplier Paid</span
-                ><strong id="supplierPaidAmount">₹0</strong>
-              </div>
-            </article>
-            <article class="payments-summary-card">
-              <div class="summary-icon purple">
-                <i class="fa-solid fa-wallet"></i>
-              </div>
-              <div>
-                <span>Outstanding</span
-                ><strong id="outstandingAmount">₹0</strong>
-              </div>
-            </article>
-          </section>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Payments | Someshwar AI ERP</title>
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+  <link rel="manifest" href="/images/site.webmanifest" />
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/payments.css" />
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#2563eb" />
+</head>
 
-          <section class="content-card payments-card">
-            <div class="card-header payments-card-header">
-              <div>
-                <h2>Payments List</h2>
-                <p>
-                  Manage customer receipts and supplier payments in one place.
-                </p>
-              </div>
-              <button
-                class="primary-button"
-                id="addPaymentButton"
-                type="button"
-              >
-                <i class="fa-solid fa-plus"></i><span>New Payment</span>
-              </button>
+<body>
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+  <div class="main-wrapper">
+    <div id="header-container"></div>
+    <main class="main-content">
+      <section class="payments-page">
+        <section class="payments-summary-grid">
+          <article class="payments-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-money-bill-transfer"></i>
             </div>
-            <div class="payments-filters">
-              <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i
-                ><input
-                  id="paymentSearch"
-                  type="search"
-                  placeholder="Search payment, invoice, customer or supplier..."
-                  autocomplete="off"
-                />
-              </div>
-              <select id="paymentTypeFilter" class="filter-select">
-                <option value="">All Types</option>
-                <option value="CUSTOMER">Customer Receipt</option>
-                <option value="SUPPLIER">Supplier Payment</option>
-              </select>
-              <select id="paymentMethodFilter" class="filter-select">
-                <option value="">All Methods</option>
-                <option value="CASH">Cash</option>
-                <option value="UPI">UPI</option>
-                <option value="BANK">Bank Transfer</option>
-                <option value="CHEQUE">Cheque</option>
-                <option value="CARD">Card</option>
-                <option value="OTHER">Other</option>
-              </select>
-              <div class="date-filter-wrapper">
-                <input
-                  id="paymentDateFilter"
-                  class="date-filter"
-                  type="date"
-                  aria-label="Payment date"
-                />
-                <i class="fa-regular fa-calendar date-filter-icon"></i>
-              </div>
-              <button
-                class="secondary-button"
-                id="resetPaymentFilters"
-                type="button"
-              >
-                <i class="fa-solid fa-rotate-left"></i> Reset
-              </button>
+            <div>
+              <span>Total Payments</span><strong id="totalPayments">0</strong>
             </div>
-            <div class="table-responsive">
-              <table class="data-table payments-table">
-                <thead>
-                  <tr>
-                    <th>Payment No.</th>
-                    <th>Type</th>
-                    <th>Party</th>
-                    <th>Invoice</th>
-                    <th>Date</th>
-                    <th>Amount</th>
-                    <th>Method</th>
-                    <th class="action-column">Action</th>
-                  </tr>
-                </thead>
-                <tbody id="paymentsTableBody">
-                  <tr>
-                    <td colspan="8">
-                      <div class="payments-loading">
-                        <i class="fa-solid fa-spinner fa-spin"></i> Loading
-                        payments...
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+          </article>
+          <article class="payments-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-arrow-down"></i>
             </div>
-            <div class="payments-empty" id="paymentsEmpty" hidden>
-              <div class="empty-icon">
-                <i class="fa-solid fa-money-check-dollar"></i>
-              </div>
-              <h3>No payments found</h3>
-              <p>Create your first customer receipt or supplier payment.</p>
-              <button
-                class="primary-button small"
-                id="emptyAddPayment"
-                type="button"
-              >
-                <i class="fa-solid fa-plus"></i> New Payment
-              </button>
+            <div>
+              <span>Received</span><strong id="receivedAmount">₹0</strong>
             </div>
-            <div class="payments-footer">
-              <span id="paymentsCount">Showing 0 payments</span>
-              <div class="payments-pagination">
-                <button
-                  type="button"
-                  class="pagination-button"
-                  id="previousPaymentPage"
-                  disabled
-                >
-                  <i class="fa-solid fa-chevron-left"></i></button
-                ><span id="paymentPageNumber">1</span
-                ><button
-                  type="button"
-                  class="pagination-button"
-                  id="nextPaymentPage"
-                  disabled
-                >
-                  <i class="fa-solid fa-chevron-right"></i>
-                </button>
-              </div>
+          </article>
+          <article class="payments-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-arrow-up"></i>
             </div>
-          </section>
+            <div>
+              <span>Supplier Paid</span><strong id="supplierPaidAmount">₹0</strong>
+            </div>
+          </article>
+          <article class="payments-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-wallet"></i>
+            </div>
+            <div>
+              <span>Outstanding</span><strong id="outstandingAmount">₹0</strong>
+            </div>
+          </article>
         </section>
-      </main>
-    </div>
 
-    <div class="modal-overlay" id="paymentModal" hidden>
+        <section class="content-card payments-card">
+          <div class="card-header payments-card-header">
+            <div>
+              <h2>Payments List</h2>
+              <p>
+                Manage customer receipts and supplier payments in one place.
+              </p>
+            </div>
+            <button class="primary-button" id="addPaymentButton" type="button">
+              <i class="fa-solid fa-plus"></i><span>New Payment</span>
+            </button>
+          </div>
+          <div class="payments-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i><input id="paymentSearch" type="search"
+                placeholder="Search payment, invoice, customer or supplier..." autocomplete="off" />
+            </div>
+            <select id="paymentTypeFilter" class="filter-select">
+              <option value="">All Types</option>
+              <option value="CUSTOMER">Customer Receipt</option>
+              <option value="SUPPLIER">Supplier Payment</option>
+            </select>
+            <select id="paymentMethodFilter" class="filter-select">
+              <option value="">All Methods</option>
+              <option value="CASH">Cash</option>
+              <option value="UPI">UPI</option>
+              <option value="BANK">Bank Transfer</option>
+              <option value="CHEQUE">Cheque</option>
+              <option value="CARD">Card</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <div class="date-filter-wrapper">
+              <input id="paymentDateFilter" class="date-filter" type="date" aria-label="Payment date" />
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+            <button class="secondary-button" id="resetPaymentFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="data-table payments-table">
+              <thead>
+                <tr>
+                  <th>Payment No.</th>
+                  <th>Type</th>
+                  <th>Party</th>
+                  <th>Invoice</th>
+                  <th>Date</th>
+                  <th>Amount</th>
+                  <th>Method</th>
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+              <tbody id="paymentsTableBody">
+                <tr>
+                  <td colspan="8">
+                    <div class="payments-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i> Loading
+                      payments...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="payments-empty" id="paymentsEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-money-check-dollar"></i>
+            </div>
+            <h3>No payments found</h3>
+            <p>Create your first customer receipt or supplier payment.</p>
+            <button class="primary-button small" id="emptyAddPayment" type="button">
+              <i class="fa-solid fa-plus"></i> New Payment
+            </button>
+          </div>
+          <div class="payments-footer">
+            <span id="paymentsCount">Showing 0 payments</span>
+            <div class="payments-pagination">
+              <button type="button" class="pagination-button" id="previousPaymentPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i></button><span id="paymentPageNumber">1</span><button
+                type="button" class="pagination-button" id="nextPaymentPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- <div class="modal-overlay" id="paymentModal" hidden>
       <div
         class="modal payment-modal"
         role="dialog"
@@ -331,41 +294,457 @@
           </div>
         </form>
       </div>
-    </div>
+    </div> -->
 
-    <div class="modal-overlay" id="viewPaymentModal" hidden>
-      <div
-        class="modal payment-view-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="viewPaymentTitle"
-      >
-        <div class="modal-header">
-          <div class="modal-title-wrap">
-            <div class="modal-title-icon">
-              <i class="fa-solid fa-receipt"></i>
-            </div>
-            <div>
-              <h2 id="viewPaymentTitle">Payment</h2>
-              <p id="viewPaymentSubtitle">Payment details</p>
-            </div>
+  <div class="modal-overlay" id="paymentModal" hidden>
+    <div class="modal payment-modal" role="dialog" aria-modal="true" aria-labelledby="paymentModalTitle">
+
+      <!-- =====================================================
+         HEADER
+    ====================================================== -->
+
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-money-bill-transfer"></i>
           </div>
-          <button class="modal-close" id="closeViewPaymentModal" type="button">
-            <i class="fa-solid fa-xmark"></i>
-          </button>
+
+          <div>
+            <h2 id="paymentModalTitle">
+              New Payment
+            </h2>
+
+            <p id="paymentModalDescription">
+              Record a customer receipt or supplier payment.
+            </p>
+          </div>
+
         </div>
-        <div id="paymentDetailsContent" class="payment-details-content"></div>
+
+        <button class="modal-close" id="closePaymentModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+
+      <!-- =====================================================
+         FORM
+    ====================================================== -->
+
+      <form id="paymentForm" novalidate>
+
+        <!-- ===================================================
+           CUSTOMER / SUPPLIER
+      ==================================================== -->
+
+        <div class="payment-type-switch">
+
+          <button type="button" class="payment-type-option active" data-type="CUSTOMER">
+            <i class="fa-solid fa-user-tie"></i>
+
+            <span>
+              Customer Receipt
+            </span>
+
+            <small>
+              Money received
+            </small>
+          </button>
+
+
+          <button type="button" class="payment-type-option" data-type="SUPPLIER">
+            <i class="fa-solid fa-truck-field"></i>
+
+            <span>
+              Supplier Payment
+            </span>
+
+            <small>
+              Money paid
+            </small>
+          </button>
+
+        </div>
+
+
+        <input type="hidden" id="paymentType" value="CUSTOMER" />
+
+
+        <!-- ===================================================
+           FORM GRID
+      ==================================================== -->
+
+        <div class="payment-form-grid">
+
+          <!-- ===============================================
+             CUSTOMER
+        ================================================ -->
+
+          <div class="form-group party-group" id="customerGroup">
+
+            <label for="customerId">
+              Customer <span>*</span>
+            </label>
+
+            <select id="customerId">
+              <option value="">
+                Select Customer
+              </option>
+            </select>
+
+            <small class="form-error" data-error-for="customer"></small>
+
+          </div>
+
+
+          <!-- ===============================================
+             SUPPLIER
+        ================================================ -->
+
+          <div class="form-group party-group" id="supplierGroup" hidden>
+
+            <label for="supplierId">
+              Supplier <span>*</span>
+            </label>
+
+            <select id="supplierId">
+              <option value="">
+                Select Supplier
+              </option>
+            </select>
+
+            <small class="form-error" data-error-for="supplier"></small>
+
+          </div>
+
+
+          <!-- ===============================================
+             PAYMENT MODE
+        ================================================ -->
+
+          <div class="form-group payment-mode-group">
+
+            <label>
+              Payment Mode <span>*</span>
+            </label>
+
+            <div class="payment-mode-switch" id="paymentModeSwitch">
+
+              <button type="button" class="payment-mode-option active" data-mode="INVOICE">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+
+                <span>
+                  Against Due
+                </span>
+
+                <small>
+                  Adjust against old invoices
+                </small>
+              </button>
+
+
+              <button type="button" class="payment-mode-option" data-mode="ADVANCE">
+                <i class="fa-solid fa-wallet"></i>
+
+                <span>
+                  Advance
+                </span>
+
+                <small>
+                  Keep as advance
+                </small>
+              </button>
+
+            </div>
+
+            <input type="hidden" id="paymentMode" value="INVOICE" />
+
+          </div>
+
+
+          <!-- ===============================================
+             PAYMENT DATE
+        ================================================ -->
+
+          <div class="form-group">
+
+            <label for="paymentDate">
+              Payment Date <span>*</span>
+            </label>
+
+            <input id="paymentDate" type="date" required />
+
+            <small class="form-error" data-error-for="date"></small>
+
+          </div>
+
+
+          <!-- ===============================================
+             AMOUNT
+        ================================================ -->
+
+          <div class="form-group">
+
+            <label for="amount">
+              Amount <span>*</span>
+            </label>
+
+            <div class="currency-input">
+
+              <span>₹</span>
+
+              <input id="amount" type="number" min="0.01" step="0.01" placeholder="0.00" required />
+
+            </div>
+
+            <small id="outstandingHint" class="field-hint"></small>
+
+            <small class="form-error" data-error-for="amount"></small>
+
+          </div>
+
+
+          <!-- ===============================================
+             PAYMENT METHOD
+        ================================================ -->
+
+          <div class="form-group">
+
+            <label for="paymentMethod">
+              Payment Method <span>*</span>
+            </label>
+
+            <select id="paymentMethod">
+
+              <option value="">
+                Select Method
+              </option>
+
+              <option value="CASH">
+                Cash
+              </option>
+
+              <option value="UPI">
+                UPI
+              </option>
+
+              <option value="BANK">
+                Bank Transfer
+              </option>
+
+              <option value="CHEQUE">
+                Cheque
+              </option>
+
+              <option value="CARD">
+                Card
+              </option>
+
+              <option value="OTHER">
+                Other
+              </option>
+
+            </select>
+
+          </div>
+
+
+          <!-- ===============================================
+             REFERENCE NO
+        ================================================ -->
+
+          <div class="form-group">
+
+            <label for="referenceNo">
+              Reference No.
+            </label>
+
+            <input id="referenceNo" type="text" maxlength="100" placeholder="UTR / cheque no. / reference" />
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+           PARTY BALANCE
+      ================================================== -->
+
+        <div class="payment-note payment-party-summary" id="paymentBalanceBox">
+
+          <!-- TOTAL DUE -->
+
+          <div class="payment-summary-item">
+
+            <span>
+              <i class="fa-solid fa-file-invoice"></i>
+              Total Due
+            </span>
+
+            <strong id="referenceTotal">
+              ₹0
+            </strong>
+
+          </div>
+
+
+          <!-- AVAILABLE ADVANCE -->
+
+          <div class="payment-summary-item">
+
+            <span>
+              <i class="fa-solid fa-wallet"></i>
+              Available Advance
+            </span>
+
+            <strong id="referencePaid">
+              ₹0
+            </strong>
+
+          </div>
+
+
+          <!-- AFTER PAYMENT -->
+
+          <div class="payment-summary-item payment-summary-due">
+
+            <span>
+              <i class="fa-solid fa-arrow-down"></i>
+              Remaining Due
+            </span>
+
+            <strong id="referenceDue">
+              ₹0
+            </strong>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+           FIFO INFORMATION
+      ================================================== -->
+
+        <div class="payment-allocation-info" id="paymentAllocationInfo">
+
+          <div class="allocation-info-icon">
+            <i class="fa-solid fa-layer-group"></i>
+          </div>
+
+          <div class="allocation-info-content">
+
+            <strong>
+              Automatic Invoice Adjustment
+            </strong>
+
+            <p>
+              This payment will automatically be
+              adjusted against the oldest outstanding
+              invoices first.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+           ADVANCE INFORMATION
+      ================================================== -->
+
+        <div class="payment-advance-info" id="paymentAdvanceInfo" hidden>
+
+          <div class="allocation-info-icon">
+            <i class="fa-solid fa-wallet"></i>
+          </div>
+
+          <div class="allocation-info-content">
+
+            <strong>
+              Advance Payment
+            </strong>
+
+            <p>
+              This amount will be saved as an advance
+              and can be adjusted against future invoices.
+            </p>
+
+          </div>
+
+        </div>
+
+
+        <!-- =================================================
+           REMARKS
+      ================================================== -->
+
+        <div class="form-group remarks-group">
+
+          <label for="remarks">
+            Remarks
+          </label>
+
+          <textarea id="remarks" rows="2" maxlength="1000" placeholder="Optional notes..."></textarea>
+
+        </div>
+
+       <!-- =================================================
+           FOOTER
+      ================================================== -->
+
         <div class="modal-footer">
-          <button class="secondary-button" id="closeViewPayment" type="button">
-            Close
+
+          <button class="secondary-button" id="cancelPayment" type="button">
+            Cancel
           </button>
+
+          <button class="primary-button" id="savePayment" type="submit">
+
+            <i class="fa-solid fa-check"></i>
+
+            <span>
+              Save Payment
+            </span>
+
+          </button>
+
         </div>
+
+      </form>
+
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="viewPaymentModal" hidden>
+    <div class="modal payment-view-modal" role="dialog" aria-modal="true" aria-labelledby="viewPaymentTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div>
+            <h2 id="viewPaymentTitle">Payment</h2>
+            <p id="viewPaymentSubtitle">Payment details</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeViewPaymentModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div id="paymentDetailsContent" class="payment-details-content"></div>
+      <div class="modal-footer">
+        <button class="secondary-button" id="closeViewPayment" type="button">
+          Close
+        </button>
       </div>
     </div>
+  </div>
 
 
 
-     <!-- ================== Delete Modal ============================ -->
+  <!-- ================== Delete Modal ============================ -->
   <div class="modal-overlay" id="deleteModal" aria-hidden="true" hidden>
     <div class="modal confirmation-modal">
       <div class="confirmation-icon">
@@ -385,31 +764,32 @@
     </div>
   </div>
 
-    
-    <div class="toast-container" id="toastContainer"></div>
+
+  <div class="toast-container" id="toastContainer"></div>
 
   <script src="/js/authGuard.js"></script>
-    <script src="/js/sidebar.js"></script>
-    <script src="/socket.io/socket.io.js"></script>
+  <script src="/js/sidebar.js"></script>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="/js/notifications.js"></script>
-    <script src="/js/header.js"></script>
-    <script src="/js/payments.js"></script>
-    <script>
-      document.addEventListener("DOMContentLoaded", async () => {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-          window.location.replace("/login");
-          return;
-        }
-        await Promise.all([
-          loadSidebar("payments"),
-          loadHeader({
-            title: "Payments",
-            description: "Manage customer receipts and supplier payments",
-          }),
-        ]);
-        if (typeof initPaymentsPage === "function") initPaymentsPage();
-      });
-    </script>
-  </body>
+  <script src="/js/header.js"></script>
+  <script src="/js/payments.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+      await Promise.all([
+        loadSidebar("payments"),
+        loadHeader({
+          title: "Payments",
+          description: "Manage customer receipts and supplier payments",
+        }),
+      ]);
+      if (typeof initPaymentsPage === "function") initPaymentsPage();
+    });
+  </script>
+</body>
+
 </html>

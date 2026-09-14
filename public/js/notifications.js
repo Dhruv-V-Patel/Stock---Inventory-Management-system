@@ -221,15 +221,19 @@ const initializeNotifications = async () => {
 
     switch (type) {
       case "payment":
-        window.location.href = `/payments?id=${id}`;
+        window.location.href = `/payments`;
         break;
 
-      case "party":
-        window.location.href = `/parties?id=${id}`;
+      case "sale":
+        window.location.href = `/sales`;
         break;
 
-      case "agent":
-        window.location.href = `/agents?id=${id}`;
+      case "purchase":
+        window.location.href = `/purchases`;
+        break;
+        
+      case "production":
+        window.location.href = `/production`;
         break;
     }
     await markNotificationsRead();

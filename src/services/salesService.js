@@ -93,6 +93,7 @@ const validateHeader = (payload) => {
     customerId,
     saleDate,
     vehicleNo: payload?.vehicle_no?.trim() || null,
+    challanLrNo: payload?.challan_lr_no?.trim() || null,
     driverName: payload?.driver_name?.trim() || null,
     driverMobile: payload?.driver_mobile?.trim() || null,
     discount,
@@ -312,124 +313,6 @@ const insertStockMovement = async (
   );
 };
 
-// const getSaleById = async (id, client = pool) => {
-//   const saleId = assertId(id, "sale id");
-
-//   const result = await client.query(
-//     `
-//       SELECT
-//         s.id,
-//         s.sale_no,
-//         s.customer_id,
-//         c.name AS customer_name,
-//         c.mobile AS customer_mobile,
-//         c.gstin AS customer_gstin,
-//         c.address AS customer_address,
-//         s.sale_date,
-//         s.vehicle_no,
-//         s.driver_name,
-//         s.driver_mobile,
-//         s.subtotal,
-//         s.discount,
-//         s.tax_amount,
-//         s.total_amount,
-//         s.payment_status,
-//         s.remarks,
-//         s.created_by,
-//         s.created_at,
-//         s.updated_at,
-//         COALESCE(
-//           json_agg(
-//             json_build_object(
-//               'id', si.id,
-//               'product_id', si.product_id,
-//               'product_code', p.code,
-//               'product_name', p.name,
-//               'quantity', si.quantity,
-//               'unit', si.unit,
-//               'rate', si.rate,
-//               'amount', si.amount,
-//             )
-//             ORDER BY si.id
-//           ) FILTER (WHERE si.id IS NOT NULL),
-//           '[]'::json
-//         ) AS items
-//       FROM sales s
-//       INNER JOIN customers c
-//         ON c.id = s.customer_id
-//       LEFT JOIN sale_items si
-//         ON si.sale_id = s.id
-//       LEFT JOIN products p
-//         ON p.id = si.product_id
-//       WHERE s.id = $1
-//       GROUP BY
-//         s.id,
-//         c.name,
-//         c.mobile,
-//         c.gstin,
-//         c.address
-//     `,
-//     [saleId],
-//   );
-
-//   if (!result.rows.length) return null;
-
-//   const row = result.rows[0];
-
-//   return {
-//     ...row,
-//     id: Number(row.id),
-//     customer_id: Number(row.customer_id),
-//     subtotal: Number(row.subtotal || 0),
-//     discount: Number(row.discount || 0),
-//     tax_amount: Number(row.tax_amount || 0),
-//     total_amount: Number(row.total_amount || 0),
-//     items: (row.items || []).map((item) => ({
-//       ...item,
-//       id: Number(item.id),
-//       product_id: Number(item.product_id),
-//       quantity: Number(item.quantity || 0),
-//       rate: Number(item.rate || 0),
-//       amount: Number(item.amount || 0),
-//     })),
-//   };
-// };
-
-// const listSales = async () => {
-//   const result = await pool.query(`
-//     SELECT
-//       s.id,
-//       s.sale_no,
-//       s.customer_id,
-//       c.name AS customer_name,
-//       c.mobile AS customer_mobile,
-//       s.sale_date,
-//       s.total_amount,
-//       s.payment_status,
-//       COUNT(si.id)::int AS item_count
-//     FROM sales s
-//     INNER JOIN customers c
-//       ON c.id = s.customer_id
-//     LEFT JOIN sale_items si
-//       ON si.sale_id = s.id
-//     GROUP BY
-//       s.id,
-//       c.name,
-//       c.mobile
-//     ORDER BY
-//       s.sale_date DESC,
-//       s.id DESC
-//   `);
-
-//   return result.rows.map((row) => ({
-//     ...row,
-//     id: Number(row.id),
-//     customer_id: Number(row.customer_id),
-//     item_count: Number(row.item_count || 0),
-//     total_amount: Number(row.total_amount || 0),
-//   }));
-// };
-
 const getSaleById = async (id, client = pool) => {
   const saleId = assertId(id, "sale id");
 
@@ -447,6 +330,7 @@ const getSaleById = async (id, client = pool) => {
 
         s.sale_date,
         s.vehicle_no,
+        s.challan_lr_no,
         s.driver_name,
         s.driver_mobile,
 
@@ -631,6 +515,10 @@ const listSales = async () => {
       c.name AS customer_name,
       c.mobile AS customer_mobile,
       s.sale_date,
+      s.vehicle_no,
+      s.challan_lr_no,
+      s.driver_name,
+      s.driver_mobile,
       s.total_amount,
 
       COALESCE(sr.return_amount, 0) AS return_amount,
@@ -642,7 +530,21 @@ const listSales = async () => {
 
       s.payment_status,
 
-      COUNT(si.id)::int AS item_count
+      COUNT(si.id)::int AS item_count,
+
+      COALESCE(
+        JSON_AGG(
+          JSON_BUILD_OBJECT(
+            'product_id', si.product_id,
+            'product_name', p.name,
+            'product_code', p.code,
+            'quantity', si.quantity,
+            'unit', si.unit
+          )
+          ORDER BY si.id
+        ) FILTER (WHERE si.id IS NOT NULL),
+        '[]'::json
+      ) AS items
 
     FROM sales s
 
@@ -651,6 +553,9 @@ const listSales = async () => {
 
     LEFT JOIN sale_items si
       ON si.sale_id = s.id
+    
+    LEFT JOIN products p
+      ON p.id = si.product_id
 
     LEFT JOIN (
       SELECT
@@ -682,6 +587,16 @@ const listSales = async () => {
     customer_id: Number(row.customer_id),
 
     item_count: Number(row.item_count || 0),
+
+    items: Array.isArray(row.items)
+      ? row.items.map((item) => ({
+          product_id: Number(item.product_id || 0),
+          product_name: item.product_name || "",
+          product_code: item.product_code || "",
+          quantity: Number(item.quantity || 0),
+          unit: item.unit || "",
+        }))
+      : [],
 
     total_amount: Number(row.total_amount || 0),
 
@@ -775,6 +690,7 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
           customer_id,
           sale_date,
           vehicle_no,
+          challan_lr_no,
           driver_name,
           driver_mobile,
           subtotal,
@@ -787,7 +703,7 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
         )
         VALUES (
           $1, $2, $3, $4, $5, $6,
-          $7, $8, $9, $10, $11, $12, $13
+          $7, $8, $9, $10, $11, $12, $13, $14
         )
         RETURNING *
       `,
@@ -796,6 +712,7 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
         header.customerId,
         header.saleDate,
         header.vehicleNo,
+        header.challanLrNo,
         header.driverName,
         header.driverMobile,
         totals.subtotal,
@@ -842,7 +759,7 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
         quantity: item.quantity,
         movementType: "SALE",
         saleId,
-        movementDate: header.saleDate ? `${header.saleDate} 00:00:00` : null,
+        movementDate: header.saleDate ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}` : null,
         remarks: `Finished stock sold through ${saleNo}.`,
         userId,
       });
@@ -1046,31 +963,139 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
       taxAmount: header.taxAmount,
     });
 
-    for (const item of oldItems) {
-      await insertStockMovement(client, {
-        productId: item.product_id,
-        direction: "IN",
-        quantity: item.quantity,
-        movementType: "SALE_EDIT_REVERSAL",
-        saleId,
-        movementDate: existing.sale_date ? `${existing.sale_date}` : null,
-        remarks: `Previous quantity restored while editing sale ${existing.sale_no}.`,
-        userId,
-      });
-    }
+    // for (const item of oldItems) {
+    //   await insertStockMovement(client, {
+    //     productId: item.product_id,
+    //     direction: "IN",
+    //     quantity: item.quantity,
+    //     movementType: "SALE_EDIT_REVERSAL",
+    //     saleId,
+    //     movementDate: existing.sale_date ? `${existing.sale_date}` : null,
+    //     remarks: `Previous quantity restored while editing sale ${existing.sale_no}.`,
+    //     userId,
+    //   });
+    // }
 
-    for (const item of validatedItems) {
+    // for (const item of validatedItems) {
+    //   await insertStockMovement(client, {
+    //     productId: item.product_id,
+    //     direction: "OUT",
+    //     quantity: item.quantity,
+    //     movementType: "SALE_EDIT",
+    //     saleId,
+    //     movementDate: header.saleDate ? `${header.saleDate}` : null,
+    //     remarks: `Updated finished-stock quantity for sale ${existing.sale_no}.`,
+    //     userId,
+    //   });
+    // }
+
+    // =====================================================
+// UPDATE EXISTING STOCK MOVEMENTS
+// Do NOT create reversal + new movement on every edit.
+// =====================================================
+
+
+for (const productId of allProductIds) {
+  const oldQuantity = oldByProduct.get(productId) || 0;
+  const newQuantity = newByProduct.get(productId) || 0;
+
+  // ---------------------------------------------
+  // Product existed before and still exists
+  // ---------------------------------------------
+  if (oldQuantity > 0 && newQuantity > 0) {
+    const movementResult = await client.query(
+      `
+        SELECT id
+        FROM stock_movements
+        WHERE item_type = 'PRODUCT'
+          AND item_id = $1
+          AND direction = 'OUT'
+          AND movement_type = 'SALE'
+          AND reference_type = 'SALE'
+          AND reference_id = $2
+        ORDER BY id ASC
+        LIMIT 1
+        FOR UPDATE
+      `,
+      [productId, saleId]
+    );
+
+    if (movementResult.rows.length) {
+      // UPDATE existing movement
+      await client.query(
+        `
+          UPDATE stock_movements
+          SET
+            quantity = $1,
+            movement_date = COALESCE($2::TIMESTAMP, movement_date),
+            remarks = $3,
+            created_by = COALESCE($4, created_by)
+          WHERE id = $5
+        `,
+        [
+          newQuantity,
+          header.saleDate
+            ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+            : null,
+          `Finished stock sold through updated sale ${existing.sale_no}.`,
+          userId || null,
+          movementResult.rows[0].id,
+        ]
+      );
+    } else {
+      // Old sale movement not found.
+      // Create it once to repair missing stock movement.
       await insertStockMovement(client, {
-        productId: item.product_id,
+        productId,
         direction: "OUT",
-        quantity: item.quantity,
-        movementType: "SALE_EDIT",
+        quantity: newQuantity,
+        movementType: "SALE",
         saleId,
-        movementDate: header.saleDate ? `${header.saleDate}` : null,
-        remarks: `Updated finished-stock quantity for sale ${existing.sale_no}.`,
+        movementDate: header.saleDate
+          ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+          : null,
+        remarks: `Finished stock sold through updated sale ${existing.sale_no}.`,
         userId,
       });
     }
+  }
+
+  // ---------------------------------------------
+  // Product was removed from the sale
+  // ---------------------------------------------
+  else if (oldQuantity > 0 && newQuantity === 0) {
+    await client.query(
+      `
+        DELETE FROM stock_movements
+        WHERE item_type = 'PRODUCT'
+          AND item_id = $1
+          AND direction = 'OUT'
+          AND movement_type = 'SALE'
+          AND reference_type = 'SALE'
+          AND reference_id = $2
+      `,
+      [productId, saleId]
+    );
+  }
+
+  // ---------------------------------------------
+  // New product added to existing sale
+  // ---------------------------------------------
+  else if (oldQuantity === 0 && newQuantity > 0) {
+    await insertStockMovement(client, {
+      productId,
+      direction: "OUT",
+      quantity: newQuantity,
+      movementType: "SALE",
+      saleId,
+      movementDate: header.saleDate
+        ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+        : null,
+      remarks: `Finished stock added through updated sale ${existing.sale_no}.`,
+      userId,
+    });
+  }
+}
 
     await client.query(
       `
@@ -1087,8 +1112,9 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
           total_amount = $9,
           payment_status = $10,
           remarks = $11,
+          challan_lr_no = $12,
           updated_at = NOW()
-        WHERE id = $12
+        WHERE id = $13
       `,
       [
         header.customerId,
@@ -1102,6 +1128,7 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
         totals.total_amount,
         header.paymentStatus,
         header.remarks,
+        header.challanLrNo,
         saleId,
       ],
     );
