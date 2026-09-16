@@ -1,0 +1,1467 @@
+.expense-page {
+    max-width: 100%;
+}
+
+.expense-page button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+.expense-card {
+    box-shadow: var(--shadow);
+}
+
+.expense-card-header {
+    min-height: 68px;
+}
+
+.expense-card-header > div:first-child {
+    min-width: 0;
+}
+
+.category-name-wrap {
+    min-width: 180px;
+}
+
+.category-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.category-meta {
+    margin-top: 3px;
+    color: var(--text-secondary);
+    font-size: 9px;
+    line-height: 1.35;
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    margin-right: 6px;
+    flex: 0 0 6px;
+    border-radius: 50%;
+    background: currentColor;
+}
+
+.expense-status {
+    white-space: nowrap;
+}
+
+.expense-actions {
+    min-width: 92px;
+}
+
+/* =========================================================
+   EMPTY STATE
+   ========================================================= */
+
+.empty-state {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+}
+
+.empty-state .empty-icon {
+    width: 52px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 12px;
+    border-radius: 13px;
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+    font-size: 21px;
+}
+
+.empty-state .empty-icon.danger {
+    background: var(--danger-background);
+    color: var(--danger);
+}
+
+.empty-state h3 {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.empty-state p {
+    max-width: 420px;
+    margin: 5px 0 15px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   VIEW DETAILS MODAL
+   ========================================================= */
+
+.category-view-modal {
+    width: min(560px, 100%);
+}
+
+.category-view-content {
+    padding: 18px 21px 2px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    min-height: 48px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.detail-row:last-child {
+    border-bottom: 0;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.detail-value {
+    max-width: 65%;
+    color: var(--text-primary);
+    font-size: 11px;
+    font-weight: 600;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.category-view-modal .modal-footer {
+    margin-top: 12px;
+}
+
+/* =========================================================
+   DELETE CONFIRMATION
+   ========================================================= */
+
+.delete-modal {
+    width: min(440px, 100%);
+}
+
+.delete-content {
+    padding: 25px 24px 5px;
+    text-align: center;
+}
+
+.delete-warning {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    border-radius: 50%;
+    background: var(--danger-background);
+    color: var(--danger);
+    font-size: 21px;
+}
+
+.delete-content p {
+    margin: 0;
+    color: var(--text-primary);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.delete-content p strong {
+    color: var(--text-primary);
+    font-weight: 700;
+}
+
+.delete-content small {
+    display: block;
+    max-width: 360px;
+    margin: 8px auto 0;
+    color: var(--text-secondary);
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+.danger-button {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: #fff;
+}
+
+.danger-button:hover {
+    border-color: #dc2626;
+    background: #dc2626;
+    color: #fff;
+}
+
+.danger-button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   MODAL SCROLLBAR
+   ========================================================= */
+
+.expense-modal::-webkit-scrollbar,
+.category-view-content::-webkit-scrollbar {
+    width: 5px;
+}
+
+.expense-modal::-webkit-scrollbar-track,
+.category-view-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.expense-modal::-webkit-scrollbar-thumb,
+.category-view-content::-webkit-scrollbar-thumb {
+    background: rgba(100, 116, 139, .35);
+    border-radius: 999px;
+}
+
+/* =========================================================
+   FOCUS / ACCESSIBILITY
+   ========================================================= */
+
+.expense-page button:focus-visible,
+.expense-page input:focus-visible,
+.expense-page select:focus-visible,
+.expense-page textarea:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.modal-close:focus-visible,
+.table-action:focus-visible,
+.primary-button:focus-visible,
+.secondary-button:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.expense-page {
+    width: 100%;
+}
+
+/* =========================================================
+   PAGE HEADER
+   ========================================================= */
+
+.expense-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.expense-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.expense-title-icon {
+    width: 44px;
+    height: 44px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 11px;
+
+    background: var(--icon-background);
+    color: var(--primary);
+
+    font-size: 18px;
+}
+
+.expense-title h1 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 23px;
+    line-height: 1.15;
+}
+
+.expense-title .eyebrow {
+    margin: 0 0 2px;
+
+    color: var(--primary);
+
+    font-size: 9px;
+    font-weight: 700;
+
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.expense-title .subtitle {
+    margin: 4px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   BUTTONS
+   ========================================================= */
+
+.expense-page .primary-button,
+.expense-page .secondary-button,
+.expense-page .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    gap: 8px;
+
+    min-height: 38px;
+    padding: 0 14px;
+
+    border-radius: 8px;
+
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease,
+        transform .15s ease;
+}
+
+.expense-page .primary-button,
+.expense-page .btn-primary {
+    border: 1px solid var(--primary);
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.expense-page .primary-button:hover,
+.expense-page .btn-primary:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+}
+
+.expense-page .secondary-button,
+.expense-page .btn-secondary {
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-secondary);
+}
+
+.expense-page .secondary-button:hover,
+.expense-page .btn-secondary:hover {
+    border-color: var(--primary);
+    background: var(--surface-hover);
+    color: var(--primary);
+}
+
+.expense-page .primary-button:active,
+.expense-page .secondary-button:active,
+.expense-page .btn:active {
+    transform: scale(.98);
+}
+
+/* =========================================================
+   CARD
+   ========================================================= */
+
+.expense-card {
+    margin-bottom: 18px;
+
+    overflow: hidden;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+
+    box-shadow: var(--shadow);
+}
+
+.expense-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 18px;
+
+    padding: 18px 20px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.expense-card-header h2 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 16px;
+}
+
+.expense-card-header p {
+    margin: 4px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 11px;
+}
+
+.category-list-icon {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 9px;
+
+    background: var(--icon-background);
+    color: var(--primary);
+
+    font-size: 14px;
+}
+
+/* =========================================================
+   TABLE
+   ========================================================= */
+
+.expense-table-wrap {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.expense-table {
+    width: 100%;
+    min-width: 620px;
+
+    border-collapse: collapse;
+}
+
+.expense-table th,
+.expense-table td {
+    padding: 13px 15px;
+
+    white-space: nowrap;
+    text-align: left;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.expense-table th {
+    background: var(--surface-secondary);
+
+    color: var(--text-secondary);
+
+    font-size: 10px;
+    font-weight: 700;
+
+    letter-spacing: .02em;
+    text-transform: uppercase;
+}
+
+.expense-table td {
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.expense-table tbody tr {
+    transition: background .15s ease;
+}
+
+.expense-table tbody tr:hover {
+    background: var(--surface-secondary);
+}
+
+.expense-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.expense-table th:last-child,
+.expense-table td:last-child {
+    width: 120px;
+    text-align: right;
+}
+
+/* =========================================================
+   CATEGORY NAME
+   ========================================================= */
+
+.expense-category,
+.category-name {
+    color: var(--text-primary);
+
+    font-weight: 600;
+}
+
+.category-name-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.category-row-icon {
+    width: 32px;
+    height: 32px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 8px;
+
+    background: var(--icon-background);
+    color: var(--primary);
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   STATUS
+   Supports existing JS classes as well
+   ========================================================= */
+
+.expense-status,
+.status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    min-height: 23px;
+
+    padding: 0 9px;
+
+    border-radius: 20px;
+
+    font-size: 10px;
+    font-weight: 700;
+}
+
+.expense-status.active,
+.status-active,
+.status-true {
+    background: var(--success-background);
+    color: var(--success);
+}
+
+.expense-status.inactive,
+.status-inactive,
+.status-false {
+    background: var(--danger-background);
+    color: var(--danger);
+}
+
+/* common alternative status class */
+.status-ACTIVE {
+    background: var(--success-background);
+    color: var(--success);
+}
+
+.status-INACTIVE {
+    background: var(--danger-background);
+    color: var(--danger);
+}
+
+/* =========================================================
+   ACTIONS
+   ========================================================= */
+
+.expense-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 3px;
+}
+
+.expense-action,
+.table-action,
+.action-button {
+    width: 30px;
+    height: 30px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 1px solid transparent;
+    border-radius: 7px;
+
+    background: transparent;
+    color: var(--text-secondary);
+
+    cursor: pointer;
+
+    font-size: 14px;
+
+    transition:
+        background .2s ease,
+        color .2s ease,
+        border-color .2s ease;
+}
+
+.expense-action:hover,
+.table-action:hover,
+.action-button:hover {
+    background: var(--surface-hover);
+    color: var(--primary);
+}
+
+.expense-action.danger:hover,
+.table-action.danger:hover,
+.action-button.danger:hover,
+.btn-danger:hover {
+    background: var(--danger-background);
+    color: var(--danger);
+}
+
+/* =========================================================
+   LEGACY SMALL BUTTON SUPPORT
+   ========================================================= */
+
+.btn-small {
+    min-height: 30px !important;
+
+    padding: 0 9px !important;
+
+    border-radius: 7px !important;
+
+    font-size: 11px !important;
+}
+
+/* =========================================================
+   LOADING / EMPTY
+   ========================================================= */
+
+.table-loading,
+.expense-loading {
+    height: 110px;
+
+    text-align: center !important;
+    vertical-align: middle;
+
+    color: var(--text-secondary) !important;
+
+    font-size: 12px !important;
+}
+
+.table-loading i {
+    margin-right: 7px;
+}
+
+.expense-empty {
+    min-height: 220px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+
+    padding: 30px;
+
+    text-align: center;
+
+    color: var(--text-secondary);
+}
+
+.expense-empty i {
+    width: 48px;
+    height: 48px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    margin-bottom: 12px;
+
+    border-radius: 12px;
+
+    background: var(--surface-secondary);
+    color: var(--text-secondary);
+
+    font-size: 20px;
+}
+
+.expense-empty h3 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 15px;
+}
+
+.expense-empty p {
+    margin: 5px 0 14px;
+
+    font-size: 11px;
+}
+
+/* =========================================================
+   MODAL
+   ========================================================= */
+
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+
+    z-index: 2000;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: var(--overlay);
+
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+}
+
+.modal-backdrop.show {
+    display: flex;
+}
+
+.modal-backdrop[hidden] {
+    display: none !important;
+}
+
+.expense-modal {
+    width: min(520px, 100%);
+    max-height: calc(100vh - 36px);
+
+    overflow-y: auto;
+
+    background: var(--surface);
+
+    border: 1px solid var(--border);
+    border-radius: 14px;
+
+    box-shadow: 0 20px 60px rgba(15, 23, 42, .25);
+
+    animation: categoryModalOpen .18s ease;
+}
+
+@keyframes categoryModalOpen {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* =========================================================
+   MODAL HEADER
+   ========================================================= */
+
+.expense-modal .modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+
+    gap: 18px;
+
+    padding: 19px 21px;
+
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-title-wrap {
+    display: flex;
+    align-items: center;
+
+    gap: 11px;
+}
+
+.modal-title-icon {
+    width: 38px;
+    height: 38px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border-radius: 9px;
+
+    background: var(--icon-background);
+    color: var(--primary);
+
+    font-size: 14px;
+}
+
+.expense-modal .modal-header h2 {
+    margin: 0;
+
+    color: var(--text-primary);
+
+    font-size: 17px;
+}
+
+.expense-modal .modal-header p {
+    margin: 3px 0 0;
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+}
+
+.modal-close {
+    width: 32px;
+    height: 32px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 0;
+    border-radius: 7px;
+
+    background: transparent;
+    color: var(--text-secondary);
+
+    cursor: pointer;
+
+    transition:
+        background .2s ease,
+        color .2s ease;
+}
+
+.modal-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+/* =========================================================
+   FORM
+   ========================================================= */
+
+#form {
+    padding: 18px 20px 0;
+}
+
+.category-form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.form-group {
+    min-width: 0;
+}
+
+.form-group.full {
+    grid-column: 1 / -1;
+}
+
+.form-group label:not(.checkbox-row) {
+    display: block;
+
+    margin-bottom: 5px;
+
+    color: var(--text-primary);
+
+    font-size: 10px;
+    font-weight: 600;
+}
+
+.form-group label span {
+    color: var(--danger);
+}
+
+/* =========================================================
+   INPUT
+   ========================================================= */
+
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon > i {
+    position: absolute;
+
+    left: 12px;
+    top: 50%;
+
+    transform: translateY(-50%);
+
+    color: var(--text-secondary);
+
+    font-size: 12px;
+
+    pointer-events: none;
+}
+
+.input-with-icon input {
+    padding-left: 34px !important;
+}
+
+.expense-modal .form-group input[type="text"],
+.expense-modal .form-group input:not([type]),
+.expense-modal .form-group select,
+.expense-modal .form-group textarea {
+    width: 100%;
+
+    min-height: 38px;
+
+    padding: 0 10px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    outline: none;
+
+    background: var(--surface);
+    color: var(--text-primary);
+
+    font-family: inherit;
+    font-size: 12px;
+
+    transition:
+        border-color .2s ease,
+        box-shadow .2s ease;
+}
+
+.expense-modal .form-group input:hover,
+.expense-modal .form-group select:hover,
+.expense-modal .form-group textarea:hover {
+    border-color: #cbd5e1;
+}
+
+.expense-modal .form-group input:focus,
+.expense-modal .form-group select:focus,
+.expense-modal .form-group textarea:focus {
+    border-color: var(--primary);
+
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
+}
+
+.expense-modal .form-group input::placeholder {
+    color: #9ca3af;
+}
+
+.form-hint {
+    display: block;
+
+    margin-top: 5px;
+
+    color: var(--text-secondary);
+
+    font-size: 9px;
+    line-height: 1.45;
+}
+
+/* =========================================================
+   ACTIVE CHECKBOX
+   ========================================================= */
+
+.checkbox-row {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    margin: 0 !important;
+
+    padding: 11px 12px;
+
+    border: 1px solid var(--border);
+    border-radius: 9px;
+
+    background: var(--surface-secondary);
+
+    cursor: pointer;
+}
+
+.checkbox-row input {
+    position: absolute;
+
+    width: 1px !important;
+    height: 1px !important;
+
+    opacity: 0;
+
+    pointer-events: none;
+}
+
+.checkbox-box {
+    width: 20px;
+    height: 20px;
+
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    flex-shrink: 0;
+
+    border: 1px solid var(--border);
+    border-radius: 5px;
+
+    background: var(--surface);
+
+    color: transparent;
+
+    font-size: 11px;
+
+    transition:
+        background .2s ease,
+        border-color .2s ease,
+        color .2s ease;
+}
+
+.checkbox-row input:checked + .checkbox-box {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #ffffff;
+}
+
+.checkbox-content {
+    display: flex;
+    flex-direction: column;
+
+    gap: 2px;
+}
+
+.checkbox-content strong {
+    color: var(--text-primary);
+
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.checkbox-content small {
+    color: var(--text-secondary);
+
+    font-size: 9px;
+    font-weight: 400;
+}
+
+/* =========================================================
+   NOTE
+   ========================================================= */
+
+.form-note {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 7px;
+
+    margin: 12px 20px 0;
+
+    padding: 9px 10px;
+
+    border-radius: 8px;
+
+    background: var(--surface-secondary);
+
+    color: var(--text-secondary);
+
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+.form-note i {
+    margin-top: 2px;
+
+    color: var(--primary);
+}
+
+/* =========================================================
+   MODAL FOOTER
+   ========================================================= */
+
+.expense-modal .modal-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+
+    gap: 9px;
+
+    margin: 16px 20px 0;
+
+    padding: 16px 0 20px;
+
+    border-top: 1px solid var(--border);
+}
+
+/* =========================================================
+   TOAST
+   ========================================================= */
+
+.toast-container {
+    position: fixed;
+
+    right: 20px;
+    bottom: 20px;
+
+    z-index: 5000;
+
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+
+    gap: 8px;
+
+    pointer-events: none;
+}
+
+.toast {
+    min-width: 250px;
+    max-width: 360px;
+
+    display: flex;
+    align-items: center;
+
+    gap: 9px;
+
+    padding: 11px 13px;
+
+    border: 1px solid var(--border);
+    border-radius: 8px;
+
+    background: var(--surface);
+    color: var(--text-primary);
+
+    box-shadow: var(--shadow);
+
+    font-size: 11px;
+    line-height: 1.4;
+
+    pointer-events: auto;
+}
+
+.toast-message {
+    flex: 1;
+}
+
+.toast-success i,
+.toast.success i {
+    color: var(--success);
+}
+
+.toast-error i,
+.toast.error i {
+    color: var(--danger);
+}
+
+.toast-warning i,
+.toast.warning i {
+    color: #d97706;
+}
+
+.toast-info i,
+.toast.info i {
+    color: var(--primary);
+}
+
+.toast-close {
+    width: 20px;
+    height: 20px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border: 0;
+    border-radius: 4px;
+
+    background: transparent;
+    color: var(--text-secondary);
+
+    cursor: pointer;
+}
+
+.toast-close:hover {
+    background: var(--surface-hover);
+    color: var(--text-primary);
+}
+
+/* =========================================================
+   DARK THEME
+   ========================================================= */
+
+[data-theme="dark"] .expense-modal .form-group input:hover,
+[data-theme="dark"] .expense-modal .form-group select:hover,
+[data-theme="dark"] .expense-modal .form-group textarea:hover {
+    border-color: #3b4658;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+    .expense-head {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .expense-head > .primary-button {
+        width: 100%;
+    }
+
+    .expense-title {
+        width: 100%;
+    }
+
+    .expense-card-header {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .expense-table {
+        min-width: 560px;
+    }
+
+    .expense-modal {
+        max-height: calc(100vh - 20px);
+    }
+
+    .expense-modal .modal-header {
+        padding: 16px;
+    }
+
+    #form {
+        padding: 15px 15px 0;
+    }
+
+    .form-note {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .expense-modal .modal-footer {
+        flex-direction: column-reverse;
+
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .expense-modal .modal-footer button {
+        width: 100%;
+    }
+
+    .toast-container {
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+    }
+
+    .toast {
+        width: 100%;
+        min-width: 0;
+        max-width: none;
+    }
+}
+
+@media (max-width: 480px) {
+
+   
+}
+
+
+/* =========================================================
+   DARK THEME REFINEMENTS
+   ========================================================= */
+
+[data-theme="dark"] .category-meta {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .expense-table tbody tr:hover {
+    background: var(--surface-hover);
+}
+
+[data-theme="dark"] .delete-warning {
+    background: var(--danger-background);
+}
+
+[data-theme="dark"] .expense-modal .form-group input::placeholder {
+    color: #64748b;
+}
+
+/* =========================================================
+   RESPONSIVE REFINEMENTS
+   ========================================================= */
+
+@media (max-width: 900px) {
+    .expense-card-header {
+        padding: 17px;
+    }
+
+    .expense-table {
+        min-width: 560px;
+    }
+}
+
+@media (max-width: 700px) {
+    .expense-page {
+        width: 100%;
+    }
+
+    .expense-head {
+        margin-bottom: 15px;
+    }
+
+    .expense-card-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .expense-card-header .primary-button,
+    .expense-card-header .secondary-button {
+        width: 100%;
+    }
+
+    .expense-table {
+        min-width: 540px;
+    }
+
+    .category-view-modal,
+    .delete-modal {
+        width: 100%;
+    }
+
+    .category-view-content {
+        padding: 15px;
+    }
+
+    .detail-row {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .detail-value {
+        max-width: 100%;
+        text-align: left;
+    }
+
+    .delete-content {
+        padding: 22px 18px 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .expense-title {
+        gap: 9px;
+    }
+
+    .expense-title-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+    }
+
+    .expense-title h1 {
+        font-size: 20px;
+    }
+
+    .expense-title .subtitle {
+        font-size: 10px;
+    }
+
+    .category-row-icon {
+        width: 30px;
+        height: 30px;
+    }
+
+    .category-name-wrap {
+        gap: 8px;
+    }
+
+    .expense-actions {
+        gap: 1px;
+    }
+
+    .expense-card-header {
+        padding: 15px;
+    }
+
+    .category-list-icon {
+        display: none;
+    }
+
+    .expense-table {
+        min-width: 520px;
+    }
+
+    .expense-table th,
+    .expense-table td {
+        padding: 11px 12px;
+    }
+
+    .expense-modal .modal-footer {
+        margin-left: 15px;
+        margin-right: 15px;
+    }
+
+    .expense-action,
+    .table-action,
+    .action-button {
+        width: 29px;
+        height: 29px;
+    }
+
+    .category-view-content {
+        padding: 13px 15px 0;
+    }
+
+    .expense-modal .modal-header {
+        padding: 15px;
+    }
+
+    .modal-title-icon {
+        width: 36px;
+        height: 36px;
+    }
+
+    .expense-modal .modal-header h2 {
+        font-size: 15px;
+    }
+
+    .expense-modal .modal-header p {
+        font-size: 10px;
+    }
+}

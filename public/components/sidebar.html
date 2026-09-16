@@ -145,6 +145,11 @@
                     <i class="fa-solid fa-trash-can"></i>
                     <span>Production Wastage</span>
                 </a>
+
+                <a href="/consumptionCorrections" class="submenu-item" data-page="consumptionCorrections">
+                    <i class="fa-solid fa-eraser"></i>
+                    <span>Consumption Corrections</span>
+                </a>
             </div>
         </div>
 
@@ -174,6 +179,36 @@
                 <a href="/dispatch" class="submenu-item" data-page="dispatch">
                     <i class="fa-solid fa-truck"></i>
                     <span>Dispatch</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- ==================== EXPENSE ==================== -->
+         <div class="settings-menu">
+            <button type="button" class="nav-item settings-toggle" id="expenseToggle">
+                <div class="nav-icon">
+                    <i class="fa-solid fa-money-bill-wave"></i>
+                </div>
+
+                <span>Expense</span>
+
+                <i class="fa-solid fa-chevron-down settings-arrow" id="expenseArrow"></i>
+            </button>
+
+            <div class="settings-submenu" id="expenseSubmenu">
+               <a href="/expense-categories" class="submenu-item" data-page="expense-categories">
+                    <i class="fa-solid fa-tags"></i>
+                    <span>Expense Categories</span>
+                </a>
+
+                <a href="/expense-bills" class="submenu-item" data-page="expense-bills">
+                    <i class="fa-solid fa-receipt"></i>
+                    <span>Expense Bills</span>
+                </a>
+
+                <a href="/expense-payables" class="submenu-item" data-page="expense-payables">
+                    <i class="fa-solid fa-file-invoice-dollar"></i>
+                    <span>Expense Payables</span>
                 </a>
             </div>
         </div>
@@ -220,10 +255,10 @@
                     <i class="fa-solid fa-money-bill-transfer"></i>
                     <span>Payment Report</span>
                 </a>
-                <!-- <a href="/profit-loss-report" class="submenu-item" data-page="profit-loss-report">
+                <a href="/expense-report" class="submenu-item" data-page="expense-report">
                     <i class="fa-solid fa-chart-line"></i>
-                    <span>Profit/Loss Report</span>
-                </a> -->
+                    <span>Expense Report</span>
+                </a>
             </div>
         </div>
 

@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Consumption Corrections | Someshwar AI ERP</title>
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/consumptionCorrections.css" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="header-container"></div>
+      <main class="main-content">
+        <section class="production-page">
+          <!-- PAGE HEADER -->
+          <!-- FILTER / CORRECTION SETUP -->
+          <section class="content-card correction-filter-card">
+            <div class="card-header">
+              <div>
+                <h2>Find Production Batches</h2>
+                <p>
+                  Select the BOM and raw material to find production batches
+                  affected by the BOM quantity correction.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <!-- PRODUCT -->
+              <div class="form-group">
+                <label for="correctionProduct"> Product </label>
+                <select id="correctionProduct">
+                  <option value="">Select Product</option>
+                </select>
+              </div>
+
+              <!-- BOM -->
+              <div class="form-group">
+                <label for="correctionBom">
+                  Product Design / BOM <span>*</span>
+                </label>
+                <select id="correctionBom" disabled>
+                  <option value="">Select Product Design</option>
+                </select>
+                <small class="form-help">
+                  Select the BOM whose raw material quantity was corrected.
+                </small>
+              </div>
+
+              <!-- RAW MATERIAL -->
+              <div class="form-group">
+                <label for="correctionRawMaterial">
+                  Raw Material <span>*</span>
+                </label>
+                <select id="correctionRawMaterial" disabled>
+                  <option value="">Select Raw Material</option>
+                </select>
+              </div>
+
+              <!-- FROM DATE -->
+              <div class="form-group">
+                <label for="correctionFromDate"> From Date </label>
+                <input id="correctionFromDate" type="date" />
+              </div>
+
+              <!-- TO DATE -->
+              <div class="form-group">
+                <label for="correctionToDate"> To Date </label>
+                <input id="correctionToDate" type="date" />
+              </div>
+            </div>
+
+            <div class="correction-filter-actions">
+              <button
+                class="secondary-button"
+                id="resetCorrectionFilters"
+                type="button"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+                Reset
+              </button>
+              <button
+                class="primary-button"
+                id="findCorrectionProductions"
+                type="button"
+              >
+                <i class="fa-solid fa-magnifying-glass"></i>
+                Find Productions
+              </button>
+            </div>
+          </section>
+
+          <!-- CORRECTED BOM DETAILS -->
+          <section
+            class="content-card correction-details-card"
+            id="correctionDetailsCard"
+            hidden
+          >
+            <div class="card-header">
+              <div>
+                <h2>Correction Details</h2>
+                <p>
+                  Compare the original production consumption with the corrected
+                  BOM quantity.
+                </p>
+              </div>
+            </div>
+
+            <div class="correction-info-grid">
+              <div class="correction-info-item">
+                <span>Product</span>
+                <strong id="correctionProductName">—</strong>
+              </div>
+              <div class="correction-info-item">
+                <span>Product Design</span>
+                <strong id="correctionBomName">—</strong>
+              </div>
+              <div class="correction-info-item">
+                <span>Raw Material</span>
+                <strong id="correctionMaterialName">—</strong>
+              </div>
+              <div class="correction-info-item">
+                <span>Original BOM Qty / Unit</span>
+                <strong id="correctionOldQty">—</strong>
+              </div>
+              <div class="correction-info-item">
+                <span>Correct BOM Qty / Unit</span>
+                <strong id="correctionNewQty">—</strong>
+              </div>
+              <div class="correction-info-item">
+                <span>Difference / Unit</span>
+                <strong id="correctionDifference">—</strong>
+              </div>
+            </div>
+          </section>
+
+          <!-- AFFECTED PRODUCTIONS -->
+          <section
+            class="content-card correction-productions-card"
+            id="correctionProductionsCard"
+            hidden
+          >
+            <div class="card-header">
+              <div>
+                <h2>Affected Production Batches</h2>
+                <p>
+                  Select the batches for which stock consumption needs to be
+                  corrected.
+                </p>
+              </div>
+
+              <div class="correction-selection-actions">
+                <button
+                  class="secondary-button small"
+                  id="selectAllCorrection"
+                  type="button"
+                >
+                  Select All
+                </button>
+                <button
+                  class="secondary-button small"
+                  id="clearCorrectionSelection"
+                  type="button"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table correction-table">
+                <thead>
+                  <tr>
+                    <th class="checkbox-column">
+                      <input type="checkbox" id="selectAllCorrectionCheckbox" />
+                    </th>
+                    <th>Batch No.</th>
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Produced Qty</th>
+                    <th>Original Consumption</th>
+                    <th>Corrected Consumption</th>
+                    <th>Stock Adjustment</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+
+                <tbody id="correctionProductionsBody">
+                  <tr>
+                    <td colspan="9">
+                      <div class="materials-placeholder">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        Find production batches to continue.
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- SELECTION SUMMARY -->
+            <div class="correction-summary" id="correctionSummary" hidden>
+              <div class="correction-summary-item">
+                <span>Selected Batches</span>
+                <strong id="selectedBatchCount">0</strong>
+              </div>
+              <div class="correction-summary-item">
+                <span>Total Produced</span>
+                <strong id="selectedProducedQty">0</strong>
+              </div>
+              <div class="correction-summary-item">
+                <span>Original Consumption</span>
+                <strong id="selectedOldConsumption">0</strong>
+              </div>
+              <div class="correction-summary-item">
+                <span>Corrected Consumption</span>
+                <strong id="selectedCorrectedConsumption">0</strong>
+              </div>
+              <div class="correction-summary-item highlight">
+                <span>Stock Adjustment</span>
+                <strong id="selectedAdjustment">0</strong>
+              </div>
+            </div>
+          </section>
+
+          <!-- APPLY CORRECTION -->
+          <section
+            class="content-card apply-correction-card"
+            id="applyCorrectionCard"
+            hidden
+          >
+            <div class="card-header">
+              <div>
+                <h2>Apply Correction</h2>
+                <p>
+                  This action creates a separate stock movement. Historical
+                  production actual consumption will not be changed.
+                </p>
+              </div>
+            </div>
+
+            <div class="correction-warning">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              <div>
+                <strong> Stock adjustment only </strong>
+                <p>
+                  The original production record and actual quantity will remain
+                  unchanged. Only the raw material stock ledger will be
+                  adjusted.
+                </p>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="correctionReason">
+                Correction Reason <span>*</span>
+              </label>
+              <textarea
+                id="correctionReason"
+                rows="4"
+                maxlength="1000"
+                placeholder="Enter why the BOM consumption was incorrect..."
+              ></textarea>
+
+              <small class="form-error" id="correctionReasonError"></small>
+            </div>
+
+            <div class="correction-final-preview">
+              <div class="final-preview-item">
+                <span>Selected Batches</span>
+                <strong id="finalBatchCount">0</strong>
+              </div>
+
+              <div class="final-preview-item">
+                <span>Old Consumption</span>
+                <strong id="finalOldConsumption">0</strong>
+              </div>
+
+              <div class="final-preview-item">
+                <span>Corrected Consumption</span>
+                <strong id="finalCorrectedConsumption">0</strong>
+              </div>
+
+              <div class="final-preview-item adjustment">
+                <span>Stock Movement</span>
+
+                <strong id="finalStockMovement">—</strong>
+              </div>
+            </div>
+
+            <div class="modal-footer">
+              <button
+                class="secondary-button"
+                id="cancelCorrection"
+                type="button"
+              >
+                Cancel
+              </button>
+
+              <button class="primary-button" id="applyCorrection" type="button">
+                <i class="fa-solid fa-check-double"></i>
+                Apply Correction
+              </button>
+            </div>
+          </section>
+
+          <!-- CORRECTION HISTORY -->
+          <section class="content-card correction-history-card">
+            <div class="card-header">
+              <div>
+                <h2>Correction History</h2>
+
+                <p>Previously applied production consumption corrections.</p>
+              </div>
+
+              <button
+                class="secondary-button"
+                id="refreshCorrectionHistory"
+                type="button"
+              >
+                <i class="fa-solid fa-rotate"></i>
+                Refresh
+              </button>
+            </div>
+
+            <div class="table-responsive">
+              <table class="data-table correction-history-table">
+                <thead>
+                  <tr>
+                    <th>Correction No.</th>
+
+                    <th>Date</th>
+
+                    <th>Product</th>
+
+                    <th>Raw Material</th>
+
+                    <th>Batches</th>
+
+                    <th>Adjustment</th>
+
+                    <th>Created By</th>
+
+                    <th class="action-column">Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="correctionHistoryBody">
+                  <tr>
+                    <td colspan="8">
+                      <div class="production-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+
+                        Loading correction history...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="production-empty" id="correctionHistoryEmpty" hidden>
+              <div class="empty-icon">
+                <i class="fa-solid fa-scale-balanced"></i>
+              </div>
+
+              <h3>No Corrections Found</h3>
+
+              <p>Applied consumption corrections will appear here.</p>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- VIEW CORRECTION MODAL -->
+    <div class="modal-overlay" id="viewCorrectionModal" hidden>
+      <div class="modal view-modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-scale-balanced"></i>
+            </div>
+
+            <div>
+              <h2>Consumption Correction Details</h2>
+
+              <p>Correction history and stock adjustment details.</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeViewCorrectionModal"
+            type="button"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div class="view-production-body" id="viewCorrectionBody"></div>
+      </div>
+    </div>
+
+    <!-- CONFIRM CORRECTION MODAL -->
+    <div class="modal-overlay" id="confirmCorrectionModal" hidden>
+      <div class="delete-modal">
+        <div class="delete-icon">
+          <i class="fa-solid fa-scale-balanced"></i>
+        </div>
+
+        <h3>Apply Consumption Correction?</h3>
+
+        <p id="confirmCorrectionMessage">
+          This will create a stock adjustment movement. Historical production
+          data will not be changed.
+        </p>
+
+        <div class="delete-actions">
+          <button
+            class="secondary-button"
+            id="cancelConfirmCorrection"
+            type="button"
+          >
+            Cancel
+          </button>
+
+          <button
+            class="primary-button"
+            id="confirmApplyCorrection"
+            type="button"
+          >
+            <i class="fa-solid fa-check"></i>
+            Confirm Correction
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/consumptionCorrections.js"></script>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+        await Promise.all([
+          loadSidebar("consumptionCorrections"),
+          loadHeader({
+            title: "Consumption Corrections",
+            description:
+              "Correct historical production raw material stock consumption",
+          }),
+        ]);
+        if (typeof initConsumptionCorrectionsPage === "function") {
+          initConsumptionCorrectionsPage();
+        }
+      });
+    </script>
+  </body>
+</html>

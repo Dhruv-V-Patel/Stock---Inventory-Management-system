@@ -33,6 +33,7 @@ const auditLogRoutes = require("./routes/auditLogRoutes");
 const openingStockRoutes = require("./routes/openingStockRoutes");
 const pushRoutes = require("./routes/pushRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const expenseRoutes = require('./routes/expenseRoutes');
 
 app.use(helmet({ contentSecurityPolicy: false }));
 
@@ -91,6 +92,7 @@ app.use("/api/purchase-returns",purchaseReturnRoutes);
 app.use("/api/sales-returns",salesReturnRoutes);
 app.use("/api/audit-logs",auditLogRoutes);
 app.use("/api/opening-stock", openingStockRoutes);
+app.use('/api/expenses', expenseRoutes);
 
 app.set("trust proxy", 1);
 app.get("/:page", (req, res, next) => {

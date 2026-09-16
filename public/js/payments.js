@@ -4,6 +4,8 @@ const PaymentsPage = (() => {
     filtered: [],
     customers: [],
     suppliers: [],
+    expenseCategories: [],
+    expenseBills: [],
     page: 1,
     pageSize: 30,
     editingId: null,
@@ -148,6 +150,13 @@ const PaymentsPage = (() => {
     amount: Number(payment.amount || 0),
     payment_type: payment.payment_type || "",
     payment_mode: payment.payment_mode || "INVOICE",
+    expense_category_id: payment.expense_category_id
+      ? Number(payment.expense_category_id)
+      : null,
+    paid_to: payment.paid_to || "",
+    expense_bill_id: payment.expense_bill_id
+      ? Number(payment.expense_bill_id)
+      : null,
     payment_date: payment.payment_date || "",
     payment_no: payment.payment_no || "",
     party_name: payment.party_name || "",
@@ -203,16 +212,51 @@ const PaymentsPage = (() => {
     return Number(payment?.amount || 0);
   };
 
+  // const loadOptions = async () => {
+  //   const payload = await apiRequest("/api/payments/options");
+
+  //   state.customers = payload.customers || [];
+  //   state.suppliers = payload.suppliers || [];
+  //   state.expenseCategories = payload.expense_categories || [];
+  //   state.expenseBills = payload.expense_bills || [];
+
+  //   renderPartyOptions();
+  //   renderExpenseOptions();
+
+  //   updatePartyBalance();
+  // };
+
   const loadOptions = async () => {
-    const payload = await apiRequest("/api/payments/options");
+  const payload = await apiRequest("/api/payments/options");
 
-    state.customers = payload.customers || [];
-    state.suppliers = payload.suppliers || [];
+  state.customers = payload.customers || [];
+  state.suppliers = payload.suppliers || [];
 
-    renderPartyOptions();
+  state.expenseCategories = (
+    payload.expense_categories || []
+  )
+    .map((category) => ({
+      ...category,
+      id: Number(category.id),
+      name: category.name || "",
+      total_due: Number(category.total_due || 0),
+      available_advance: Number(category.available_advance || 0),
+    }))
+    .filter(
+      (category) =>
+        Number.isInteger(category.id) &&
+        category.id > 0,
+    );
 
-    updatePartyBalance();
-  };
+  state.expenseBills = payload.expense_bills || [];
+
+  renderPartyOptions();
+  renderExpenseOptions();
+
+  updatePartyBalance();
+};
+
+///  
 
   const renderPartyOptions = () => {
     elements.customerId.innerHTML = `
@@ -244,6 +288,21 @@ const PaymentsPage = (() => {
         )
         .join("")}
     `;
+  };
+
+  const renderExpenseOptions = () => {
+    if (elements.expenseCategoryId) {
+      elements.expenseCategoryId.innerHTML = `
+        <option value="">Select Category</option>
+        ${state.expenseCategories
+          .map(
+            (category) => `
+          <option value="${category.id}">${escapeHtml(category.name)}</option>
+        `,
+          )
+          .join("")}
+      `;
+    }
   };
 
   const updateSummary = () => {
@@ -311,7 +370,9 @@ const PaymentsPage = (() => {
                   ${
                     payment.payment_type === "CUSTOMER"
                       ? "Customer Receipt"
-                      : "Supplier Payment"
+                      : payment.payment_type === "SUPPLIER"
+                        ? "Supplier Payment"
+                        : "Expense Payment"
                   }
                 </span>
               </td>
@@ -323,13 +384,12 @@ const PaymentsPage = (() => {
                   </strong>
 
                   ${
-                    payment.party_mobile
-                      ? `
-                        <small>
-                          ${escapeHtml(payment.party_mobile)}
-                        </small>
-                      `
-                      : ""
+                    payment.payment_type === "EXPENSE" &&
+                    payment.expense_category_name
+                      ? `<small>${escapeHtml(payment.expense_category_name)}</small>`
+                      : payment.party_mobile
+                        ? `<small>${escapeHtml(payment.party_mobile)}</small>`
+                        : ""
                   }
                 </div>
               </td>
@@ -483,101 +543,202 @@ const PaymentsPage = (() => {
     }
   };
 
+  // const updatePartyBalance = () => {
+  //   const type = elements.paymentType.value;
+  //   const mode = elements.paymentMode.value || "INVOICE";
+
+  //   const isExpense = type === "EXPENSE";
+
+  //   elements.customerGroup.hidden = type !== "CUSTOMER";
+  //   elements.supplierGroup.hidden = type !== "SUPPLIER";
+  //   elements.expenseCategoryGroup.hidden = !isExpense;
+  //   elements.paidToGroup.hidden = !isExpense;
+
+  //   if (elements.expensePaymentInfo) {
+  //     elements.expensePaymentInfo.hidden = !isExpense;
+  //   }
+
+  //   if (elements.paymentAllocationInfo) {
+  //     elements.paymentAllocationInfo.hidden =
+  //       isExpense ||
+  //       !(
+  //         (type === "CUSTOMER" && elements.customerId.value) ||
+  //         (type === "SUPPLIER" && elements.supplierId.value)
+  //       );
+  //   }
+
+  //   if (isExpense) {
+  //     const categoryId = Number(elements.expenseCategoryId?.value || 0);
+
+  //     const category = state.expenseCategories.find(
+  //       (item) => Number(item.id) === categoryId,
+  //     );
+
+  //     const totalDue = Number(category?.total_due || 0);
+
+  //     const availableAdvance = Number(category?.available_advance || 0);
+
+  //     const amount = Number(elements.amount.value || 0);
+
+  //     elements.referenceTotal.textContent = currency(totalDue);
+
+  //     elements.referencePaid.textContent = currency(availableAdvance);
+
+  //     if (mode === "INVOICE") {
+  //       const remainingDue = Math.max(totalDue - amount, 0);
+
+  //       elements.referenceDue.textContent = currency(remainingDue);
+
+  //       elements.outstandingHint.textContent = category
+  //         ? `Maximum payable: ${currency(totalDue)}`
+  //         : "Select an expense category.";
+
+  //       if (elements.paymentAllocationInfo) {
+  //         elements.paymentAllocationInfo.hidden = !category;
+  //       }
+
+  //       if (elements.paymentAdvanceInfo) {
+  //         elements.paymentAdvanceInfo.hidden = true;
+  //       }
+  //     } else if (mode === "ADVANCE") {
+  //       elements.referenceDue.textContent = currency(totalDue);
+
+  //       elements.outstandingHint.textContent = category
+  //         ? "Advance payment will be automatically adjusted against future expense bills."
+  //         : "Select an expense category.";
+
+  //       if (elements.paymentAllocationInfo) {
+  //         elements.paymentAllocationInfo.hidden = true;
+  //       }
+
+  //       if (elements.paymentAdvanceInfo) {
+  //         elements.paymentAdvanceInfo.hidden = !category;
+  //       }
+  //     } else {
+  //       elements.referenceDue.textContent = currency(totalDue);
+
+  //       elements.outstandingHint.textContent = category
+  //         ? "Quick expense does not require a bill."
+  //         : "Select an expense category.";
+
+  //       if (elements.paymentAllocationInfo) {
+  //         elements.paymentAllocationInfo.hidden = true;
+  //       }
+
+  //       if (elements.paymentAdvanceInfo) {
+  //         elements.paymentAdvanceInfo.hidden = true;
+  //       }
+  //     }
+
+  //     return;
+  //   }
+
+  //   const party = getSelectedParty();
+  //   const due = Number(
+  //     party?.total_due ?? party?.outstanding ?? party?.due ?? 0,
+  //   );
+  //   const advance = Number(party?.available_advance ?? party?.advance ?? 0);
+  //   const amount = Number(elements.amount.value || 0);
+
+  //   if (mode === "INVOICE") {
+  //     const editingAmount = getEditingPaymentAmount();
+  //     const availableDue = due + editingAmount;
+  //     const remainingDue = Math.max(availableDue - amount, 0);
+  //     elements.referenceTotal.textContent = currency(availableDue);
+  //     elements.referencePaid.textContent = currency(advance);
+  //     elements.referenceDue.textContent = currency(remainingDue);
+  //     elements.outstandingHint.textContent = party
+  //       ? `Maximum payable: ${currency(availableDue)}`
+  //       : "";
+  //     if (elements.paymentAdvanceInfo)
+  //       elements.paymentAdvanceInfo.hidden = true;
+  //   } else {
+  //     elements.referenceTotal.textContent = currency(due);
+  //     elements.referencePaid.textContent = currency(advance);
+  //     elements.referenceDue.textContent = currency(due);
+  //     elements.outstandingHint.textContent = party
+  //       ? "Advance payment has no invoice limit."
+  //       : "";
+  //     if (elements.paymentAllocationInfo)
+  //       elements.paymentAllocationInfo.hidden = true;
+  //     if (elements.paymentAdvanceInfo) {
+  //       elements.paymentAdvanceInfo.hidden = !party;
+  //     }
+  //   }
+  // };
+
   const updatePartyBalance = () => {
-    const type = elements.paymentType.value;
+  const type = elements.paymentType.value;
+  const mode = elements.paymentMode.value;
+  const amount = Number(elements.amount.value || 0);
 
-    const partyId = Number(
-      type === "CUSTOMER"
-        ? elements.customerId.value
-        : elements.supplierId.value,
+  let totalDue = 0;
+  let availableAdvance = 0;
+
+  if (type === "CUSTOMER") {
+    const customerId = Number(elements.customerId.value || 0);
+    const customer = state.customers.find(
+      (item) => Number(item.id) === customerId,
     );
 
-    const party =
-      type === "CUSTOMER"
-        ? state.customers.find((x) => Number(x.id) === partyId)
-        : state.suppliers.find((x) => Number(x.id) === partyId);
+    totalDue = Number(customer?.total_due || 0);
+    availableAdvance = Number(customer?.available_advance || 0);
 
-    const due = Number(
-      party?.total_due ?? party?.outstanding ?? party?.due ?? 0,
-    );
-
-    const advance = Number(party?.available_advance ?? party?.advance ?? 0);
-    const amount = Number(elements.amount.value || 0);
-    const mode = elements.paymentMode.value || "INVOICE";
-    let remainingDue = due;
-
-    if (mode === "INVOICE") {
-      const editingAmount = getEditingPaymentAmount();
-      const availableDue = due + editingAmount;
-      remainingDue = Math.max(availableDue - amount, 0);
-      elements.referenceTotal.textContent = currency(availableDue);
-      elements.referencePaid.textContent = currency(advance);
-      elements.referenceDue.textContent = currency(remainingDue);
-
-      elements.outstandingHint.textContent = partyId
-        ? `Maximum payable: ${currency(availableDue)}`
-        : "";
-
-      if (elements.paymentAllocationInfo) {
-        elements.paymentAllocationInfo.hidden = !partyId;
-
-        if (partyId) {
-          elements.paymentAllocationInfo.innerHTML = `
-            <i class="fa-solid fa-arrows-rotate"></i>
-
-            <div>
-              <strong>Automatic FIFO Allocation</strong>
-
-              <span>
-                This payment will automatically be
-                applied to the oldest outstanding
-                invoices first.
-              </span>
-            </div>
-          `;
-        }
-      }
-
-      if (elements.paymentAdvanceInfo) {
-        elements.paymentAdvanceInfo.hidden = true;
-      }
-    } else {
-      elements.referenceTotal.textContent = currency(due);
-      elements.referencePaid.textContent = currency(advance);
-      elements.referenceDue.textContent = currency(due);
-      elements.outstandingHint.textContent = partyId
-        ? "Advance payment has no invoice limit."
-        : "";
-
-      if (elements.paymentAllocationInfo) {
-        elements.paymentAllocationInfo.hidden = true;
-      }
-
-      if (elements.paymentAdvanceInfo) {
-        elements.paymentAdvanceInfo.hidden = !partyId;
-
-        if (partyId) {
-          elements.paymentAdvanceInfo.innerHTML = `
-            <i class="fa-solid fa-wallet"></i>
-
-            <div>
-              <strong>Advance Payment</strong>
-
-              <span>
-                Available advance:
-                ${currency(advance)}.
-                This amount can be settled
-                against future invoices.
-              </span>
-            </div>
-          `;
-        }
-      }
+    if (state.editingId) {
+      totalDue += getEditingPaymentAmount();
     }
-  };
+  } else if (type === "SUPPLIER") {
+    const supplierId = Number(elements.supplierId.value || 0);
+    const supplier = state.suppliers.find(
+      (item) => Number(item.id) === supplierId,
+    );
+
+    totalDue = Number(supplier?.total_due || 0);
+    availableAdvance = Number(supplier?.available_advance || 0);
+
+    if (state.editingId) {
+      totalDue += getEditingPaymentAmount();
+    }
+  } else if (type === "EXPENSE") {
+    const categoryId = Number(elements.expenseCategoryId.value || 0);
+
+    const category = state.expenseCategories.find(
+      (item) => Number(item.id) === categoryId,
+    );
+
+    totalDue = Number(category?.total_due || 0);
+    availableAdvance = Number(category?.available_advance || 0);
+
+    // IMPORTANT:
+    // While editing, add the current payment back.
+    // The category total_due already reflects the existing payment.
+    if (state.editingId) {
+      totalDue += getEditingPaymentAmount();
+    }
+  }
+
+  const remainingDue =
+    mode === "ADVANCE"
+      ? totalDue
+      : Math.max(totalDue - amount, 0);
+
+  elements.referenceTotal.textContent = currency(totalDue);
+  elements.referencePaid.textContent = currency(availableAdvance);
+  elements.referenceDue.textContent = currency(remainingDue);
+
+  if (amount > 0 && mode !== "ADVANCE") {
+    elements.outstandingHint.textContent =
+      `Maximum payable: ${currency(totalDue)}`;
+  } else {
+    elements.outstandingHint.textContent = "";
+  }
+};
 
   const setType = (type) => {
-    const normalizedType = type === "SUPPLIER" ? "SUPPLIER" : "CUSTOMER";
+    const normalizedType = ["CUSTOMER", "SUPPLIER", "EXPENSE"].includes(type)
+      ? type
+      : "CUSTOMER";
+
     elements.paymentType.value = normalizedType;
     document.querySelectorAll(".payment-type-option").forEach((button) => {
       button.classList.toggle("active", button.dataset.type === normalizedType);
@@ -585,11 +746,35 @@ const PaymentsPage = (() => {
 
     elements.customerGroup.hidden = normalizedType !== "CUSTOMER";
     elements.supplierGroup.hidden = normalizedType !== "SUPPLIER";
+    elements.expenseCategoryGroup.hidden = normalizedType !== "EXPENSE";
+    elements.paidToGroup.hidden = normalizedType !== "EXPENSE";
+
+    const quickButton = document.querySelector(
+      '.payment-mode-option[data-mode="QUICK"]',
+    );
+    if (quickButton) quickButton.hidden = normalizedType !== "EXPENSE";
+
+    if (
+      normalizedType === "EXPENSE" &&
+      elements.paymentMode.value === "INVOICE"
+    ) {
+      // Keep Against Bill as default for expenses.
+    } else if (
+      normalizedType !== "EXPENSE" &&
+      elements.paymentMode.value === "QUICK"
+    ) {
+      setPaymentMode("INVOICE");
+      return;
+    }
+
     updatePartyBalance();
   };
 
   const setPaymentMode = (mode) => {
-    const normalizedMode = mode === "ADVANCE" ? "ADVANCE" : "INVOICE";
+    const type = elements.paymentType.value;
+    let normalizedMode = mode === "ADVANCE" ? "ADVANCE" : "INVOICE";
+    if (type === "EXPENSE" && mode === "QUICK") normalizedMode = "QUICK";
+
     elements.paymentMode.value = normalizedMode;
     document.querySelectorAll(".payment-mode-option").forEach((button) => {
       button.classList.toggle("active", button.dataset.mode === normalizedMode);
@@ -606,6 +791,8 @@ const PaymentsPage = (() => {
     elements.paymentDate.value = today();
     elements.paymentMethod.value = "";
     elements.amount.value = "";
+    elements.expenseCategoryId.value = "";
+    elements.paidTo.value = "";
 
     setType("CUSTOMER");
 
@@ -652,7 +839,8 @@ const PaymentsPage = (() => {
 
     if (!payment) {
       elements.paymentModalTitle.textContent = "New Payment";
-      elements.paymentModalDescription.textContent = "Record a customer receipt or supplier payment.";
+      elements.paymentModalDescription.textContent =
+        "Record a customer receipt or supplier payment.";
       elements.savePayment.querySelector("span").textContent = "Save Payment";
       updatePartyBalance();
       return;
@@ -663,8 +851,13 @@ const PaymentsPage = (() => {
 
     if (payment.payment_type === "CUSTOMER") {
       elements.customerId.value = String(payment.customer_id || "");
-    } else {
+    } else if (payment.payment_type === "SUPPLIER") {
       elements.supplierId.value = String(payment.supplier_id || "");
+    } else {
+      elements.expenseCategoryId.value = String(
+        payment.expense_category_id || "",
+      );
+      elements.paidTo.value = payment.paid_to || "";
     }
 
     setPaymentMode(payment.payment_mode || "INVOICE");
@@ -695,55 +888,58 @@ const PaymentsPage = (() => {
     document
       .querySelectorAll(".form-error")
       .forEach((error) => (error.textContent = ""));
-
     elements.amount.classList.remove("stock-exceeded");
 
     let valid = true;
-
     const type = elements.paymentType.value;
     const mode = elements.paymentMode.value || "INVOICE";
 
     if (type === "CUSTOMER" && !elements.customerId.value) {
       qs('[data-error-for="customer"]').textContent = "Customer is required.";
-
       valid = false;
     }
 
     if (type === "SUPPLIER" && !elements.supplierId.value) {
       qs('[data-error-for="supplier"]').textContent = "Supplier is required.";
-
       valid = false;
+    }
+
+    if (type === "EXPENSE") {
+      if (!elements.expenseCategoryId.value) {
+        qs('[data-error-for="expense-category"]').textContent =
+          "Expense category is required.";
+        valid = false;
+      }
+      if (!elements.paidTo.value.trim()) {
+        qs('[data-error-for="paid-to"]').textContent =
+          "Paid To / Vendor is required.";
+        valid = false;
+      }
     }
 
     if (!elements.paymentDate.value) {
       qs('[data-error-for="date"]').textContent = "Payment date is required.";
-
       valid = false;
     }
 
     const amount = Number(elements.amount.value);
-
     if (!Number.isFinite(amount) || amount <= 0) {
       qs('[data-error-for="amount"]').textContent = "Enter a valid amount.";
-
       valid = false;
     }
 
-    if (valid && mode === "INVOICE") {
+    if (valid && type !== "EXPENSE" && mode === "INVOICE") {
       const due = getPartyDue() + getEditingPaymentAmount();
-
       if (amount > due + 0.000001) {
         qs('[data-error-for="amount"]').textContent =
           `Maximum payable amount is ${currency(due)}.`;
-
         elements.amount.classList.add("stock-exceeded");
-
         valid = false;
       }
     }
+
     if (!elements.paymentMethod.value) {
       showToast("Payment method is required.", "error");
-
       valid = false;
     }
 
@@ -761,11 +957,36 @@ const PaymentsPage = (() => {
     const type = elements.paymentType.value;
     const mode = elements.paymentMode.value || "INVOICE";
 
+    const expenseCategoryValue =
+      type === "EXPENSE"
+        ? String(elements.expenseCategoryId?.value || "").trim()
+        : "";
+
+    const expenseCategoryId =
+      expenseCategoryValue && /^\d+$/.test(expenseCategoryValue)
+        ? Number(expenseCategoryValue)
+        : null;
+
+    if (type === "EXPENSE" && !expenseCategoryId) {
+      qs('[data-error-for="expense-category"]').textContent =
+        "Please select a valid expense category.";
+
+      elements.expenseCategoryId?.focus();
+
+      showToast("Please select a valid expense category.", "error");
+      return;
+    }
+
     const body = {
       payment_type: type,
       payment_mode: mode,
-      customer_id: type === "CUSTOMER" ? Number(elements.customerId.value) : null,
-      supplier_id: type === "SUPPLIER" ? Number(elements.supplierId.value) : null,
+      customer_id:
+        type === "CUSTOMER" ? Number(elements.customerId.value) : null,
+      supplier_id:
+        type === "SUPPLIER" ? Number(elements.supplierId.value) : null,
+      expense_category_id: type === "EXPENSE" ? expenseCategoryId : null,
+      paid_to: type === "EXPENSE" ? elements.paidTo.value.trim() : null,
+      expense_bill_id: null,
       payment_date: elements.paymentDate.value,
       amount: Number(elements.amount.value),
       payment_method: elements.paymentMethod.value,
@@ -830,12 +1051,18 @@ const PaymentsPage = (() => {
       const payment = payload.payment;
 
       const modeLabel =
-        payment.payment_mode === "ADVANCE" ? "Advance" : "Against Due";
+        payment.payment_mode === "ADVANCE"
+          ? "Advance"
+          : payment.payment_mode === "QUICK"
+            ? "Quick Expense"
+            : "Against Due";
 
       const typeLabel =
         payment.payment_type === "CUSTOMER"
           ? "Customer Receipt"
-          : "Supplier Payment";
+          : payment.payment_type === "SUPPLIER"
+            ? "Supplier Payment"
+            : "Expense Payment";
 
       elements.viewTitle.textContent = payment.payment_no;
 
@@ -1078,7 +1305,9 @@ const PaymentsPage = (() => {
     const id = Number(button.dataset.id);
     const payment = state.payments.find((x) => Number(x.id) === id);
 
-    if (!payment) { return;}
+    if (!payment) {
+      return;
+    }
     const action = button.dataset.action;
 
     if (action === "view") {
@@ -1119,6 +1348,13 @@ const PaymentsPage = (() => {
     elements.supplierGroup = qs("#supplierGroup");
     elements.customerId = qs("#customerId");
     elements.supplierId = qs("#supplierId");
+    elements.expenseCategoryGroup = qs("#expenseCategoryGroup");
+    elements.paidToGroup = qs("#paidToGroup");
+    elements.expenseBillGroup = qs("#expenseBillGroup");
+    elements.expenseCategoryId = qs("#expenseCategoryId");
+    elements.paidTo = qs("#paidTo");
+    elements.expenseBillId = qs("#expenseBillId");
+    elements.expensePaymentInfo = qs("#expensePaymentInfo");
     elements.paymentMode = qs("#paymentMode");
     elements.paymentDate = qs("#paymentDate");
     elements.amount = qs("#amount");
@@ -1162,6 +1398,7 @@ const PaymentsPage = (() => {
 
     elements.customerId.onchange = updatePartyBalance;
     elements.supplierId.onchange = updatePartyBalance;
+    elements.expenseCategoryId.onchange = updatePartyBalance;
 
     elements.amount.oninput = () => {
       updatePartyBalance();
@@ -1253,7 +1490,7 @@ const PaymentsPage = (() => {
     }
   };
 
-  return {init};
+  return { init };
 })();
 
 const initPaymentsPage = () => PaymentsPage.init();

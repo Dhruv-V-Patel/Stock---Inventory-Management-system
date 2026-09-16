@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Bills | Someshwar AI ERP</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/expense-bills.css">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+        <div id="header-container"></div>
+
+        <main class="main-content">
+                    <section class="expense-card">
+                    <div class="expense-filters">
+
+                        <div class="filter-search-wrap">
+                            <i class="fa-solid fa-magnifying-glass"></i>
+                            <input
+                                class="filter"
+                                id="filter_search"
+                                type="search"
+                                placeholder="Search expense, vendor or bill no..."
+                                autocomplete="off">
+                        </div>
+
+                        <select class="filter" id="filter_status">
+                            <option value="">All Status</option>
+                            <option value="PENDING">PENDING</option>
+                            <option value="PARTIAL">PARTIAL</option>
+                            <option value="PAID">PAID</option>
+                        </select>
+
+                        <input class="filter" id="filter_from_date" type="date" aria-label="From date">
+                        <input class="filter" id="filter_to_date" type="date" aria-label="To date">
+
+                        <button type="button" class="secondary-button" id="resetFilters">
+                            <i class="fa-solid fa-rotate-left"></i>
+                            Reset
+                        </button>
+                    </div>
+                </section>
+
+                <section class="expense-card">
+                    <div class="expense-card-header">
+                        <div>
+                            <h2>Expense Bill List</h2>
+                            <p>All recorded business expense bills</p>
+                        </div>
+                         <button id="add" class="btn primary-button" type="button">
+                        <i class="fa-solid fa-plus"></i>
+                        <span>New Expense Bill</span>
+                    </button>
+                    </div>
+
+                    <div class="expense-table-wrap">
+                        <table class="expense-table">
+                            <thead>
+                                <tr>
+                                    <th>Expense No</th>
+                                    <th>Category</th>
+                                    <th>Vendor / Paid To</th>
+                                    <th>Bill No</th>
+                                    <th>Bill Date</th>
+                                    <th>Total</th>
+                                    <th>Paid</th>
+                                    <th>Due</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="rows">
+                                <tr>
+                                    <td colspan="10" class="table-loading">
+                                        <i class="fa-solid fa-spinner fa-spin"></i>
+                                        Loading expense bills...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+            </section>
+        </main>
+    </div>
+
+    <div class="modal-backdrop" id="modal" hidden>
+        <div class="expense-modal" role="dialog" aria-modal="true" aria-labelledby="expenseModalTitle">
+
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-title-icon">
+                        <i class="fa-solid fa-file-invoice-dollar"></i>
+                    </div>
+
+                    <div>
+                        <h2 id="expenseModalTitle">Expense Bill</h2>
+                        <p>Record business expense and payable details.</p>
+                    </div>
+                </div>
+
+                <button type="button" class="modal-close" id="close" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <form id="form" novalidate>
+                <input type="hidden" id="billId">
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="categoryId">Expense Category <span>*</span></label>
+                        <select id="categoryId" required></select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vendorName">Vendor / Paid To <span>*</span></label>
+                        <input id="vendorName" type="text" required maxlength="200"
+                            placeholder="e.g. ABC Contractor">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="billNumber">Bill Number</label>
+                        <input id="billNumber" type="text" maxlength="100"
+                            placeholder="e.g. LB-001">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="billDate">Bill Date <span>*</span></label>
+                        <input id="billDate" type="date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="dueDate">Due Date</label>
+                        <input id="dueDate" type="date">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="totalAmount">Bill Amount <span>*</span></label>
+                        <input id="totalAmount" type="number" min="0.01" step="0.01"
+                            required placeholder="0.00">
+                    </div>
+
+                    <div class="form-group full">
+                        <label for="remarks">Remarks</label>
+                        <textarea id="remarks" rows="3"
+                            placeholder="Optional notes about this expense bill"></textarea>
+                    </div>
+                </div>
+
+                <div class="form-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>
+                        Expense bills are recorded separately from payments so
+                        pending and partially paid expenses can be tracked.
+                    </span>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" id="cancelExpenseBill" class="btn secondary-button">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="btn primary-button">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Save Bill</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- View Expense Bill Modal -->
+    <div class="modal-overlay" id="viewExpenseBillModal" aria-hidden="true" hidden>
+        <div class="modal purchase-view-modal" role="dialog" aria-modal="true"
+            aria-labelledby="viewExpenseBillTitle">
+
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <div class="modal-title-icon">
+                        <i class="fa-solid fa-file-invoice"></i>
+                    </div>
+                    <div>
+                        <h2 id="viewExpenseBillTitle">Expense Bill</h2>
+                        <p id="viewExpenseBillSubtitle">Expense bill details</p>
+                    </div>
+                </div>
+
+                <button class="modal-close" id="closeViewExpenseBillModal" type="button" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div id="expenseBillDetailsContent" class="purchase-details-content"></div>
+
+            <div class="modal-footer">
+                <button class="secondary-button" id="closeViewExpenseBill" type="button">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Expense Bill Modal -->
+    <div class="modal-overlay" id="deleteExpenseBillModal" aria-hidden="true" hidden>
+        <div class="modal confirmation-modal" role="dialog" aria-modal="true"
+            aria-labelledby="deleteExpenseBillTitle">
+
+            <div class="confirmation-icon">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+
+            <h2 id="deleteExpenseBillTitle">Delete Expense Bill?</h2>
+
+            <p id="deleteExpenseBillMessage">
+                This will permanently remove the expense bill record.
+            </p>
+
+            <div class="modal-footer">
+                <button class="secondary-button" id="cancelDeleteExpenseBill" type="button">
+                    Cancel
+                </button>
+
+                <button class="danger-button" id="confirmDeleteExpenseBill" type="button">
+                    <i class="fa-solid fa-trash-can"></i>
+                    Delete Bill
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/expense-bills.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                window.location.replace("/login");
+                return;
+            }
+
+            await Promise.all([
+            loadSidebar("expense-bills"),
+            loadHeader({
+                title: "Expense Bills",
+                    description: "Manage expense bills, payables and outstanding business expenses.",
+            }),
+            ]);
+        });
+    </script>
+</body>
+</html>

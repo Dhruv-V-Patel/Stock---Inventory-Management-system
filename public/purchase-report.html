@@ -1,527 +1,361 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purchase Report | Someshwar AI ERP</title>
 
-  <title>Purchase Report | Someshwar AI ERP</title>
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
 
-  <script>
-    (() => {
-      const theme =
-        localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
 
-      document.documentElement.setAttribute(
-        "data-theme",
-        theme,
-      );
-    })();
-  </script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
 
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css" />
 
-  <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/purchase-report.css" />
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
 
-  <link rel="stylesheet" href="/css/purchase-report.css">
-  <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
-  
-  <link rel="manifest" href="/manifest.json">
+    <link rel="manifest" href="/manifest.json" />
 
-  <meta name="theme-color" content="#2563eb">
-</head>
+    <meta name="theme-color" content="#2563eb" />
+  </head>
 
-<body>
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
 
-  <div id="sidebar-container"></div>
+    <div class="main-wrapper">
+      <div id="header-container"></div>
 
-  <div class="main-wrapper">
+      <main class="main-content">
+        <section class="purchase-report-page">
+          <!-- SUMMARY -->
+          <section class="summary-grid">
+            <article class="summary-card">
+              <div class="summary-icon blue">
+                <i class="fa-solid fa-cart-shopping"></i>
+              </div>
 
-    <div id="header-container"></div>
+              <div>
+                <span>Total Purchases</span>
+                <strong id="totalPurchases"> 0 </strong>
+              </div>
+            </article>
 
-    <main class="main-content">
+            <article class="summary-card">
+              <div class="summary-icon purple">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
 
-      <section class="purchase-report-page">
+              <div>
+                <span>Purchase Value</span>
+                <strong id="purchaseValue"> ₹0 </strong>
+              </div>
+            </article>
 
-        <!-- SUMMARY -->
-        <section class="summary-grid">
+            <article class="summary-card">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-rotate-left"></i>
+              </div>
 
-          <article class="summary-card">
+              <div>
+                <span>Purchase Returns</span>
+                <strong id="purchaseReturnValue"> ₹0 </strong>
+              </div>
+            </article>
 
-            <div class="summary-icon blue">
-              <i class="fa-solid fa-cart-shopping"></i>
+            <article class="summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-circle-check"></i>
+              </div>
+
+              <div>
+                <span>Paid Amount</span>
+                <strong id="paidAmount"> ₹0 </strong>
+              </div>
+            </article>
+
+            <article class="summary-card">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-clock"></i>
+              </div>
+
+              <div>
+                <span>Pending Amount</span>
+                <strong id="pendingAmount"> ₹0 </strong>
+              </div>
+            </article>
+
+            <article class="summary-card">
+              <div class="summary-icon green">
+                <i class="fa-solid fa-indian-rupee-sign"></i>
+              </div>
+
+              <div>
+                <span>Net Purchase</span>
+                <strong id="netPurchaseValue"> ₹0 </strong>
+              </div>
+            </article>
+          </section>
+
+          <!-- SUPPLIER WISE -->
+          <section class="content-card report-card">
+            <div class="card-header">
+              <div>
+                <h2>Supplier-wise Purchase</h2>
+
+                <p>
+                  Purchase value grouped by supplier for the selected period.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <span>Total Purchases</span>
-              <strong id="totalPurchases">
-                0
-              </strong>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Supplier</th>
+                    <th>Purchases</th>
+                    <th>Items</th>
+                    <th>Subtotal</th>
+                    <th>Discount</th>
+                    <th>Tax</th>
+                    <th>Freight</th>
+                    <th>Total</th>
+                    <th>Return</th>
+                    <th>Net Total</th>
+                  </tr>
+                </thead>
+
+                <tbody id="supplierWiseBody">
+                  <tr>
+                    <td colspan="11">
+                      <div class="report-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+
+                        Loading supplier purchase report...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
-          </article>
+            <div class="report-empty compact" id="supplierWiseEmpty" hidden>
+              <div class="empty-icon">
+                <i class="fa-solid fa-truck-field"></i>
+              </div>
 
-
-          <article class="summary-card">
-
-            <div class="summary-icon purple">
-              <i class="fa-solid fa-indian-rupee-sign"></i>
-            </div>
-
-            <div>
-              <span>Purchase Value</span>
-              <strong id="purchaseValue">
-                ₹0
-              </strong>
-            </div>
-
-          </article>
-
-          <article class="summary-card">
-
-          <div class="summary-icon orange">
-            <i class="fa-solid fa-rotate-left"></i>
-          </div>
-
-          <div>
-            <span>Purchase Returns</span>
-            <strong id="purchaseReturnValue">
-              ₹0
-            </strong>
-          </div>
-
-        </article>
-
-
-          <article class="summary-card">
-
-            <div class="summary-icon green">
-              <i class="fa-solid fa-circle-check"></i>
-            </div>
-
-            <div>
-              <span>Paid Amount</span>
-              <strong id="paidAmount">
-                ₹0
-              </strong>
-            </div>
-
-          </article>
-
-
-          <article class="summary-card">
-
-            <div class="summary-icon orange">
-              <i class="fa-solid fa-clock"></i>
-            </div>
-
-            <div>
-              <span>Pending Amount</span>
-              <strong id="pendingAmount">
-                ₹0
-              </strong>
-            </div>
-
-          </article>
-
-          <article class="summary-card">
-
-            <div class="summary-icon green">
-              <i class="fa-solid fa-indian-rupee-sign"></i>
-            </div>
-
-            <div>
-              <span>Net Purchase</span>
-              <strong id="netPurchaseValue">
-                ₹0
-              </strong>
-            </div>
-
-          </article>
-
-
-        </section>
-
-
-        <!-- SUPPLIER WISE -->
-        <section class="content-card report-card">
-
-          <div class="card-header">
-
-            <div>
-              <h2>
-                Supplier-wise Purchase
-              </h2>
+              <h3>No Supplier Data</h3>
 
               <p>
-                Purchase value grouped by supplier
-                for the selected period.
+                No supplier-wise purchase data is available for the selected
+                filters.
               </p>
             </div>
+          </section>
 
-          </div>
+          <!-- PURCHASE ENTRIES -->
+          <section class="content-card report-card">
+            <div class="card-header">
+              <div>
+                <h2>Purchase Entries</h2>
 
+                <p>Purchase transactions matching the selected filters.</p>
+              </div>
 
-          <div class="table-responsive">
+              <div class="report-toolbar-actions">
+                <button class="secondary-button" id="printReport" type="button">
+                  <i class="fa-solid fa-print"></i>
+                  <span>Print</span>
+                </button>
 
-            <table class="data-table">
-
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Supplier</th>
-                  <th>Purchases</th>
-                  <th>Items</th>
-                  <th>Subtotal</th>
-                  <th>Discount</th>
-                  <th>Tax</th>
-                  <th>Freight</th>
-                  <th>Total</th>
-                  <th>Return</th>
-                  <th>Net Total</th>
-                </tr>
-              </thead>
-
-              <tbody id="supplierWiseBody">
-
-                <tr>
-                  <td colspan="11">
-
-                    <div class="report-loading">
-
-                      <i class="fa-solid fa-spinner fa-spin"></i>
-
-                      Loading supplier purchase report...
-
-                    </div>
-
-                  </td>
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-
-          <div class="report-empty compact" id="supplierWiseEmpty" hidden>
-
-            <div class="empty-icon">
-              <i class="fa-solid fa-truck-field"></i>
+                <button class="primary-button" id="exportReport" type="button">
+                  <i class="fa-solid fa-file-excel"></i>
+                  <span>Export</span>
+                </button>
+              </div>
             </div>
 
-            <h3>
-              No Supplier Data
-            </h3>
+            <!-- FILTERS -->
+            <div class="report-filters">
+              <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass"></i>
 
-            <p>
-              No supplier-wise purchase data
-              is available for the selected filters.
-            </p>
+                <input
+                  id="search"
+                  type="search"
+                  placeholder="Search purchase, supplier or invoice..."
+                  autocomplete="off"
+                />
+              </div>
 
+              <select id="supplierFilter" class="filter-select">
+                <option value="">All Suppliers</option>
+              </select>
+
+              <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+
+                <option value="PAID">Paid</option>
+
+                <option value="PARTIAL">Partial</option>
+
+                <option value="PENDING">Pending</option>
+              </select>
+
+              <div class="date-filter">
+                <label for="fromDate"> From </label>
+
+                <input id="fromDate" type="date" aria-label="From date" />
+              </div>
+
+              <div class="date-filter">
+                <label for="toDate"> To </label>
+
+                <input id="toDate" type="date" aria-label="To date" />
+              </div>
+
+              <button class="secondary-button" id="resetFilters" type="button">
+                <i class="fa-solid fa-rotate-left"></i>
+
+                Reset
+              </button>
+            </div>
+
+            <!-- TABLE -->
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Purchase No.</th>
+                    <th>Date</th>
+                    <th>Supplier</th>
+                    <th>Invoice No.</th>
+                    <th>Items</th>
+                    <th>Subtotal</th>
+                    <th>Tax</th>
+                    <th>Freight</th>
+                    <th>Total</th>
+                    <th>Return</th>
+                    <th>Net Total</th>
+                    <th>Payment</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="purchaseBody">
+                  <tr>
+                    <td colspan="14">
+                      <div class="report-loading">
+                        <i class="fa-solid fa-spinner fa-spin"></i>
+
+                        Loading purchases...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <div class="report-empty" id="purchaseEmpty" hidden>
+              <div class="empty-icon">
+                <i class="fa-solid fa-cart-shopping"></i>
+              </div>
+
+              <h3>No Purchases Found</h3>
+
+              <p>No purchase entries match the selected filters.</p>
+            </div>
+
+            <!-- FOOTER -->
+            <div class="report-footer">
+              <span id="reportCount"> Showing 0 purchases </span>
+
+              <div class="report-pagination">
+                <button
+                  class="pagination-button"
+                  id="previousPage"
+                  type="button"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-left"></i>
+                </button>
+
+                <span id="pageNumber"> 1 </span>
+
+                <button
+                  class="pagination-button"
+                  id="nextPage"
+                  type="button"
+                  disabled
+                >
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <div class="report-period" id="reportPeriod">
+            Report Period: All Dates
           </div>
-
         </section>
-
-
-        <!-- PURCHASE ENTRIES -->
-        <section class="content-card report-card">
-
-          <div class="card-header">
-
-            <div>
-              <h2>
-                Purchase Entries
-              </h2>
-
-              <p>
-                Purchase transactions matching
-                the selected filters.
-              </p>
-            </div>
-
-
-            <div class="report-toolbar-actions">
-
-              <button class="secondary-button" id="printReport" type="button">
-                <i class="fa-solid fa-print"></i>
-                <span>Print</span>
-              </button>
-
-
-              <button class="primary-button" id="exportReport" type="button">
-                <i class="fa-solid fa-file-excel"></i>
-                <span>Export</span>
-              </button>
-
-            </div>
-
-          </div>
-
-
-          <!-- FILTERS -->
-          <div class="report-filters">
-
-            <div class="search-box">
-
-              <i class="fa-solid fa-magnifying-glass"></i>
-
-              <input id="search" type="search" placeholder="Search purchase, supplier or invoice..." autocomplete="off">
-
-            </div>
-
-
-            <select id="supplierFilter" class="filter-select">
-
-              <option value="">
-                All Suppliers
-              </option>
-
-            </select>
-
-
-            <select id="statusFilter" class="filter-select">
-
-              <option value="">
-                All Status
-              </option>
-
-              <option value="PAID">
-                Paid
-              </option>
-
-              <option value="PARTIAL">
-                Partial
-              </option>
-
-              <option value="PENDING">
-                Pending
-              </option>
-
-            </select>
-
-
-            <div class="date-filter">
-
-              <label for="fromDate">
-                From
-              </label>
-
-              <input id="fromDate" type="date" aria-label="From date">
-
-            </div>
-
-
-            <div class="date-filter">
-
-              <label for="toDate">
-                To
-              </label>
-
-              <input id="toDate" type="date" aria-label="To date">
-
-            </div>
-
-
-            <button class="secondary-button" id="resetFilters" type="button">
-
-              <i class="fa-solid fa-rotate-left"></i>
-
-              Reset
-
-            </button>
-
-          </div>
-
-
-          <!-- TABLE -->
-          <div class="table-responsive">
-
-            <table class="data-table">
-
-              <thead>
-
-                <tr>
-                  <th>#</th>
-                  <th>Purchase No.</th>
-                  <th>Date</th>
-                  <th>Supplier</th>
-                  <th>Invoice No.</th>
-                  <th>Items</th>
-                  <th>Subtotal</th>
-                  <th>Tax</th>
-                  <th>Freight</th>
-                  <th>Total</th>
-                  <th>Return</th>
-                  <th>Net Total</th>
-                  <th>Payment</th>
-                  <th>Action</th>
-                </tr>
-
-              </thead>
-
-
-              <tbody id="purchaseBody">
-
-                <tr>
-
-                  <td colspan="14">
-
-                    <div class="report-loading">
-
-                      <i class="fa-solid fa-spinner fa-spin"></i>
-
-                      Loading purchases...
-
-                    </div>
-
-                  </td>
-
-                </tr>
-
-              </tbody>
-
-            </table>
-
-          </div>
-
-
-          <div class="report-empty" id="purchaseEmpty" hidden>
-
-            <div class="empty-icon">
-
-              <i class="fa-solid fa-cart-shopping"></i>
-
-            </div>
-
-            <h3>
-              No Purchases Found
-            </h3>
-
-            <p>
-              No purchase entries match
-              the selected filters.
-            </p>
-
-          </div>
-
-
-          <!-- FOOTER -->
-          <div class="report-footer">
-
-            <span id="reportCount">
-              Showing 0 purchases
-            </span>
-
-
-            <div class="report-pagination">
-
-              <button class="pagination-button" id="previousPage" type="button" disabled>
-                <i class="fa-solid fa-chevron-left"></i>
-              </button>
-
-
-              <span id="pageNumber">
-                1
-              </span>
-
-
-              <button class="pagination-button" id="nextPage" type="button" disabled>
-                <i class="fa-solid fa-chevron-right"></i>
-              </button>
-
-            </div>
-
-          </div>
-
-        </section>
-
-
-        <div class="report-period" id="reportPeriod">
-          Report Period: All Dates
-        </div>
-
-      </section>
-
-    </main>
-
-  </div>
-
-
-  <!-- VIEW MODAL -->
-  <div class="purchase-report-modal" id="purchaseDetailModal" hidden>
-
-    <div class="purchase-detail-modal" role="dialog" aria-modal="true">
-
-      <div class="modal-header">
-
-        <div class="modal-title-wrap">
-
-          <div class="modal-title-icon">
-
-            <i class="fa-solid fa-cart-shopping"></i>
-
-          </div>
-
-          <div>
-
-            <h2 id="modalPurchaseNo">
-              Purchase Details
-            </h2>
-
-            <p id="modalPurchaseSubtitle">
-              Purchase details
-            </p>
-
-          </div>
-
-        </div>
-
-
-        <button class="modal-close" id="closePurchaseModal" type="button">
-
-          <i class="fa-solid fa-xmark"></i>
-
-        </button>
-
-      </div>
-
-
-      <div class="purchase-modal-body" id="purchaseModalBody"></div>
-
+      </main>
     </div>
 
-  </div>
+    <!-- VIEW MODAL -->
+    <div class="purchase-report-modal" id="purchaseDetailModal" hidden>
+      <div class="purchase-detail-modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-cart-shopping"></i>
+            </div>
 
+            <div>
+              <h2 id="modalPurchaseNo">Purchase Details</h2>
 
-  <div class="toast-container" id="toastContainer"></div>
+              <p id="modalPurchaseSubtitle">Purchase details</p>
+            </div>
+          </div>
 
+          <button class="modal-close" id="closePurchaseModal" type="button">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
 
-  <script src="/js/authGuard.js"></script>
-  <script src="/socket.io/socket.io.js"></script>
-  <script src="/js/notifications.js"></script>
-  <script src="/js/sidebar.js"></script>
-  <script src="/js/header.js"></script>
+        <div class="purchase-modal-body" id="purchaseModalBody"></div>
+      </div>
+    </div>
 
-  <!-- ExcelJS / SheetJS -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <div class="toast-container" id="toastContainer"></div>
 
-  <script src="/js/purchase-report.js"></script>
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
 
+    <!-- ExcelJS / SheetJS -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
-  <script>
+    <script src="/js/purchase-report.js"></script>
 
-    document.addEventListener(
-      "DOMContentLoaded",
-      async () => {
-
-        const token =
-          localStorage.getItem(
-            "accessToken",
-          );
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
 
         if (!token) {
           window.location.replace("/login");
@@ -533,23 +367,14 @@
 
           loadHeader({
             title: "Purchase Report",
-            description:
-              "Purchase quantity, supplier and payment analysis",
+            description: "Purchase quantity, supplier and payment analysis",
           }),
         ]);
 
-        if (
-          typeof initPurchaseReportPage ===
-          "function"
-        ) {
+        if (typeof initPurchaseReportPage === "function") {
           initPurchaseReportPage();
         }
-
-      },
-    );
-
-  </script>
-
-</body>
-
+      });
+    </script>
+  </body>
 </html>

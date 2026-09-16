@@ -132,6 +132,10 @@ const initializeSidebar = () => {
   const salesSubmenu = document.getElementById("salesSubmenu");
   const salesArrow = document.getElementById("salesArrow");
 
+  const expenseToggle = document.getElementById("expenseToggle");
+  const expenseSubmenu = document.getElementById("expenseSubmenu");
+  const expenseArrow = document.getElementById("expenseArrow");
+
   const reportsToggle = document.getElementById("reportsToggle");
   const reportsSubmenu = document.getElementById("reportsSubmenu");
   const reportsArrow = document.getElementById("reportsArrow");
@@ -185,6 +189,13 @@ const initializeSidebar = () => {
     const isOpen = salesSubmenu?.classList.toggle("open");
     salesArrow?.classList.toggle("rotate", isOpen);
   });
+
+  // expense submenu toggle
+  expenseToggle?.addEventListener("click", () => {
+    const isOpen = expenseSubmenu?.classList.toggle("open");
+    expenseArrow?.classList.toggle("rotate", isOpen);
+  });
+
 
   // reports submenu toggle
   reportsToggle?.addEventListener("click", () => {

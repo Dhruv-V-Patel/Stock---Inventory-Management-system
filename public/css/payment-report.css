@@ -6,7 +6,7 @@
 
 .summary-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin-bottom: 14px;
 }
@@ -204,6 +204,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  padding-left: 0px !important;
 }
 
 .payment-report-page .date-filter label {
@@ -300,6 +301,12 @@
   color: #b45309;
   background: #fffbeb;
   border: 1px solid #fde68a;
+}
+
+.payment-type-badge.expense {
+  color: #7c3aed;
+  background: #faf5ff;
+  border: 1px solid #e9d5ff;
 }
 
 
@@ -1136,6 +1143,12 @@
     color: #fcd34d;
     background: rgb(180 83 9 / 18%);
     border-color: rgb(245 158 11 / 25%);
+  }
+
+  .payment-type-badge.expense {
+    color: #d8b4fe;
+    background: rgb(126 34 206 / 18%);
+    border-color: rgb(168 85 247 / 25%);
   }
 
   .payment-amount.received,

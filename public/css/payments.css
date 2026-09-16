@@ -160,6 +160,10 @@
   color: #7c3aed;
   background: #f5f3ff;
 }
+.type-badge.expense {
+  color: #b45309;
+  background: #fffbeb;
+}
 .method-badge {
   color: var(--text-secondary);
   background: var(--surface-secondary);
@@ -273,7 +277,7 @@
 .payment-form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 10px;
+  gap: 10px;
   padding: 20px;
 }
 .form-group label {
@@ -288,7 +292,7 @@
 }
 .payment-type-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
   padding: 18px 20px 0;
 }
@@ -387,7 +391,7 @@
 /* Payment Mode Switch */
 .payment-mode-switch {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
 }
 
@@ -407,6 +411,10 @@
     border-color 0.2s ease,
     background 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.payment-mode-option[hidden] {
+  display: none !important;
 }
 
 .payment-mode-option input[type="radio"] {
@@ -647,8 +655,95 @@
   margin: 0;
   color: var(--text-primary);
   font-size: 10px;
-  white-space: pre-wrap;
+  /* white-space: pre-wrap; */
 }
+
+/* =========================================================
+   Payment Allocation View
+   ========================================================= */
+
+.payment-allocation-view {
+  margin-top: 18px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface);
+}
+
+/* Header */
+.allocation-view-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-secondary);
+}
+
+.allocation-view-header strong {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.allocation-view-header span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--icon-background);
+  color: var(--primary);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+/* Allocation List */
+.allocation-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Allocation Row */
+.allocation-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.allocation-row:last-child {
+  border-bottom: 0;
+}
+
+.allocation-row:hover {
+  background: var(--surface-hover);
+}
+
+/* Invoice number */
+.allocation-row > span {
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Allocated amount */
+.allocation-row > strong {
+  flex: 0 0 auto;
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: right;
+}
+
 @media (max-width: 1050px) {
   .payments-summary-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -759,6 +854,18 @@
   .payment-advance-info p {
     white-space: normal;
   }
+  .payment-allocation-view {
+    margin-top: 14px;
+  }
+
+  .allocation-view-header {
+    padding: 0 12px;
+  }
+
+  .allocation-row {
+    min-height: 44px;
+    padding: 0 12px;
+  }
 }
 @media (max-width: 480px) {
   .payment-form-grid {
@@ -780,5 +887,21 @@
   .modal-footer .primary-button,
   .modal-footer .secondary-button {
     width: 100%;
+  }
+   .allocation-view-header strong {
+    font-size: 10px;
+  }
+
+  .allocation-view-header span {
+    font-size: 8px;
+  }
+
+  .allocation-row {
+    gap: 10px;
+  }
+
+  .allocation-row > span,
+  .allocation-row > strong {
+    font-size: 10px;
   }
 }

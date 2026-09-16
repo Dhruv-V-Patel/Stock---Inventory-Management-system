@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Expense Categories | Someshwar AI ERP</title>
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="/css/expense-categories.css">
+
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+
+        <div id="header-container"></div>
+
+        <main class="main-content">
+
+            <section class="expense-page">
+
+                <!-- CATEGORY LIST -->
+                <section class="expense-card">
+
+                    <div class="expense-card-header">
+
+                        <div>
+                            <h2>Expense Category List</h2>
+                            <p>
+                                Organize and manage your business expense categories.
+                            </p>
+                        </div>
+
+                        <button type="button" id="add" class="primary-button">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>Add Category</span>
+                        </button>
+
+
+                    </div>
+
+                    <div class="expense-table-wrap">
+
+                        <table class="expense-table">
+
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="rows">
+
+                                <tr>
+                                    <td colspan="3" class="table-loading">
+                                        <i class="fa-solid fa-spinner fa-spin"></i>
+                                        Loading expense categories...
+                                    </td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </section>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <!-- ADD / EDIT CATEGORY MODAL -->
+    <div class="modal-backdrop" id="modal" aria-hidden="true">
+
+        <div class="expense-modal category-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+
+            <div class="modal-header">
+
+                <div class="modal-title-wrap">
+
+                    <div class="modal-title-icon">
+                        <i class="fa-solid fa-tags"></i>
+                    </div>
+
+                    <div>
+                        <h2 id="modalTitle">Expense Category</h2>
+                        <p>
+                            Add or update an expense category.
+                        </p>
+                    </div>
+
+                </div>
+
+                <button type="button" id="close" class="modal-close" aria-label="Close">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+
+            </div>
+
+            <form id="form" novalidate>
+
+                <input type="hidden" id="categoryId">
+
+                <div class="form-grid category-form-grid">
+
+                    <div class="form-group full">
+
+                        <label for="name">
+                            Category Name <span>*</span>
+                        </label>
+
+                        <div class="input-with-icon">
+
+                            <i class="fa-solid fa-tag"></i>
+
+                            <input id="name" type="text" required maxlength="100" autocomplete="off"
+                                placeholder="e.g. Electricity, Rent, Transport">
+
+                        </div>
+
+                        <small class="form-hint">
+                            Use a clear name so the category is easy to identify while creating an expense bill.
+                        </small>
+
+                    </div>
+
+                    <div class="form-group full">
+
+                        <label class="checkbox-row">
+
+                            <input type="checkbox" id="active" checked>
+
+                            <span class="checkbox-box">
+                                <i class="fa-solid fa-check"></i>
+                            </span>
+
+                            <span class="checkbox-content">
+                                <strong>Active Category</strong>
+                                <small>
+                                    Active categories can be selected in Expense Bills.
+                                </small>
+                            </span>
+
+                        </label>
+
+                    </div>
+
+                </div>
+
+                <div class="form-note">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>
+                        Deactivate a category when you no longer want it to appear
+                        for new expense entries.
+                    </span>
+                </div>
+
+                <div class="modal-footer">
+
+                    <button type="button" id="closeForm" class="secondary-button">
+                        Cancel
+                    </button>
+
+                    <button type="submit" class="primary-button">
+                        <i class="fa-solid fa-check"></i>
+                        <span>Save Category</span>
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div class="toast-container" id="toastContainer" aria-live="polite" aria-atomic="true"></div>
+
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/expense-categories.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                window.location.replace("/login");
+                return;
+            }
+
+            await Promise.all([
+                loadSidebar("expense-categories"),
+                loadHeader({
+                    title: "Expense Categories",
+                    description: "Manage categories used for business expenses."
+                })
+            ]);
+        });
+    </script>
+
+</body>
+
+</html>

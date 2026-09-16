@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Expense Payables | Someshwar AI ERP</title>
+
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+
+    <!-- Apply saved theme before page render -->
+    <script>
+      (() => {
+        const theme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", theme);
+      })();
+    </script>
+
+    <!-- Icons -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+    />
+
+    <!-- Global + Expense module styles -->
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/expense-payables.css" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#2563eb" />
+  </head>
+
+  <body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+      <!-- HEADER -->
+      <div id="header-container"></div>
+      <main class="main-content">
+        <section class="expense-page">
+          <section class="expense-grid">
+            <div class="expense-summary">
+              <div class="summary-icon">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+              </div>
+
+              <div>
+                <small>Total Outstanding</small>
+                <strong id="totalDue">₹0.00</strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="expense-card">
+            <div class="expense-filters">
+              <div class="filter-search-wrap">
+                <i class="fa-solid fa-magnifying-glass"></i>
+
+                <input
+                  class="filter"
+                  id="filter_search"
+                  type="search"
+                  placeholder="Search expense, vendor or bill no..."
+                  autocomplete="off"
+                />
+              </div>
+
+              <select class="filter" id="filter_status">
+                <option value="">All Status</option>
+                <option value="PENDING">PENDING</option>
+                <option value="PARTIAL">PARTIAL</option>
+              </select>
+
+              <input
+                class="filter"
+                id="filter_from_date"
+                type="date"
+                aria-label="From date"
+              />
+
+              <input
+                class="filter"
+                id="filter_to_date"
+                type="date"
+                aria-label="To date"
+              />
+
+              <button type="button" class="secondary-button" id="resetFilters">
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Reset</span>
+              </button>
+            </div>
+          </section>
+
+          <!-- =========================================
+                     PAYABLE LIST
+                     ========================================= -->
+          <section class="expense-card">
+            <div class="expense-card-header">
+              <div class="expense-card-title">
+                <div class="category-list-icon">
+                  <i class="fa-solid fa-list-check"></i>
+                </div>
+
+                <div>
+                  <h2>Outstanding Expense Bills</h2>
+                  <p>Pending and partially paid expenses requiring payment.</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="expense-table-wrap">
+              <table class="expense-table">
+                <thead>
+                  <tr>
+                    <th>Expense No</th>
+                    <th>Category</th>
+                    <th>Vendor / Paid To</th>
+                    <th>Due Date</th>
+                    <th>Total</th>
+                    <th>Paid</th>
+                    <th>Due</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+
+                <tbody id="rows">
+                  <tr>
+                    <td colspan="9" class="table-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+                      Loading expense payables...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <!-- =====================================================
+         View Expense Payable Modal - Purchase Style
+         ===================================================== -->
+    <div
+      class="modal-overlay"
+      id="expensePayableViewModal"
+      aria-hidden="true"
+      hidden
+    >
+      <div
+        class="modal purchase-view-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="expensePayableViewTitle"
+      >
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <div class="modal-title-icon">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+
+            <div>
+              <h2 id="expensePayableViewTitle">Expense Payable</h2>
+              <p id="expensePayableViewSubtitle">Expense payable details</p>
+            </div>
+          </div>
+
+          <button
+            class="modal-close"
+            id="closeExpensePayableViewModal"
+            type="button"
+            aria-label="Close"
+          >
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+
+        <div id="expensePayableViewBody" class="purchase-details-content"></div>
+
+        <div class="modal-footer">
+          <button
+            class="secondary-button"
+            id="closeExpensePayableView"
+            type="button"
+          >
+            Close
+          </button>
+
+          <button
+            class="primary-button"
+            id="payExpensePayableView"
+            type="button"
+            data-action="modal-pay"
+          >
+            <i class="fa-solid fa-money-bill-wave"></i>
+            Pay Now
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- =====================================================
+         SCRIPTS
+         ===================================================== -->
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="/js/sidebar.js"></script>
+    <script src="/js/header.js"></script>
+    <script src="/js/expense-payables.js"></script>
+
+    <!-- =====================================================
+         PAGE INITIALIZATION
+         ===================================================== -->
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const token = localStorage.getItem("accessToken");
+
+        if (!token) {
+          window.location.replace("/login");
+          return;
+        }
+
+        await Promise.all([
+          loadSidebar("expense-payables"),
+
+          loadHeader({
+            title: "Expense Payables",
+            description:
+              "Track outstanding and partially paid business expenses.",
+          }),
+        ]);
+      });
+    </script>
+  </body>
+</html>

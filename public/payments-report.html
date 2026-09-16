@@ -55,6 +55,17 @@
             </article>
 
             <article class="summary-card">
+              <div class="summary-icon blue">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+
+              <div>
+                <span>Received Entries</span>
+                <strong id="receivedEntries">0</strong>
+              </div>
+            </article>
+
+            <article class="summary-card">
               <div class="summary-icon green">
                 <i class="fa-solid fa-arrow-down"></i>
               </div>
@@ -77,6 +88,17 @@
             </article>
 
             <article class="summary-card">
+              <div class="summary-icon orange">
+                <i class="fa-solid fa-receipt"></i>
+              </div>
+
+              <div>
+                <span>Expense Amount</span>
+                <strong id="expenseAmount">₹0.00</strong>
+              </div>
+            </article>
+
+            <article class="summary-card">
               <div class="summary-icon purple">
                 <i class="fa-solid fa-scale-balanced"></i>
               </div>
@@ -84,17 +106,6 @@
               <div>
                 <span>Net Amount</span>
                 <strong id="netAmount">₹0.00</strong>
-              </div>
-            </article>
-
-            <article class="summary-card">
-              <div class="summary-icon blue">
-                <i class="fa-solid fa-receipt"></i>
-              </div>
-
-              <div>
-                <span>Received Entries</span>
-                <strong id="receivedEntries">0</strong>
               </div>
             </article>
           </section>
@@ -109,7 +120,7 @@
                 <h2>Party-wise Payment</h2>
 
                 <p>
-                  Payment received and paid grouped by customer and supplier.
+                  Payment received, supplier payments and expenses grouped by party/category.
                 </p>
               </div>
             </div>
@@ -119,7 +130,7 @@
                 <thead>
                   <tr>
                     <th>#</th>
-                    <th>Party</th>
+                    <th>Party / Category</th>
                     <th>Type</th>
                     <th>Entries</th>
                     <th>Received</th>
@@ -209,6 +220,7 @@
                 <option value="received">Received</option>
 
                 <option value="paid">Paid</option>
+                <option value="expense">Expense</option>
               </select>
 
               <select id="paymentModeFilter" class="filter-select">

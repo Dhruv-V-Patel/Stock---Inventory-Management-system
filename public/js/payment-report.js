@@ -104,15 +104,15 @@
         </option>
 
         ${(rows || [])
-        .map(
-          (row) =>
-            `
+          .map(
+            (row) =>
+              `
                 <option value="${esc(row.id)}">
                   ${esc(row.name)}
                 </option>
               `,
-        )
-        .join("")}
+          )
+          .join("")}
       `;
 
     if ([...element.options].some((option) => option.value === current)) {
@@ -169,6 +169,10 @@
 
     e.net.textContent = money(summary.total_amount);
 
+    if (e.expenseAmount) {
+      e.expenseAmount.textContent = money(summary.expense_amount);
+    }
+
     e.receivedEntries.textContent = num(summary.received_entries);
   };
 
@@ -222,8 +226,9 @@
               ${money(paid)}
             </td>
 
-            <td class="${net >= 0 ? "party-net-positive" : "party-net-negative"
-        }">
+            <td class="${
+              net >= 0 ? "party-net-positive" : "party-net-negative"
+            }">
 
               ${money(net)}
 
@@ -242,132 +247,117 @@
 
     if (!rows.length) {
       e.count.textContent = "Showing 0 payments";
-
       e.prev.disabled = true;
-
       e.next.disabled = true;
-
       e.page.textContent = "1";
-
       return;
     }
 
     rows.forEach((row, index) => {
-      const type =
-        String(row.payment_type || "").toUpperCase() === "SUPPLIER"
-          ? "paid"
-          : "received";
+      const paymentType = String(row.payment_type || "").toUpperCase();
+
+      const isCustomer = paymentType === "CUSTOMER";
+
+      const isExpense = paymentType === "EXPENSE";
+
+      const type = isCustomer
+        ? "received"
+        : isExpense
+          ? "expense"
+          : "paid";
+
+      const typeLabel = isCustomer
+        ? "Received"
+        : isExpense
+          ? "Expense"
+          : "Paid";
+
+      const typeIcon = isCustomer
+        ? "fa-arrow-down"
+        : isExpense
+          ? "fa-receipt"
+          : "fa-arrow-up";
 
       const tr = document.createElement("tr");
 
       tr.innerHTML = `
+        <td>
+          ${pagination?.from ? pagination.from + index : index + 1}
+        </td>
 
-            <td>
-              ${pagination?.from ? pagination.from + index : index + 1}
-            </td>
+        <td>
+          ${esc(date(row.payment_date))}
+        </td>
 
+        <td>
+          <strong>
+            ${esc(row.payment_no || "—")}
+          </strong>
+        </td>
 
-            <td>
-              ${esc(date(row.payment_date))}
-            </td>
+        <td>
+          <strong>
+            ${esc(row.party_name || "-")}
+          </strong>
 
+          <small class="party-subtitle">
+            ${esc(isExpense ? "Expense" : row.party_type || "")}
+          </small>
+        </td>
 
-            <td>
-              <strong>
-                ${esc(row.payment_no || "—")}
-              </strong>
-            </td>
-
-
-            <td>
-
-              <strong>
-                ${esc(row.party_name || "—")}
-              </strong>
-
-              <small class="party-subtitle">
-                ${esc(row.party_type || "")}
-              </small>
-
-            </td>
-
-
-            <td>
-
-              <span
-                class="
-                  payment-type-badge
-                  ${type}
-                "
-              >
-
-                <i
-                  class="
-                    fa-solid
-                    ${type === "received" ? "fa-arrow-down" : "fa-arrow-up"}
-                  "
-                ></i>
-
-                ${type === "received" ? "Received" : "Paid"}
-
-              </span>
-
-            </td>
-
-
-            <td>
-
-              <span
-                class="payment-mode-badge"
-              >
-                ${esc(label(row.payment_mode))}
-              </span>
-
-            </td>
-
-
-            <td
+        <td>
+          <span
+            class="
+              payment-type-badge
+              ${type}
+            "
+          >
+            <i
               class="
-                payment-amount
-                ${type}
+                fa-solid
+                ${typeIcon}
               "
-            >
+            ></i>
 
-              ${type === "received" ? "+" : "-"}
+            ${typeLabel}
+          </span>
+        </td>
 
-              ${money(row.amount)}
+        <td>
+          <span class="payment-mode-badge">
+            ${esc(label(row.payment_mode))}
+          </span>
+        </td>
 
-            </td>
+        <td
+          class="
+            payment-amount
+            ${type}
+          "
+        >
+          ${type === "received" ? "+" : "-"}
+          ${money(row.amount)}
+        </td>
 
+        <td>
+          ${esc(row.reference_no || "—")}
+        </td>
 
-            <td>
-              ${esc(row.reference_no || "—")}
-            </td>
+        <td>
+          ${esc(row.created_by_name || "—")}
+        </td>
 
-
-            <td>
-              ${esc(row.created_by_name || "—")}
-            </td>
-
-
-            <td>
-
-              <button
-                class="payment-action"
-                data-action="view"
-                data-id="${row.id}"
-                title="View"
-              >
-
-                <i
-                  class="fa-solid fa-eye"
-                ></i>
-
-              </button>
-
-            </td>
-
-          `;
+        <td>
+          <button
+            class="payment-action"
+            data-action="view"
+            data-id="${row.id}"
+            title="View"
+          >
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </td>
+      `;
 
       e.body.appendChild(tr);
     });
@@ -385,7 +375,6 @@
     e.page.textContent = page;
 
     e.prev.disabled = page <= 1;
-
     e.next.disabled = page >= pages;
   };
 
@@ -427,8 +416,9 @@
 
       e.period.textContent =
         e.from.value || e.to.value
-          ? `Report Period: ${e.from.value ? date(e.from.value) : "Beginning"
-          } - ${e.to.value ? date(e.to.value) : "Today"}`
+          ? `Report Period: ${
+              e.from.value ? date(e.from.value) : "Beginning"
+            } - ${e.to.value ? date(e.to.value) : "Today"}`
           : "Report Period: All Dates";
     } catch (error) {
       e.body.innerHTML = `
@@ -458,10 +448,15 @@
 
     if (!row) return;
 
-    const type =
-      String(row.payment_type || "").toUpperCase() === "SUPPLIER"
-        ? "paid"
-        : "received";
+    const paymentType = String(row.payment_type || "").toUpperCase();
+
+    const isCustomer = paymentType === "CUSTOMER";
+
+    const isExpense = paymentType === "EXPENSE";
+
+    const type = isCustomer ? "received" : "paid";
+
+    const typeLabel = isCustomer ? "Received" : isExpense ? "Expense" : "Paid";
 
     e.modalTitle.textContent = "Payment Details";
 
@@ -470,137 +465,101 @@
     )}`;
 
     e.modalBody.innerHTML = `
-
       <div class="payment-detail-grid">
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Payment No.
-          </span>
-
+          <span>Payment No.</span>
           <strong>
             ${esc(row.payment_no || "—")}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Payment Date
-          </span>
-
+          <span>Payment Date</span>
           <strong>
             ${esc(date(row.payment_date))}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Party
-          </span>
-
+          <span>Party</span>
           <strong>
             ${esc(row.party_name || "—")}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Party Type
-          </span>
-
+          <span>Party Type</span>
           <strong>
             ${esc(row.party_type || "—")}
           </strong>
-
         </div>
 
+        ${
+          isExpense
+            ? `
+              <div class="payment-detail-box">
+                <span>Expense Category</span>
+                <strong>
+                  ${esc(row.expense_category_name || "—")}
+                </strong>
+              </div>
+
+              <div class="payment-detail-box">
+                <span>Paid To / Vendor</span>
+                <strong>
+                  ${esc(row.paid_to || "—")}
+                </strong>
+              </div>
+            `
+            : ""
+        }
 
         <div class="payment-detail-box">
-
-          <span>
-            Payment Type
-          </span>
-
+          <span>Payment Type</span>
           <strong>
-            ${type === "received" ? "Received" : "Paid"}
+            ${typeLabel}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Payment Mode
-          </span>
-
+          <span>Payment Mode</span>
           <strong>
             ${esc(label(row.payment_mode))}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Reference No.
-          </span>
-
+          <span>Reference No.</span>
           <strong>
             ${esc(row.reference_no || "—")}
           </strong>
-
         </div>
 
-
         <div class="payment-detail-box">
-
-          <span>
-            Added By
-          </span>
-
+          <span>Added By</span>
           <strong>
             ${esc(row.created_by_name || "—")}
           </strong>
-
         </div>
 
-
-        ${row.remarks
-        ? `
+        ${
+          row.remarks
+            ? `
               <div class="
                 payment-detail-box
                 payment-detail-full
               ">
-
-                <span>
-                  Remarks
-                </span>
-
+                <span>Remarks</span>
                 <strong>
                   ${esc(row.remarks)}
                 </strong>
-
               </div>
             `
-        : ""
-      }
-
+            : ""
+        }
 
       </div>
-
 
       <div
         class="
@@ -608,25 +567,16 @@
           ${type}
         "
       >
-
-        <span>
-          Payment Amount
-        </span>
+        <span>Payment Amount</span>
 
         <strong>
-
           ${type === "received" ? "+" : "-"}
-
           ${money(row.amount)}
-
         </strong>
-
       </div>
-
     `;
 
     e.modal.hidden = false;
-
     document.body.style.overflow = "hidden";
   };
 
@@ -708,6 +658,18 @@
         },
 
         {
+          Metric: "Expense Entries",
+
+          Value: Number(summary.expense_entries || 0),
+        },
+
+        {
+          Metric: "Expense Amount",
+
+          Value: Number(summary.expense_amount || 0),
+        },
+
+        {
           Metric: "Net Amount",
 
           Value: Number(summary.total_amount || 0),
@@ -744,7 +706,7 @@
 
         "Net Amount": Number(
           row.total_amount ??
-          Number(row.received_amount || 0) - Number(row.paid_amount || 0),
+            Number(row.received_amount || 0) - Number(row.paid_amount || 0),
         ),
       }));
 
@@ -755,10 +717,10 @@
           partyRows.length
             ? partyRows
             : [
-              {
-                Party: "No data found",
-              },
-            ],
+                {
+                  Party: "No data found",
+                },
+              ],
         ),
 
         "Party Wise",
@@ -768,32 +730,44 @@
            SHEET 3 - PAYMENT ENTRIES
         ========================================== */
 
-      const detailRows = rows.map((row, index) => ({
-        "#": index + 1,
+      const detailRows = rows.map((row, index) => {
+        const paymentType = String(row.payment_type || "").toUpperCase();
 
-        Date: date(row.payment_date),
+        return {
+          "#": index + 1,
 
-        "Payment No.": row.payment_no || "",
+          Date: date(row.payment_date),
 
-        Party: row.party_name || "",
+          "Payment No.": row.payment_no || "",
 
-        "Party Type": row.party_type || "",
+          Party: row.party_name || "",
 
-        Type:
-          String(row.payment_type || "").toUpperCase() === "SUPPLIER"
-            ? "Paid"
-            : "Received",
+          "Party Type": row.party_type || "",
 
-        Mode: label(row.payment_mode || ""),
+          "Expense Category":
+            paymentType === "EXPENSE" ? row.expense_category_name || "" : "",
 
-        Amount: Number(row.amount || 0),
+          "Paid To / Vendor":
+            paymentType === "EXPENSE" ? row.paid_to || "" : "",
 
-        "Reference No.": row.reference_no || "",
+          Type:
+            paymentType === "CUSTOMER"
+              ? "Received"
+              : paymentType === "EXPENSE"
+                ? "Expense"
+                : "Paid",
 
-        "Added By": row.created_by_name || "",
+          Mode: label(row.payment_mode || ""),
 
-        Remarks: row.remarks || "",
-      }));
+          Amount: Number(row.amount || 0),
+
+          "Reference No.": row.reference_no || "",
+
+          "Added By": row.created_by_name || "",
+
+          Remarks: row.remarks || "",
+        };
+      });
 
       const detailSheet = XLSX.utils.json_to_sheet(detailRows);
 
@@ -906,6 +880,8 @@
       paid: q("#paidAmount"),
 
       net: q("#netAmount"),
+
+      expenseAmount: q("#expenseAmount"),
 
       receivedEntries: q("#receivedEntries"),
 

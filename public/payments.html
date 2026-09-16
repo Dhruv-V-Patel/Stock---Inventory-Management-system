@@ -67,7 +67,7 @@
             <div>
               <h2>Payments List</h2>
               <p>
-                Manage customer receipts and supplier payments in one place.
+                Manage customer receipts, supplier payments and expense payments in one place.
               </p>
             </div>
             <button class="primary-button" id="addPaymentButton" type="button">
@@ -83,6 +83,7 @@
               <option value="">All Types</option>
               <option value="CUSTOMER">Customer Receipt</option>
               <option value="SUPPLIER">Supplier Payment</option>
+              <option value="EXPENSE">Expense Payment</option>
             </select>
             <select id="paymentMethodFilter" class="filter-select">
               <option value="">All Methods</option>
@@ -167,7 +168,7 @@
             <div>
               <h2 id="paymentModalTitle">New Payment</h2>
               <p id="paymentModalDescription">
-                Record a customer receipt or supplier payment.
+                Record a customer receipt, supplier payment, or expense payment.
               </p>
             </div>
           </div>
@@ -316,7 +317,7 @@
             </h2>
 
             <p id="paymentModalDescription">
-              Record a customer receipt or supplier payment.
+              Record a customer receipt, supplier payment, or expense payment.
             </p>
           </div>
 
@@ -362,6 +363,18 @@
 
             <small>
               Money paid
+            </small>
+          </button>
+
+          <button type="button" class="payment-type-option" data-type="EXPENSE">
+            <i class="fa-solid fa-receipt"></i>
+
+            <span>
+              Expense Payment
+            </span>
+
+            <small>
+              Business expense
             </small>
           </button>
 
@@ -418,6 +431,28 @@
 
           </div>
 
+          <div class="form-group expense-group" id="expenseCategoryGroup" hidden>
+            <label for="expenseCategoryId">Expense Category <span>*</span></label>
+            <select id="expenseCategoryId">
+              <option value="">Select Category</option>
+            </select>
+            <small class="form-error" data-error-for="expense-category"></small>
+          </div>
+
+          <div class="form-group expense-group" id="paidToGroup" hidden>
+            <label for="paidTo">Paid To / Vendor <span>*</span></label>
+            <input id="paidTo" type="text" maxlength="200" placeholder="Vendor / contractor / person" />
+            <small class="form-error" data-error-for="paid-to"></small>
+          </div>
+
+          <!-- <div class="form-group expense-group" id="expenseBillGroup" hidden>
+            <label for="expenseBillId">Expense Bill <span>*</span></label>
+            <select id="expenseBillId">
+              <option value="">Select Expense Bill</option>
+            </select>
+            <small class="form-error" data-error-for="expense-bill"></small>
+          </div> -->
+
 
           <!-- ===============================================
              PAYMENT MODE
@@ -453,6 +488,18 @@
 
                 <small>
                   Keep as advance
+                </small>
+              </button>
+
+              <button type="button" class="payment-mode-option expense-only-mode" data-mode="QUICK" hidden>
+                <i class="fa-solid fa-bolt"></i>
+
+                <span>
+                  Quick Expense
+                </span>
+
+                <small>
+                  No bill required
                 </small>
               </button>
 
@@ -622,6 +669,16 @@
 
         </div>
 
+
+        <div class="payment-allocation-info" id="expensePaymentInfo" hidden>
+          <div class="allocation-info-icon">
+            <i class="fa-solid fa-receipt"></i>
+          </div>
+          <div class="allocation-info-content">
+            <strong>Expense Payment</strong>
+            <p>Expense payments are recorded separately from customer and supplier dues.</p>
+          </div>
+        </div>
 
         <!-- =================================================
            FIFO INFORMATION

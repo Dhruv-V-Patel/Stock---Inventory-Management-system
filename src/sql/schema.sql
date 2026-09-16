@@ -382,6 +382,15 @@ CREATE TABLE IF NOT EXISTS payments (
             AND purchase_id IS NOT NULL
             AND sale_id IS NULL
         )
+        OR
+        (
+            payment_type = 'EXPENSE'
+            AND customer_id IS NULL
+            AND supplier_id IS NULL
+            AND sale_id IS NULL
+            AND purchase_id IS NULL
+            AND expense_category_id IS NOT NULL
+        )
     )
 );
 
@@ -653,6 +662,12 @@ INSERT INTO permissions (module, action, name, description) VALUES
 ('payments', 'edit', 'Edit Payments', 'Update payments'),
 ('payments', 'delete', 'Delete Payments', 'Delete payments'),
 
+-- Expense
+('expense','view', 'View Expense','View expense categories, bills, payables and reports'),
+('expense','add', 'Add Expense', 'Add expense categories and bills'),
+('expense','edit', 'Edit Expense','Edit expense categories and bills'),
+('expense','delete', 'Delete Expense', 'Delete expense categories and bills'),
+
 -- Reports
 ('stock-report', 'view', 'View Stock Report', 'View stock report'),
 
@@ -754,7 +769,7 @@ DROP CONSTRAINT IF EXISTS payments_payment_mode_check;
 
 ALTER TABLE payments
 ADD CONSTRAINT payments_payment_mode_check
-CHECK (payment_mode IN ('INVOICE', 'ADVANCE'));
+CHECK (payment_mode IN ('INVOICE', 'ADVANCE', 'QUICK'));
 
 CREATE TABLE IF NOT EXISTS payment_allocations (
     id BIGSERIAL PRIMARY KEY,
@@ -804,6 +819,197 @@ CHECK (
         AND sale_id IS NULL
     )
 );
+
+INSERT INTO permissions (module, action, name, description) VALUES
+  ('expense','view', 'View Expense','View expense categories, bills, payables and reports'),
+  ('expense','add', 'Add Expense', 'Add expense categories and bills'),
+  ('expense','edit', 'Edit Expense','Edit expense categories and bills'),
+  ('expense','delete', 'Delete Expense', 'Delete expense categories and bills')
+  ('consumption-correction', 'view', 'View Consumption Corrections', 'View production consumption correction records'),
+  ('consumption-correction', 'add', 'Apply Consumption Correction','Apply bulk production consumption stock corrections')
+ON CONFLICT (module, action) DO NOTHING;
+
+
+-- Expense Payment support for existing payments module
+
+ALTER TABLE payments
+  DROP CONSTRAINT IF EXISTS payments_payment_type_check;
+
+ALTER TABLE payments
+  ADD CONSTRAINT payments_payment_type_check
+  CHECK (payment_type IN ('CUSTOMER','SUPPLIER','EXPENSE'));
+
+ALTER TABLE payments
+  ADD COLUMN IF NOT EXISTS expense_category_id BIGINT,
+  ADD COLUMN IF NOT EXISTS paid_to VARCHAR(200);
+
+CREATE TABLE IF NOT EXISTS expense_categories (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS expense_bills (
+  id BIGSERIAL PRIMARY KEY,
+  expense_no VARCHAR(50) UNIQUE NOT NULL,
+  category_id BIGINT NOT NULL REFERENCES expense_categories(id) ON DELETE RESTRICT,
+  vendor_name VARCHAR(200),
+  bill_number VARCHAR(100),
+  bill_date DATE NOT NULL,
+  due_date DATE,
+  total_amount NUMERIC(14,2) NOT NULL CHECK (total_amount > 0),
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+    CHECK (payment_status IN ('PENDING','PARTIAL','PAID')),
+  remarks TEXT,
+  created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+ALTER TABLE payments
+  ADD COLUMN IF NOT EXISTS expense_bill_id BIGINT REFERENCES expense_bills(id) ON DELETE SET NULL;
+
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'payments_expense_category_fk'
+  ) THEN
+    ALTER TABLE payments
+      ADD CONSTRAINT payments_expense_category_fk
+      FOREIGN KEY (expense_category_id) REFERENCES expense_categories(id) ON DELETE RESTRICT;
+  END IF;
+END $$;
+
+CREATE TABLE IF NOT EXISTS expense_payment_allocations (
+  id BIGSERIAL PRIMARY KEY,
+  payment_id BIGINT NOT NULL REFERENCES payments(id) ON DELETE CASCADE,
+  expense_bill_id BIGINT NOT NULL REFERENCES expense_bills(id) ON DELETE CASCADE,
+  allocated_amount NUMERIC(15,2) NOT NULL CHECK (allocated_amount > 0),
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+  UNIQUE(payment_id, expense_bill_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_payments_expense_category ON payments(expense_category_id);
+CREATE INDEX IF NOT EXISTS idx_payments_expense_bill ON payments(expense_bill_id);
+CREATE INDEX IF NOT EXISTS idx_expense_bills_category ON expense_bills(category_id);
+CREATE INDEX IF NOT EXISTS idx_expense_bills_status ON expense_bills(payment_status);
+CREATE INDEX IF NOT EXISTS idx_expense_payment_allocations_bill ON expense_payment_allocations(expense_bill_id);
+
+INSERT INTO expense_categories (name) VALUES
+('Labour'),
+('Electricity'),
+('Transport'),
+('Diesel / Fuel'),
+('Repair & Maintenance'),
+('Office Expense'),
+('Salary'),
+('Rent'),
+('Telephone / Internet'),
+('Bank Charges'),
+('Other Expense')
+ON CONFLICT (name) DO NOTHING;
+
+
+
+-- Payments table
+
+ALTER TABLE payments
+DROP CONSTRAINT IF EXISTS chk_payment_reference;
+
+ALTER TABLE payments
+ADD CONSTRAINT chk_payment_reference
+CHECK (
+    -- CUSTOMER PAYMENT
+    (
+        payment_type = 'CUSTOMER'
+        AND customer_id IS NOT NULL
+        AND supplier_id IS NULL
+        AND purchase_id IS NULL
+    )
+
+    OR
+
+    -- SUPPLIER PAYMENT
+    (
+        payment_type = 'SUPPLIER'
+        AND supplier_id IS NOT NULL
+        AND customer_id IS NULL
+        AND sale_id IS NULL
+    )
+
+    OR
+
+    -- EXPENSE PAYMENT
+    (
+        payment_type = 'EXPENSE'
+        AND customer_id IS NULL
+        AND supplier_id IS NULL
+        AND sale_id IS NULL
+        AND purchase_id IS NULL
+        AND expense_category_id IS NOT NULL
+    )
+);
+
+-- ------production_consumption_corrections
+
+CREATE TABLE IF NOT EXISTS production_consumption_corrections (
+    id BIGSERIAL PRIMARY KEY,
+
+    correction_no VARCHAR(50) UNIQUE NOT NULL,
+
+    bom_id BIGINT NOT NULL
+        REFERENCES product_boms(id) ON DELETE RESTRICT,
+
+    raw_material_id BIGINT NOT NULL
+        REFERENCES raw_materials(id) ON DELETE RESTRICT,
+
+    old_quantity NUMERIC(14,3) NOT NULL,
+    corrected_quantity NUMERIC(14,3) NOT NULL,
+
+    difference_per_unit NUMERIC(14,3) NOT NULL,
+
+    reason TEXT NOT NULL,
+
+    total_batches INTEGER NOT NULL DEFAULT 0,
+    total_adjustment_quantity NUMERIC(14,3) NOT NULL DEFAULT 0,
+
+    created_by BIGINT
+        REFERENCES users(id) ON DELETE SET NULL,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+
+CREATE TABLE IF NOT EXISTS production_consumption_correction_items (
+    id BIGSERIAL PRIMARY KEY,
+
+    correction_id BIGINT NOT NULL
+        REFERENCES production_consumption_corrections(id)
+        ON DELETE CASCADE,
+
+    production_batch_id BIGINT NOT NULL
+        REFERENCES production_batches(id) ON DELETE RESTRICT,
+
+    production_material_id BIGINT NOT NULL
+        REFERENCES production_materials(id) ON DELETE RESTRICT,
+
+    produced_quantity NUMERIC(14,3) NOT NULL,
+
+    old_quantity NUMERIC(14,3) NOT NULL,
+    corrected_quantity NUMERIC(14,3) NOT NULL,
+    adjustment_quantity NUMERIC(14,3) NOT NULL,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+
+    UNIQUE(correction_id, production_batch_id, production_material_id)
+);
+
+
+
+
 
 -- INSERT INTO permissions (
 --     module,
