@@ -7,6 +7,7 @@ const {
   updateProduct,
   deleteProduct,
   getProductSummary,
+  getNextProductCode,
 } = require("../controllers/productsController");
 const { authenticateToken } = require("../middleware/authenticateToken");
 const { requirePermission } = require('../middleware/permissionMiddleware');
@@ -17,6 +18,7 @@ router.use(authenticateToken);
 
 router.get("/", requirePermission("products.view"), listProducts);
 router.get("/summary", requirePermission("products.view"), getProductSummary);
+router.get("/next-code", requirePermission("products.view"), getNextProductCode);
 router.get("/:id",requirePermission("products.view"), getProduct);
 
 router.post("/", requirePermission("products.add"), createProduct);

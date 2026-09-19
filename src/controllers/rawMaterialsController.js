@@ -17,9 +17,6 @@ const normalizeBody = (body = {}) => ({
 });
 
 const validateBody = (body) => {
-    if (!body.code) return "Material code is required.";
-    if (body.code.length > 50) return "Material code cannot exceed 50 characters.";
-
     if (!body.name) return "Material name is required.";
     if (body.name.length > 150) return "Material name cannot exceed 150 characters.";
 
@@ -111,6 +108,18 @@ const getById = async (req, res) => {
     }
 };
 
+const getNextCode = async (req, res) => {
+    try {
+        const code = await rawMaterialsService.getNextRawMaterialCode();
+
+        return res.json({
+            code
+        });
+    } catch (error) {
+        return sendDbError(res, error);
+    }
+};
+
 const create = async (req, res) => {
     const body = normalizeBody(req.body);
     const validationError = validateBody(body);
@@ -119,9 +128,10 @@ const create = async (req, res) => {
         return res.status(400).json({
             message: validationError
         });
-    }
-
+    }    
     try {
+        body.code = await rawMaterialsService.getNextRawMaterialCode();
+
         const data = await rawMaterialsService.createRawMaterial(body);
 
         return res.status(201).json({
@@ -172,6 +182,35 @@ const update = async (req, res) => {
     }
 };
 
+// const remove = async (req, res) => {
+//     const { id } = req.params;
+
+//     if (!isPositiveInteger(id)) {
+//         return res.status(400).json({
+//             message: "Invalid raw material ID."
+//         });
+//     }
+
+//     try {
+//         const data = await rawMaterialsService.deactivateRawMaterial(
+//             Number(id)
+//         );
+
+//         if (!data) {
+//             return res.status(404).json({
+//                 message: "Raw material not found."
+//             });
+//         }
+
+//         return res.json({
+//             message: "Raw material deactivated successfully.",
+//             data
+//         });
+//     } catch (error) {
+//         return sendDbError(res, error);
+//     }
+// };
+
 const remove = async (req, res) => {
     const { id } = req.params;
 
@@ -182,21 +221,26 @@ const remove = async (req, res) => {
     }
 
     try {
-        const data = await rawMaterialsService.deactivateRawMaterial(
+        const data = await rawMaterialsService.deleteRawMaterial(
             Number(id)
         );
 
-        if (!data) {
-            return res.status(404).json({
-                message: "Raw material not found."
+        return res.json({
+            message: "Raw material deleted successfully.",
+            data
+        });
+
+    } catch (error) {
+        console.error("[Raw Materials Controller] delete:", error);
+
+        if (error.code === "RAW_MATERIAL_IN_USE") {
+            return res.status(409).json({
+                message: error.message,
+                code: error.code,
+                usedIn: error.usedIn || []
             });
         }
 
-        return res.json({
-            message: "Raw material deactivated successfully.",
-            data
-        });
-    } catch (error) {
         return sendDbError(res, error);
     }
 };
@@ -207,5 +251,6 @@ module.exports = {
     getById,
     create,
     update,
-    remove
+    remove,
+    getNextCode,
 };

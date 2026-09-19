@@ -8,6 +8,7 @@ router.use(authenticateToken);
 
 router.get("/", requirePermission("raw-materials.view"), controller.list);
 router.get("/summary", requirePermission("raw-materials.view"), controller.summary);
+router.get("/next-code", requirePermission("raw-materials.view"), controller.getNextCode);
 router.get("/:id", requirePermission("raw-materials.view"), controller.getById);
 
 router.post("/", requirePermission("raw-materials.add"), controller.create);

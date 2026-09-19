@@ -266,6 +266,7 @@ CREATE TABLE IF NOT EXISTS sales (
     driver_name VARCHAR(150),
     driver_mobile VARCHAR(20),
     subtotal NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    challan_lr_no VARCHAR(100),
     discount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -343,6 +344,32 @@ CREATE TABLE IF NOT EXISTS dispatch_items (
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 
+
+CREATE TABLE IF NOT EXISTS expense_categories (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(100) NOT NULL UNIQUE,
+  is_active BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS expense_bills (
+  id BIGSERIAL PRIMARY KEY,
+  expense_no VARCHAR(50) UNIQUE NOT NULL,
+  category_id BIGINT NOT NULL REFERENCES expense_categories(id) ON DELETE RESTRICT,
+  vendor_name VARCHAR(200),
+  bill_number VARCHAR(100),
+  bill_date DATE NOT NULL,
+  due_date DATE,
+  total_amount NUMERIC(14,2) NOT NULL CHECK (total_amount > 0),
+  payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
+    CHECK (payment_status IN ('PENDING','PARTIAL','PAID')),
+  remarks TEXT,
+  created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS payments (
     id BIGSERIAL PRIMARY KEY,
     payment_no VARCHAR(50) UNIQUE NOT NULL,
@@ -358,7 +385,11 @@ CREATE TABLE IF NOT EXISTS payments (
     sale_id BIGINT REFERENCES sales(id) ON DELETE SET NULL,
     purchase_id BIGINT REFERENCES purchases(id) ON DELETE SET NULL,
     payment_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    payment_mode VARCHAR(20) NOT NULL DEFAULT 'INVOICE',
+    expense_bill_id BIGINT REFERENCES expense_bills(id) ON DELETE SET NULL,
     amount NUMERIC(14, 2) NOT NULL CHECK (amount > 0),
+    expense_category_id BIGINT,
+    paid_to VARCHAR(200),
     payment_method VARCHAR(30),
     reference_no VARCHAR(100),
     remarks TEXT,
@@ -391,6 +422,36 @@ CREATE TABLE IF NOT EXISTS payments (
             AND purchase_id IS NULL
             AND expense_category_id IS NOT NULL
         )
+    ),
+    CONSTRAINT payments_payment_mode_check CHECK (payment_mode IN ('INVOICE', 'ADVANCE', 'QUICK')),
+    CONSTRAINT payments_payment_type_check CHECK (payment_type IN ('CUSTOMER','SUPPLIER','EXPENSE'))
+);
+
+CREATE TABLE IF NOT EXISTS payment_allocations (
+    id BIGSERIAL PRIMARY KEY,
+
+    payment_id BIGINT NOT NULL
+        REFERENCES payments(id)
+        ON DELETE CASCADE,
+
+    sale_id BIGINT
+        REFERENCES sales(id)
+        ON DELETE CASCADE,
+
+    purchase_id BIGINT
+        REFERENCES purchases(id)
+        ON DELETE CASCADE,
+
+    allocated_amount NUMERIC(15,2) NOT NULL
+        CHECK (allocated_amount > 0),
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT payment_allocation_document_check
+    CHECK (
+        (sale_id IS NOT NULL AND purchase_id IS NULL)
+        OR
+        (sale_id IS NULL AND purchase_id IS NOT NULL)
     )
 );
 
@@ -679,6 +740,16 @@ INSERT INTO permissions (module, action, name, description) VALUES
 
 ('payments-report', 'view', 'View Payment Report', 'View payment report'),
 
+('consumption-correction', 'view', 'View Consumption Corrections', 'View production consumption correction records'),
+('consumption-correction', 'add', 'Apply Consumption Correction','Apply bulk production consumption stock corrections'),
+
+
+-- Quotation
+('quotations', 'view', 'View Quotations', 'View quotations'),
+('quotations', 'add', 'Add Quotations', 'Create new quotations'),
+('quotations', 'edit', 'Edit Quotations', 'Update quotations'),
+('quotations', 'delete', 'Delete Quotations', 'Delete quotations')
+
 -- Administration
 ('manage-users', 'view', 'View Manage Users', 'View users'),
 ('manage-users', 'add', 'Add Manage Users', 'Create new users'),
@@ -711,8 +782,6 @@ WHERE r.name = 'member'
 ON CONFLICT (role_id, permission_id) DO NOTHING;
 
 
---------------- New Added
-
 CREATE TABLE IF NOT EXISTS push_subscriptions
 (
     id SERIAL PRIMARY KEY,
@@ -739,7 +808,7 @@ CREATE TABLE IF NOT EXISTS notifications
 
     created_by INTEGER REFERENCES users(id),
 
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_notifications_created_at
@@ -749,7 +818,7 @@ CREATE TABLE IF NOT EXISTS notification_reads
 (
     notification_id BIGINT NOT NULL REFERENCES notifications(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    read_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (notification_id, user_id)
 );
 
@@ -760,116 +829,8 @@ CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user
 ON push_subscriptions(user_id);
 
 
-ALTER TABLE payments
-ADD COLUMN IF NOT EXISTS payment_mode VARCHAR(20)
-NOT NULL DEFAULT 'INVOICE';
-
-ALTER TABLE payments
-DROP CONSTRAINT IF EXISTS payments_payment_mode_check;
-
-ALTER TABLE payments
-ADD CONSTRAINT payments_payment_mode_check
-CHECK (payment_mode IN ('INVOICE', 'ADVANCE', 'QUICK'));
-
-CREATE TABLE IF NOT EXISTS payment_allocations (
-    id BIGSERIAL PRIMARY KEY,
-
-    payment_id BIGINT NOT NULL
-        REFERENCES payments(id)
-        ON DELETE CASCADE,
-
-    sale_id BIGINT
-        REFERENCES sales(id)
-        ON DELETE CASCADE,
-
-    purchase_id BIGINT
-        REFERENCES purchases(id)
-        ON DELETE CASCADE,
-
-    allocated_amount NUMERIC(15,2) NOT NULL
-        CHECK (allocated_amount > 0),
-
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-
-    CONSTRAINT payment_allocation_document_check
-    CHECK (
-        (sale_id IS NOT NULL AND purchase_id IS NULL)
-        OR
-        (sale_id IS NULL AND purchase_id IS NOT NULL)
-    )
-);
-
-ALTER TABLE payments
-DROP CONSTRAINT IF EXISTS chk_payment_reference;
-
-ALTER TABLE payments
-ADD CONSTRAINT chk_payment_reference
-CHECK (
-    (
-        payment_type = 'CUSTOMER'
-        AND customer_id IS NOT NULL
-        AND supplier_id IS NULL
-        AND purchase_id IS NULL
-    )
-    OR
-    (
-        payment_type = 'SUPPLIER'
-        AND supplier_id IS NOT NULL
-        AND customer_id IS NULL
-        AND sale_id IS NULL
-    )
-);
-
-INSERT INTO permissions (module, action, name, description) VALUES
-  ('expense','view', 'View Expense','View expense categories, bills, payables and reports'),
-  ('expense','add', 'Add Expense', 'Add expense categories and bills'),
-  ('expense','edit', 'Edit Expense','Edit expense categories and bills'),
-  ('expense','delete', 'Delete Expense', 'Delete expense categories and bills')
-  ('consumption-correction', 'view', 'View Consumption Corrections', 'View production consumption correction records'),
-  ('consumption-correction', 'add', 'Apply Consumption Correction','Apply bulk production consumption stock corrections')
-ON CONFLICT (module, action) DO NOTHING;
-
 
 -- Expense Payment support for existing payments module
-
-ALTER TABLE payments
-  DROP CONSTRAINT IF EXISTS payments_payment_type_check;
-
-ALTER TABLE payments
-  ADD CONSTRAINT payments_payment_type_check
-  CHECK (payment_type IN ('CUSTOMER','SUPPLIER','EXPENSE'));
-
-ALTER TABLE payments
-  ADD COLUMN IF NOT EXISTS expense_category_id BIGINT,
-  ADD COLUMN IF NOT EXISTS paid_to VARCHAR(200);
-
-CREATE TABLE IF NOT EXISTS expense_categories (
-  id BIGSERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL UNIQUE,
-  is_active BOOLEAN NOT NULL DEFAULT TRUE,
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE IF NOT EXISTS expense_bills (
-  id BIGSERIAL PRIMARY KEY,
-  expense_no VARCHAR(50) UNIQUE NOT NULL,
-  category_id BIGINT NOT NULL REFERENCES expense_categories(id) ON DELETE RESTRICT,
-  vendor_name VARCHAR(200),
-  bill_number VARCHAR(100),
-  bill_date DATE NOT NULL,
-  due_date DATE,
-  total_amount NUMERIC(14,2) NOT NULL CHECK (total_amount > 0),
-  payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
-    CHECK (payment_status IN ('PENDING','PARTIAL','PAID')),
-  remarks TEXT,
-  created_by BIGINT REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
-);
-
-ALTER TABLE payments
-  ADD COLUMN IF NOT EXISTS expense_bill_id BIGINT REFERENCES expense_bills(id) ON DELETE SET NULL;
 
 DO $$
 BEGIN
@@ -912,46 +873,6 @@ INSERT INTO expense_categories (name) VALUES
 ('Other Expense')
 ON CONFLICT (name) DO NOTHING;
 
-
-
--- Payments table
-
-ALTER TABLE payments
-DROP CONSTRAINT IF EXISTS chk_payment_reference;
-
-ALTER TABLE payments
-ADD CONSTRAINT chk_payment_reference
-CHECK (
-    -- CUSTOMER PAYMENT
-    (
-        payment_type = 'CUSTOMER'
-        AND customer_id IS NOT NULL
-        AND supplier_id IS NULL
-        AND purchase_id IS NULL
-    )
-
-    OR
-
-    -- SUPPLIER PAYMENT
-    (
-        payment_type = 'SUPPLIER'
-        AND supplier_id IS NOT NULL
-        AND customer_id IS NULL
-        AND sale_id IS NULL
-    )
-
-    OR
-
-    -- EXPENSE PAYMENT
-    (
-        payment_type = 'EXPENSE'
-        AND customer_id IS NULL
-        AND supplier_id IS NULL
-        AND sale_id IS NULL
-        AND purchase_id IS NULL
-        AND expense_category_id IS NOT NULL
-    )
-);
 
 -- ------production_consumption_corrections
 
@@ -1009,8 +930,6 @@ CREATE TABLE IF NOT EXISTS production_consumption_correction_items (
 
 
 
-
-
 -- INSERT INTO permissions (
 --     module,
 --     action,
@@ -1034,3 +953,190 @@ CREATE TABLE IF NOT EXISTS production_consumption_correction_items (
 -- FROM permissions
 -- WHERE action = 'edit'
 -- ON CONFLICT (module, action) DO NOTHING;
+
+
+
+-- ============================================
+-- QUOTATIONS
+-- ============================================
+
+CREATE TABLE IF NOT EXISTS quotations (
+    id BIGSERIAL PRIMARY KEY,
+
+    quotation_no VARCHAR(50) NOT NULL UNIQUE,
+
+    customer_id INTEGER NOT NULL
+        REFERENCES customers(id)
+        ON DELETE RESTRICT,
+
+    quotation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+
+    valid_until DATE,
+
+    subtotal NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (subtotal >= 0),
+
+    discount NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (discount >= 0),
+
+    tax_amount NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (tax_amount >= 0),
+
+    total_amount NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (total_amount >= 0),
+
+    remarks TEXT,
+
+    created_by INTEGER
+        REFERENCES users(id)
+        ON DELETE SET NULL,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS quotation_items (
+    id BIGSERIAL PRIMARY KEY,
+
+    quotation_id BIGINT NOT NULL
+        REFERENCES quotations(id)
+        ON DELETE CASCADE,
+
+    product_id INTEGER NOT NULL
+        REFERENCES products(id)
+        ON DELETE RESTRICT,
+
+    quantity NUMERIC(15,3) NOT NULL
+        CHECK (quantity > 0),
+
+    unit VARCHAR(30) NOT NULL,
+
+    rate NUMERIC(15,2) NOT NULL
+        CHECK (rate >= 0),
+
+    gst_tax_rate NUMERIC(5,2) NOT NULL DEFAULT 0
+        CHECK (gst_tax_rate >= 0 AND gst_tax_rate <= 100),
+
+    gst_amount NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (gst_amount >= 0),
+
+    amount NUMERIC(15,2) NOT NULL DEFAULT 0
+        CHECK (amount >= 0),
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS quotation_terms (
+    id SERIAL PRIMARY KEY,
+
+    term_text TEXT NOT NULL,
+
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+
+    sort_order INTEGER NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS quotation_term_items (
+    id BIGSERIAL PRIMARY KEY,
+
+    quotation_id BIGINT NOT NULL
+        REFERENCES quotations(id)
+        ON DELETE CASCADE,
+
+    term_id INTEGER
+        REFERENCES quotation_terms(id)
+        ON DELETE SET NULL,
+
+    term_text TEXT NOT NULL,
+
+    sort_order INTEGER NOT NULL DEFAULT 0,
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_quotations_customer
+    ON quotations(customer_id);
+
+CREATE INDEX IF NOT EXISTS idx_quotations_date
+    ON quotations(quotation_date);
+
+CREATE INDEX IF NOT EXISTS idx_quotation_items_quotation
+    ON quotation_items(quotation_id);
+
+CREATE INDEX IF NOT EXISTS idx_quotation_items_product
+    ON quotation_items(product_id);
+
+CREATE INDEX IF NOT EXISTS idx_quotation_term_items_quotation
+    ON quotation_term_items(quotation_id);
+
+CREATE INDEX IF NOT EXISTS idx_quotation_terms_active
+    ON quotation_terms(is_active);
+
+
+-- ============================================
+-- DEFAULT TERMS
+-- ============================================
+
+INSERT INTO quotation_terms (term_text, sort_order)
+SELECT 'Prices are valid for 15 days.', 1
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM quotation_terms
+    WHERE term_text = 'Prices are valid for 15 days.'
+);
+
+INSERT INTO quotation_terms (term_text, sort_order)
+SELECT 'GST will be charged as applicable.', 2
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM quotation_terms
+    WHERE term_text = 'GST will be charged as applicable.'
+);
+
+INSERT INTO quotation_terms (term_text, sort_order)
+SELECT 'Delivery charges are extra.', 3
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM quotation_terms
+    WHERE term_text = 'Delivery charges are extra.'
+);
+
+CREATE TABLE IF NOT EXISTS company_settings (
+    id BIGSERIAL PRIMARY KEY,
+
+    company_name VARCHAR(150) NOT NULL,
+    tagline VARCHAR(255),
+
+    address TEXT,
+    gstin VARCHAR(20),
+
+    phone VARCHAR(20),
+    email VARCHAR(150),
+    website VARCHAR(255),
+
+    logo_url TEXT,
+    stamp_url TEXT,
+
+    authorized_signatory_name VARCHAR(100),
+
+    created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS ux_company_settings_single
+ON company_settings ((TRUE));
+
+INSERT INTO permissions (module, action, name, description) VALUES
+
+-- Quotation
+('quotations', 'view', 'View Quotations', 'View quotations'),
+('quotations', 'add', 'Add Quotations', 'Create new quotations'),
+('quotations', 'edit', 'Edit Quotations', 'Update quotations'),
+('quotations', 'delete', 'Delete Quotations', 'Delete quotations')
+
+ON CONFLICT (module, action) DO NOTHING;

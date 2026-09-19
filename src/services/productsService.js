@@ -50,6 +50,95 @@ const parseNonNegativeNumber = (value, fieldName) => {
 
   return number;
 };
+const generateCategoryPrefix = (categoryName) => {
+  const name = String(categoryName || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9\s]/g, "");
+
+  if (!name) {
+    return "PRD";
+  }
+
+  const words = name.split(/\s+/).filter(Boolean);
+
+  if (words.length === 1) {
+    return words[0].slice(0, 3);
+  }
+
+  return words
+    .map((word) => word.charAt(0))
+    .join("")
+    .slice(0, 4);
+};
+
+const getNextProductCode = async (categoryIdValue) => {
+  const categoryId = Number(categoryIdValue);
+
+  if (!Number.isInteger(categoryId) || categoryId <= 0) {
+    throw validationError("Invalid category.");
+  }
+
+  const categoryResult = await pool.query(
+    `
+      SELECT id, name
+      FROM product_categories
+      WHERE id = $1
+        AND is_active = TRUE
+      LIMIT 1
+    `,
+    [categoryId],
+  );
+
+  if (categoryResult.rowCount === 0) {
+    throw notFoundError("Category not found.");
+  }
+
+  const category = categoryResult.rows[0];
+
+  const prefix = generateCategoryPrefix(category.name);
+
+  const result = await pool.query(
+    `
+      SELECT code
+      FROM products
+      WHERE category_id = $1
+        AND UPPER(code) ~ $2
+      ORDER BY
+        CAST(
+          SUBSTRING(
+            UPPER(code)
+            FROM '[0-9]+$'
+          ) AS INTEGER
+        ) DESC
+      LIMIT 1
+    `,
+    [
+      categoryId,
+      `^${prefix}-[0-9]+$`,
+    ],
+  );
+
+  let nextNumber = 1;
+
+  if (result.rowCount > 0) {
+    const lastCode = String(result.rows[0].code);
+
+    const match = lastCode.match(/(\d+)$/);
+
+    if (match) {
+      nextNumber = Number(match[1]) + 1;
+    }
+  }
+
+  const code = `${prefix}-${String(nextNumber).padStart(3, "0")}`;
+
+  return {
+    code,
+    prefix,
+    sequence: nextNumber,
+  };
+};
 
 const parseBoolean = (value, defaultValue = true) => {
   if (value === undefined || value === null || value === "") {
@@ -291,7 +380,21 @@ const createAuditLog = async (
 
 const listProducts = async () => {
   const result = await pool.query(`
-    SELECT * FROM products p
+    SELECT
+      p.id,
+      p.code,
+      p.name,
+      p.category_id,
+      pc.name AS category_name,
+      p.size,
+      p.unit,
+      p.minimum_stock,
+      p.selling_rate,
+      p.gst_tax_rate,
+      p.is_active,
+      p.created_at,
+      p.updated_at
+    FROM products p
     LEFT JOIN product_categories pc
       ON pc.id = p.category_id
     ORDER BY
@@ -351,7 +454,7 @@ const getProduct = async (idValue) => {
     size: row.size || "",
     unit: row.unit || "PCS",
     minimum_stock: Number(row.minimum_stock || 0),
-    // selling_rate: Number(row.selling_rate || 0),
+    selling_rate: Number(row.selling_rate || 0),
     gst_tax_rate: row.gst_tax_rate,
     is_active: Boolean(row.is_active),
     created_at: row.created_at,
@@ -400,6 +503,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             size,
             unit,
             minimum_stock,
+            selling_rate,
             gst_tax_rate,
             is_active
           )
@@ -411,20 +515,10 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             $5,
             $6,
             $7,
-            $8
+            $8,
+            $9
           )
-          RETURNING
-            id,
-            code,
-            name,
-            category_id,
-            size,
-            unit,
-            minimum_stock,
-            gst_tax_rate,
-            is_active,
-            created_at,
-            updated_at
+          RETURNING *
         `,
       [
         payload.code,
@@ -433,6 +527,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
         payload.size,
         payload.unit,
         payload.minimum_stock,
+        payload.selling_rate,
         payload.gst_tax_rate,
         payload.is_active,
       ],
@@ -533,9 +628,9 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         payload.minimum_stock ??
         current.minimum_stock,
 
-      // selling_rate:
-      //   payload.selling_rate ??
-      //   current.selling_rate,
+      selling_rate:
+        payload.selling_rate ??
+        current.selling_rate,
 
       gst_tax_rate:
         payload.gst_tax_rate ??
@@ -558,22 +653,12 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
             size = $4,
             unit = $5,
             minimum_stock = $6,
-            gst_tax_rate = $7,
-            is_active = $8,
+            selling_rate = $7,
+            gst_tax_rate = $8,
+            is_active = $9,
             updated_at = NOW()
-          WHERE id = $9
-          RETURNING
-            id,
-            code,
-            name,
-            category_id,
-            size,
-            unit,
-            minimum_stock,
-            gst_tax_rate,
-            is_active,
-            created_at,
-            updated_at
+          WHERE id = $10
+          RETURNING *
         `,
       [
         next.code,
@@ -582,6 +667,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         next.size,
         next.unit,
         next.minimum_stock,
+        next.selling_rate,
         next.gst_tax_rate,
         next.is_active,
         id,
@@ -774,6 +860,7 @@ const getProductSummary = async () => {
 module.exports = {
   listProducts,
   getProduct,
+  getNextProductCode,
   createProduct,
   updateProduct,
   deleteProduct,

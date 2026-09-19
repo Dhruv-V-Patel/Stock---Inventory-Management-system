@@ -276,7 +276,7 @@ const removeSupplier = async (req, res) => {
       });
     }
 
-    console.error("[Supplier] removeSupplier:", error);
+    console.error("[Supplier] removeSupplier:", error.message);
 
     return res.status(500).json({
       success: false,

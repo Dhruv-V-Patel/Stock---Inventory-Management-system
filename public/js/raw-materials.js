@@ -3,6 +3,30 @@
 
   const API_BASE = "/api/raw-materials";
 
+  const getNextMaterialCode = async () => {
+    try {
+        elements.materialCode.value = "Generating...";
+
+        const response = await request(`${API_BASE}/next-code`);
+
+        const code = response?.code;
+
+        if (!code) {
+            throw new Error("Unable to generate material code.");
+        }
+
+        elements.materialCode.value = code;
+    } catch (error) {
+        console.error("[Raw Materials] code generation error:", error);
+
+        elements.materialCode.value = "";
+        showToast(
+            error.message || "Unable to generate material code.",
+            "error"
+        );
+    }
+};
+
   const state = {
     materials: [],
     filteredMaterials: [],
@@ -416,7 +440,9 @@
     elements.modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
 
-    window.setTimeout(() => elements.materialCode.focus(), 50);
+    if (!material) {
+    getNextMaterialCode();
+}
   };
 
   const closeModal = () => {
@@ -445,7 +471,7 @@
   });
 
   const validatePayload = (payload) => {
-    if (!payload.code) return "Material code is required.";
+    // if (!payload.code) return "Material code is required.";
     if (!payload.name) return "Material name is required.";
     if (!payload.unit) return "Unit is required.";
 
@@ -505,7 +531,9 @@
   const openDeleteModal = (material) => {
     state.deletingId = Number(material.id);
 
-    elements.deleteMessage.textContent = `“${material.name}” will be marked inactive. Existing purchase and production history will remain safe.`;
+    // elements.deleteMessage.textContent = `“${material.name}” will be marked inactive. Existing purchase and production history will remain safe.`;
+
+    elements.deleteMessage.textContent = `"${material.name}" will be permanently deleted. This action cannot be undone.`;
 
     elements.deleteModal.classList.add("show");
     elements.deleteModal.setAttribute("aria-hidden", "false");
@@ -534,11 +562,14 @@
       });
 
       closeDeleteModal();
-      showToast("Raw material deactivated successfully.");
+      showToast("Raw material Deleted successfully.");
       await loadMaterials();
     } catch (error) {
       console.error("[Raw Materials] delete error:", error);
-      showToast(error.message, "error");
+       showToast(
+            error.message || "Unable to delete raw material.",
+            "error"
+        );
     } finally {
       elements.confirmDeleteButton.disabled = false;
     }

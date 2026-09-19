@@ -1,0 +1,332 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Profile | Someshwar AI ERP</title>
+    <link rel="icon" type="image/x-icon" href="/images/favicon.ico">
+    <script>
+        (() => {
+            const theme = localStorage.getItem("theme") || "light";
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/company-profile.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
+</head>
+
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    <div id="sidebar-container"></div>
+
+    <div class="main-wrapper">
+        <div id="header-container"></div>
+
+        <main class="main-content">
+            <section class="company-profile-page">
+                <form id="companyProfileForm" novalidate>
+                    <input type="hidden" id="profileId">
+
+                    <div class="profile-layout">
+
+                        <div class="profile-main">
+
+                            <section class="content-card profile-card">
+                                <div class="card-header">
+                                    <div class="section-title">
+
+                                        <div class="section-icon blue">
+                                            <i class="fa-solid fa-building"></i>
+                                        </div>
+
+                                        <div class="section-info">
+                                            <h3>Business Information</h3>
+                                            <p>Basic company details shown on business documents.</p>
+                                        </div>
+
+                                        <div class="header-actions">
+                                            <button class="primary-button" id="saveProfileTop" type="button">
+                                                <i class="fa-solid fa-check"></i>
+                                                <span>Save Changes</span>
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <div class="form-grid">
+                                    <div class="form-group form-group-full">
+                                        <label for="companyName">Company Name <span>*</span></label>
+                                        <input id="companyName" type="text" maxlength="150"
+                                            placeholder="e.g. Someshwar AI Solution LLP" required>
+                                        <small class="form-error" data-error-for="companyName"></small>
+                                    </div>
+
+                                    <div class="form-group form-group-full">
+                                        <label for="tagline">Tagline</label>
+                                        <input id="tagline" type="text" maxlength="255"
+                                            placeholder="e.g. Intelligence That Transforms Business">
+                                    </div>
+
+                                    <div class="form-group form-group-full">
+                                        <label for="companyAddress">Address</label>
+                                        <textarea id="companyAddress" rows="3" maxlength="1000"
+                                            placeholder="Company office / billing address"></textarea>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="gstin">GSTIN</label>
+                                        <input id="gstin" type="text" maxlength="15" placeholder="e.g. 24ABCDE1234F1Z5"
+                                            autocomplete="off">
+                                        <small class="form-error" data-error-for="gstin"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="phone">Phone</label>
+                                        <input id="phone" type="tel" maxlength="10" placeholder="e.g. 9876543210">
+                                        <small class="form-error" data-error-for="phone"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="email">Email</label>
+                                        <input id="email" type="email" maxlength="150"
+                                            placeholder="e.g. info@company.com">
+                                        <small class="form-error" data-error-for="email"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="website">Website</label>
+                                        <input id="website" type="url" maxlength="255"
+                                            placeholder="e.g. https://www.company.com">
+                                        <small class="form-error" data-error-for="website"></small>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="content-card profile-card">
+                                <div class="card-header">
+                                    <div class="section-title">
+                                        <div class="section-icon purple">
+                                            <i class="fa-solid fa-user-pen"></i>
+                                        </div>
+                                        <div>
+                                            <h3>Authorized Signatory</h3>
+                                            <p>Name displayed below the signature on quotations and documents.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid single-grid">
+                                    <div class="form-group">
+                                        <label for="authorizedSignatoryName">Signatory Name</label>
+                                        <input id="authorizedSignatoryName" type="text" maxlength="100"
+                                            placeholder="e.g. Authorized Signatory">
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="content-card profile-card">
+                                <div class="card-header">
+                                    <div class="section-title">
+                                        <div class="section-icon orange">
+                                            <i class="fa-solid fa-image"></i>
+                                        </div>
+                                        <div>
+                                            <h3>Document Branding</h3>
+                                            <p>Fixed assets used across quotations and other documents.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="branding-grid">
+
+                                    <div class="upload-card">
+                                        <div class="upload-card-header">
+                                            <div>
+                                                <h4>Company Logo</h4>
+                                                <p>Recommended: PNG with transparent background.</p>
+                                            </div>
+                                            <span class="asset-badge">Logo</span>
+                                        </div>
+
+                                        <div class="image-preview logo-preview" id="logoPreview">
+                                            <div class="empty-preview">
+                                                <i class="fa-solid fa-image"></i>
+                                                <span>No logo uploaded</span>
+                                            </div>
+                                            <img id="logoPreviewImage" class="preview-image" src="" alt="Company Logo">
+                                        </div>
+
+                                        <input id="logoFile" type="file"
+                                            accept="image/png,image/jpg,image/jpeg,image/webp" hidden>
+
+                                        <div class="upload-actions">
+                                            <button class="secondary-button" id="chooseLogo" type="button">
+                                                <i class="fa-solid fa-upload"></i>
+                                                Upload Logo
+                                            </button>
+                                            <button class="text-danger-button" id="removeLogo" type="button" hidden>
+                                                <i class="fa-solid fa-trash"></i>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div class="upload-card">
+                                        <div class="upload-card-header">
+                                            <div>
+                                                <h4>Company Stamp + Signature</h4>
+                                                <p>Use one transparent image containing both.</p>
+                                            </div>
+                                            <span class="asset-badge">Stamp</span>
+                                        </div>
+
+                                        <div class="image-preview stamp-preview" id="stampPreview">
+                                            <div class="empty-preview">
+                                                <i class="fa-solid fa-stamp"></i>
+                                                <span>No stamp uploaded</span>
+                                            </div>
+                                            <img id="stampPreviewImage" class="preview-image" src=""
+                                                alt="Company Stamp and Signature">
+                                        </div>
+
+                                        <input id="stampFile" type="file"
+                                            accept="image/png,image/jpg,image/jpeg,image/webp" hidden>
+
+                                        <div class="upload-actions">
+                                            <button class="secondary-button" id="chooseStamp" type="button">
+                                                <i class="fa-solid fa-upload"></i>
+                                                Upload Stamp
+                                            </button>
+                                            <button class="text-danger-button" id="removeStamp" type="button" hidden>
+                                                <i class="fa-solid fa-trash"></i>
+                                                Remove
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                <div class="form-note">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>
+                                        These branding assets are company-level settings. Individual quotations should
+                                        not
+                                        need separate stamp or signature fields.
+                                    </span>
+                                </div>
+                                <div class="form-footer">
+                                    <span id="saveStatus">All changes are saved to Company Profile.</span>
+                                    <button class="secondary-button" id="resetProfile" type="button">
+                                        <i class="fa-solid fa-rotate-left"></i>
+                                        Reset
+                                    </button>
+                                    <button class="primary-button" id="saveProfile" type="submit">
+                                        <i class="fa-solid fa-check"></i>
+                                        <span>Save Changes</span>
+                                    </button>
+                                </div>
+                            </section>
+
+
+                        </div>
+
+                        <aside class="profile-side">
+                            <section class="content-card preview-card">
+                                <div class="card-header">
+                                    <div class="section-title">
+                                        <div class="section-icon green">
+                                            <i class="fa-solid fa-eye"></i>
+                                        </div>
+                                        <div>
+                                            <h3>Document Preview</h3>
+                                            <p>How your company header will look.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="document-preview">
+                                    <div class="document-logo" id="documentLogo">
+                                        <i class="fa-solid fa-building"></i>
+                                    </div>
+
+                                    <div class="document-company">
+                                        <strong id="previewCompanyName">Company Name</strong>
+                                        <span id="previewTagline">Company tagline</span>
+                                        <small id="previewAddress">Company address</small>
+                                    </div>
+
+                                    <div class="document-divider"></div>
+
+                                    <div class="preview-contact">
+                                        <span><i class="fa-solid fa-phone"></i><b id="previewPhone">—</b></span>
+                                        <span><i class="fa-solid fa-envelope"></i><b id="previewEmail">—</b></span>
+                                        <span><i class="fa-solid fa-id-card"></i><b id="previewGstin">—</b></span>
+                                    </div>
+                                </div>
+                            </section>
+
+                            <section class="content-card fixed-settings-card">
+                                <div class="fixed-settings-title">
+                                    <i class="fa-solid fa-lock"></i>
+                                    <div>
+                                        <strong>Company-level settings</strong>
+                                        <span>Used consistently across documents.</span>
+                                    </div>
+                                </div>
+
+                                <ul>
+                                    <li>Company name and contact details</li>
+                                    <li>Logo</li>
+                                    <li>Stamp + signature</li>
+                                    <li>Authorized signatory</li>
+                                </ul>
+                            </section>
+                        </aside>
+
+                    </div>
+
+                </form>
+
+            </section>
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/js/authGuard.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/notifications.js"></script>
+    <script src="js/sidebar.js"></script>
+    <script src="js/header.js"></script>
+    <script src="js/company-profile.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async () => {
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                window.location.replace("/login");
+                return;
+            }
+
+            await Promise.all([
+                loadSidebar("company-profile"),
+                loadHeader({
+                    title: "Company Profile",
+                    description: "Manage company details, branding and authorized signatory."
+                })
+            ]);
+
+            // if (typeof initCompanyProfilePage === "function") {
+            //     await initCompanyProfilePage();
+            // }
+        });
+    </script>
+</body>
+
+</html>

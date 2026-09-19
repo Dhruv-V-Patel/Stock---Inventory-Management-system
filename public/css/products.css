@@ -608,6 +608,11 @@
   padding: 20px 21px 0;
 }
 
+#productCode:disabled {
+  cursor: not-allowed;
+  opacity: 0.75;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -653,12 +658,15 @@
   color: #9ca3af;
 }
 
-.form-error {
+.form-error,.form-hint {
   display: block;
   min-height: 14px;
   margin-top: 4px;
   color: var(--danger);
   font-size: 12px;
+}
+.form-hint{
+  color: var(--primary);
 }
 
 .currency-input {

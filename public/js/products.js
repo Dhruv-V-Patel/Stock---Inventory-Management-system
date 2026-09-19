@@ -50,7 +50,7 @@ const ProductsPage = (() => {
     size: product.size ?? "",
     unit: product.unit ?? "PCS",
     minimum_stock: Number(product.minimum_stock ?? 0),
-    // selling_rate: Number(product.selling_rate ?? 0),
+    selling_rate: Number(product.selling_rate ?? 0),
     gst_tax_rate: Number(product.gst_tax_rate ?? 0),
     is_active: Boolean(product.is_active),
   });
@@ -311,10 +311,6 @@ const ProductsPage = (() => {
     }
 
     elements.empty.hidden = true;
-  
-  // <span class="rate">
-  // ${formatCurrency(product.selling_rate)}
-  // </span>
 
     elements.tableBody.innerHTML = pageRows
       .map((product) => {
@@ -365,6 +361,12 @@ const ProductsPage = (() => {
               ${product.minimum_stock.toLocaleString("en-IN", {
                 maximumFractionDigits: 3,
               })}
+            </td>
+
+            <td>
+              <span class="rate">
+                ${formatCurrency(product.selling_rate)}
+              </span>
             </td>
 
             <td>
@@ -431,8 +433,9 @@ const ProductsPage = (() => {
   const resetForm = () => {
     elements.form.reset();
     elements.id.value = "";
+    elements.code.value = "";
     elements.minimumStock.value = "0";
-    // elements.sellingRate.value = "0";
+    elements.sellingRate.value = "0";
     elements.gstTaxRate.value = "0";
     elements.unit.value = "PCS";
     elements.status.value = "true";
@@ -458,18 +461,27 @@ const ProductsPage = (() => {
   const validateForm = () => {
     clearErrors();
 
-    const code = elements.code.value.trim();
+    // const code = elements.code.value.trim();
     const name = elements.name.value.trim();
+    const sellingRate = Number(elements.sellingRate.value);
 
     let valid = true;
 
-    if (!code) {
-      setError("productCode", "Product code is required.");
-      valid = false;
-    }
+    // if (!code) {
+    //   setError("productCode", "Product code is required.");
+    //   valid = false;
+    // }
 
     if (!name) {
       setError("productName", "Product name is required.");
+      valid = false;
+    }
+
+    if (!Number.isFinite(sellingRate) || sellingRate < 0) {
+      setError(
+        "sellingRate",
+        "Base selling rate must be a valid non-negative amount.",
+      );
       valid = false;
     }
 
@@ -495,7 +507,7 @@ const ProductsPage = (() => {
       elements.size.value = product.size;
       elements.unit.value = product.unit;
       elements.minimumStock.value = product.minimum_stock;
-      // elements.sellingRate.value = product.selling_rate;
+      elements.sellingRate.value = product.selling_rate;
       elements.gstTaxRate.value = String(product.gst_tax_rate ?? 0);
       elements.status.value = String(product.is_active);
       elements.saveProduct.querySelector("span").textContent = "Update Product";
@@ -503,6 +515,7 @@ const ProductsPage = (() => {
       elements.modalTitle.textContent = "Add Product";
       elements.modalDescription.textContent = "Create a product master record.";
       elements.saveProduct.querySelector("span").textContent = "Save Product";
+      elements.code.value = "";
     }
 
     elements.modal.hidden = false;
@@ -561,7 +574,7 @@ const ProductsPage = (() => {
     size: elements.size.value.trim() || null,
     unit: elements.unit.value,
     minimum_stock: Number(elements.minimumStock.value || 0),
-    // selling_rate: Number(elements.sellingRate.value || 0),
+    selling_rate: Number(elements.sellingRate.value || 0),
     gst_tax_rate: Number(elements.gstTaxRate.value || 0),
     is_active: elements.status.value === "true",
   });
@@ -610,36 +623,6 @@ const ProductsPage = (() => {
         : "Save Product";
     }
   };
-
-  // const deleteProduct = async (id) => {
-  //   const product = state.products.find(
-  //     (item) => String(item.id) === String(id),
-  //   );
-
-  //   if (!product) {
-  //     return;
-  //   }
-
-  //   const confirmed = window.confirm(
-  //     `Delete "${product.name}"?\n\nIf this product is already referenced by production, sales or other transactions, the database may reject deletion.`,
-  //   );
-
-  //   if (!confirmed) {
-  //     return;
-  //   }
-
-  //   try {
-  //     await apiRequest(`/api/products/${id}`, {
-  //       method: "DELETE",
-  //     });
-
-  //     await loadProducts();
-  //     showToast("Product deleted successfully.");
-  //   } catch (error) {
-  //     console.error("Failed to delete product:", error);
-  //     showToast(error.message || "Unable to delete product.", "error");
-  //   }
-  // };
 
   const deleteProduct = async (id) => {
     const product = state.products.find(
@@ -750,6 +733,14 @@ const ProductsPage = (() => {
       applyFilters();
     });
 
+    elements.category.addEventListener("change", async () => {
+      const categoryId = elements.category.value;
+
+      if (!state.editingId) {
+        await generateProductCode(categoryId);
+      }
+    });
+
     elements.statusFilter.addEventListener("change", () => {
       state.page = 1;
       applyFilters();
@@ -820,6 +811,37 @@ const ProductsPage = (() => {
       }
     });
   };
+
+  const generateProductCode = async (categoryId) => {
+  if (!categoryId) {
+    elements.code.value = "";
+    return;
+  }
+
+  try {
+    elements.code.value = "Generating...";
+
+    const payload = await apiRequest(
+      `/api/products/next-code?category_id=${encodeURIComponent(categoryId)}`,
+    );
+
+    const code = payload?.code;
+
+    if (!code) {
+      throw new Error("Unable to generate product code.");
+    }
+
+    elements.code.value = code;
+  } catch (error) {
+    console.error("Failed to generate product code:", error);
+
+    elements.code.value = "";
+    showToast(
+      error.message || "Unable to generate product code.",
+      "error",
+    );
+  }
+};
 
   const loadCategories = async (selectedCategory = "") => {
     try {
@@ -985,7 +1007,7 @@ const ProductsPage = (() => {
     elements.size = qs("#productSize");
     elements.unit = qs("#productUnit");
     elements.minimumStock = qs("#minimumStock");
-    // elements.sellingRate = qs("#sellingRate");
+    elements.sellingRate = qs("#sellingRate");
     elements.gstTaxRate = qs("#gstTaxRate");
     elements.status = qs("#productStatus");
 

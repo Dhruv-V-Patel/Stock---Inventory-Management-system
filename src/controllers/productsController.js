@@ -47,6 +47,31 @@ const getProduct = async (req, res) => {
   }
 };
 
+const getNextProductCode = async (req, res) => {
+  try {
+    const { category_id } = req.query;
+
+    const result = await productsService.getNextProductCode(category_id);
+
+    return res.status(200).json({
+      success: true,
+      code: result.code,
+      prefix: result.prefix,
+      sequence: result.sequence,
+    });
+  } catch (error) {
+    console.error("[Products Controller] next-code:", error);
+
+    return res.status(error.statusCode || 500).json({
+      success: false,
+      message:
+        error.statusCode
+          ? error.message
+          : "Failed to generate product code.",
+    });
+  }
+};
+
 const createProduct = async (req, res) => {
   try {
     const product = await productsService.createProduct({
@@ -184,4 +209,5 @@ module.exports = {
   updateProduct,
   deleteProduct,
   getProductSummary,
+  getNextProductCode,
 };

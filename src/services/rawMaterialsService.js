@@ -153,6 +153,29 @@ const getRawMaterialById = async (id) => {
         : null;
 };
 
+const getNextRawMaterialCode = async () => {
+    const query = `
+        SELECT
+            COALESCE(
+                MAX(
+                    CAST(
+                        SUBSTRING(code FROM '^RM-([0-9]+)$')
+                        AS INTEGER
+                    )
+                ),
+                0
+            ) + 1 AS next_number
+        FROM raw_materials
+        WHERE code ~ '^RM-[0-9]+$';
+    `;
+
+    const { rows } = await pool.query(query);
+
+    const nextNumber = Number(rows[0]?.next_number || 1);
+
+    return `RM-${String(nextNumber).padStart(3, "0")}`;
+};
+
 const getRawMaterialSummary = async () => {
     const query = `
         SELECT
@@ -261,28 +284,158 @@ const updateRawMaterial = async (
     return rows[0] ? mapRawMaterial(rows[0]) : null;
 };
 
-const deactivateRawMaterial = async (id) => {
-    const query = `
-        UPDATE raw_materials
-        SET
-            is_active = FALSE,
-            updated_at = NOW()
-        WHERE id = $1
-        RETURNING
-            id,
-            code,
-            name,
-            category,
-            unit,
-            minimum_stock,
-            is_active,
-            created_at,
-            updated_at;
-    `;
+// const deactivateRawMaterial = async (id) => {
+//     const query = `
+//         UPDATE raw_materials
+//         SET
+//             is_active = FALSE,
+//             updated_at = NOW()
+//         WHERE id = $1
+//         RETURNING
+//             id,
+//             code,
+//             name,
+//             category,
+//             unit,
+//             minimum_stock,
+//             is_active,
+//             created_at,
+//             updated_at;
+//     `;
 
-    const { rows } = await pool.query(query, [id]);
+//     const { rows } = await pool.query(query, [id]);
 
-    return rows[0] ? mapRawMaterial(rows[0]) : null;
+//     return rows[0] ? mapRawMaterial(rows[0]) : null;
+// };
+
+const deleteRawMaterial = async (id) => {
+    const client = await pool.connect();
+
+    try {
+        await client.query("BEGIN");
+
+        // Lock material
+        const materialResult = await client.query(
+            `
+                SELECT
+                    id,
+                    code,
+                    name,
+                    category,
+                    unit,
+                    minimum_stock,
+                    is_active,
+                    created_at,
+                    updated_at
+                FROM raw_materials
+                WHERE id = $1
+                FOR UPDATE
+            `,
+            [id]
+        );
+
+        if (materialResult.rowCount === 0) {
+            const error = new Error("Raw material not found.");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        const material = materialResult.rows[0];
+
+        // Check all references
+        const referenceResult = await client.query(
+            `
+                SELECT
+                    EXISTS (
+                        SELECT 1
+                        FROM purchase_items
+                        WHERE raw_material_id = $1
+                    ) AS purchase_reference,
+
+                    EXISTS (
+                        SELECT 1
+                        FROM purchase_return_items
+                        WHERE raw_material_id = $1
+                    ) AS purchase_return_reference,
+
+                    EXISTS (
+                        SELECT 1
+                        FROM product_bom_items
+                        WHERE raw_material_id = $1
+                    ) AS bom_reference,
+
+                    EXISTS (
+                        SELECT 1
+                        FROM production_materials
+                        WHERE raw_material_id = $1
+                    ) AS production_reference,
+
+                    EXISTS (
+                        SELECT 1
+                        FROM stock_movements
+                        WHERE item_type = 'RAW_MATERIAL'
+                          AND item_id = $1
+                    ) AS stock_reference
+            `,
+            [id]
+        );
+
+        const references = referenceResult.rows[0];
+
+        const usedIn = [];
+
+        if (references.purchase_reference) {
+            usedIn.push("Purchase");
+        }
+
+        if (references.purchase_return_reference) {
+            usedIn.push("Purchase Return");
+        }
+
+        if (references.bom_reference) {
+            usedIn.push("BOM");
+        }
+
+        if (references.production_reference) {
+            usedIn.push("Production");
+        }
+
+        if (references.stock_reference) {
+            usedIn.push("Stock Movement");
+        }
+
+        // Block delete if used anywhere
+        if (usedIn.length > 0) {
+            const error = new Error(
+                `Cannot delete "${material.name}". This raw material is already used in: ${usedIn.join(", ")}.`
+            );
+
+            error.statusCode = 409;
+            error.code = "RAW_MATERIAL_IN_USE";
+            error.usedIn = usedIn;
+
+            throw error;
+        }
+
+        // Permanent delete
+        await client.query(
+            `
+                DELETE FROM raw_materials
+                WHERE id = $1
+            `,
+            [id]
+        );
+
+        await client.query("COMMIT");
+
+        return mapRawMaterial(material);
+
+    } catch (error) {
+        await client.query("ROLLBACK").catch(() => {});
+        throw error;
+    } finally {
+        client.release();
+    }
 };
 
 module.exports = {
@@ -291,5 +444,7 @@ module.exports = {
     getRawMaterialSummary,
     createRawMaterial,
     updateRawMaterial,
-    deactivateRawMaterial
+    // deactivateRawMaterial,
+    deleteRawMaterial,
+    getNextRawMaterialCode,
 };

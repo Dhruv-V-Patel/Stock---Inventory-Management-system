@@ -34,13 +34,6 @@
 
       <main class="main-content">
         <section class="products-page">
-          <!-- <div class="products-toolbar">
-            <button class="primary-button" id="addProductButton" type="button">
-              <i class="fa-solid fa-plus"></i>
-              <span>Add Product</span>
-            </button>
-          </div> -->
-
           <section class="product-summary-grid">
             <article class="product-summary-card">
               <div class="summary-icon blue">
@@ -132,7 +125,7 @@
                     <th>Size / Specification</th>
                     <th>Unit</th>
                     <th>Min. Stock</th>
-                    <!-- <th>Selling Rate</th> -->
+                    <th>Selling Rate</th>
                     <th>GST Tax Slab</th>
                     <th>Status</th>
                     <th class="action-column">Action</th>
@@ -233,8 +226,8 @@
         <form id="productForm" novalidate>
           <input type="hidden" id="productId" />
 
-          <div class="form-grid">
-            <div class="form-group">
+           <div class="form-grid">
+            <!--<div class="form-group">
               <label for="productCode">Product Code <span>*</span></label>
               <input
                 id="productCode"
@@ -245,7 +238,27 @@
                 required
               />
               <small class="form-error" data-error-for="productCode"></small>
-            </div>
+            </div> -->
+
+            <div class="form-group">
+  <label for="productCode">Product Code</label>
+
+  <input
+    id="productCode"
+    name="code"
+    type="text"
+    maxlength="50"
+    placeholder="Select category to generate code"
+    disabled
+  />
+
+  <small class="form-hint">
+    <i class="fa-solid fa-wand-magic-sparkles"></i>
+    Product code is auto generated from category.
+  </small>
+
+  <!-- <small class="form-error" data-error-for="productCode"></small> -->
+</div>
 
             <div class="form-group">
               <label for="productName">Product Name <span>*</span></label>
@@ -315,7 +328,7 @@
               />
             </div>
 
-            <!-- <div class="form-group">
+            <div class="form-group">
               <label for="sellingRate">Selling Rate</label>
               <div class="currency-input">
                 <span>₹</span>
@@ -329,7 +342,7 @@
                   placeholder="0.00"
                 />
               </div>
-            </div> -->
+            </div>
 
             <div class="form-group">
   <label for="gstTaxRate">

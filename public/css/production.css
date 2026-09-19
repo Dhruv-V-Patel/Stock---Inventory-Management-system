@@ -431,20 +431,6 @@
 }
 
 /* MODALS */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  background: rgba(15, 23, 42, 0.48);
-  backdrop-filter: blur(2px);
-}
-.modal-overlay[hidden] {
-  display: none;
-}
 .production-modal {
   width: min(760px, 100%);
   max-height: calc(100vh - 40px);
@@ -474,14 +460,6 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
-}
-.modal-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  padding: 19px 21px;
-  border-bottom: 1px solid var(--border);
 }
 .modal-title-wrap {
   display: flex;

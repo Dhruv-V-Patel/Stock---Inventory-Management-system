@@ -1,0 +1,670 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Quotation | Someshwar AI ERP</title>
+
+  <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
+
+  <script>
+    (() => {
+      const theme = localStorage.getItem("theme") || "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="stylesheet" href="/css/quotation.css" />
+
+  <link rel="manifest" href="/manifest.json" />
+
+  <meta name="theme-color" content="#2563eb" />
+</head>
+
+<body>
+  <!-- Sidebar -->
+  <div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div id="sidebar-container"></div>
+
+  <!-- Main -->
+  <div class="main-wrapper">
+    <!-- Header -->
+    <div id="header-container"></div>
+
+    <main class="main-content">
+      <section class="quotation-page">
+        <!-- =====================================================
+             SUMMARY CARDS
+        ====================================================== -->
+
+        <section class="quotation-summary-grid">
+          <article class="quotation-summary-card">
+            <div class="summary-icon blue">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+
+            <div>
+              <span>Total Quotations</span>
+              <strong id="totalQuotations">0</strong>
+            </div>
+          </article>
+
+          <article class="quotation-summary-card">
+            <div class="summary-icon purple">
+              <i class="fa-solid fa-calendar-day"></i>
+            </div>
+
+            <div>
+              <span>Today's Quotations</span>
+              <strong id="todayQuotations">0</strong>
+            </div>
+          </article>
+
+          <article class="quotation-summary-card">
+            <div class="summary-icon orange">
+              <i class="fa-solid fa-clock"></i>
+            </div>
+
+            <div>
+              <span>Expired</span>
+              <strong id="expiredQuotations">0</strong>
+            </div>
+          </article>
+
+          <article class="quotation-summary-card">
+            <div class="summary-icon green">
+              <i class="fa-solid fa-indian-rupee-sign"></i>
+            </div>
+
+            <div>
+              <span>Total Quotation Value</span>
+              <strong id="totalQuotationValue">₹0</strong>
+            </div>
+          </article>
+        </section>
+
+        <!-- =====================================================
+             QUOTATION LIST
+        ====================================================== -->
+
+        <section class="content-card quotations-card">
+          <div class="card-header quotations-card-header">
+            <div>
+              <h2>Quotation List</h2>
+
+              <p>Create and manage customer quotations.</p>
+            </div>
+
+            <button class="primary-button" id="addQuotationButton" type="button">
+              <i class="fa-solid fa-plus"></i>
+
+              <span>New Quotation</span>
+            </button>
+          </div>
+
+          <!-- Filters -->
+
+          <div class="quotation-filters">
+            <div class="search-box">
+              <i class="fa-solid fa-magnifying-glass"></i>
+
+              <input id="quotationSearch" type="search" placeholder="Search quotation no or customer..."
+                autocomplete="off" />
+            </div>
+
+            <select id="customerFilter" class="filter-select">
+              <option value="">All Customers</option>
+            </select>
+
+            <div class="date-filter-wrapper">
+              <input id="quotationDateFilter" class="date-filter" type="date" aria-label="Quotation date" />
+
+              <i class="fa-regular fa-calendar date-filter-icon"></i>
+            </div>
+
+            <button class="secondary-button" id="resetFilters" type="button">
+              <i class="fa-solid fa-rotate-left"></i>
+
+              Reset
+            </button>
+          </div>
+
+          <!-- Table -->
+
+          <div class="table-responsive">
+            <table class="data-table quotations-table">
+              <thead>
+                <tr>
+                  <th>Quotation No.</th>
+
+                  <th>Customer</th>
+
+                  <th>Date</th>
+
+                  <th>Valid Until</th>
+
+                  <th>Items</th>
+
+                  <th>Total</th>
+
+                  <th class="action-column">Action</th>
+                </tr>
+              </thead>
+
+              <tbody id="quotationsTableBody">
+                <tr>
+                  <td colspan="7">
+                    <div class="quotations-loading">
+                      <i class="fa-solid fa-spinner fa-spin"></i>
+
+                      Loading quotations...
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Empty -->
+
+          <div class="quotations-empty" id="quotationsEmpty" hidden>
+            <div class="empty-icon">
+              <i class="fa-solid fa-file-invoice"></i>
+            </div>
+
+            <h3>No quotations found</h3>
+
+            <p>Create your first customer quotation.</p>
+
+            <button class="primary-button small" id="emptyAddQuotation" type="button">
+              <i class="fa-solid fa-plus"></i>
+
+              New Quotation
+            </button>
+          </div>
+
+          <!-- Footer -->
+
+          <div class="quotations-footer">
+            <span id="quotationsCount"> Showing 0 quotations </span>
+
+            <div class="quotations-pagination">
+              <button type="button" class="pagination-button" id="previousPage" disabled>
+                <i class="fa-solid fa-chevron-left"></i>
+              </button>
+
+              <span id="pageNumber"> 1 </span>
+
+              <button type="button" class="pagination-button" id="nextPage" disabled>
+                <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================================================
+       CREATE / EDIT QUOTATION MODAL
+  ========================================================== -->
+
+  <div class="modal-overlay" id="quotationModal" hidden>
+    <div class="modal quotation-modal" role="dialog" aria-modal="true" aria-labelledby="quotationModalTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+
+          <div>
+            <h2 id="quotationModalTitle">New Quotation</h2>
+
+            <p>Create a quotation for customer.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeQuotationModal" type="button" aria-label="Close">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+
+      <form id="quotationForm" novalidate>
+        <div class="quotation-form-body">
+          <section class="quotation-form-section">
+            <div class="section-heading">
+              <div>
+                <h3>Quotation Details</h3>
+
+                <p>Basic quotation information.</p>
+              </div>
+            </div>
+
+            <div class="quotation-form-grid">
+              <div class="form-group">
+                <label for="quotationNo"> Quotation No. </label>
+
+                <input id="quotationNo" type="text" readonly placeholder="Auto generated" />
+              </div>
+
+              <div class="form-group">
+                <label for="quotationDate">
+                  Quotation Date
+                  <span>*</span>
+                </label>
+
+                <input id="quotationDate" type="date" required />
+
+                <small class="form-error" data-error-for="quotationDate"></small>
+              </div>
+
+              <div class="form-group">
+                <label for="validUntil">
+                  Valid Until
+                  <span>*</span>
+                </label>
+
+                <input id="validUntil" type="date" required />
+
+                <small class="form-error" data-error-for="validUntil"></small>
+              </div>
+
+              <div class="form-group quotation-customer-field">
+                <label for="customerId">
+                  Customer
+                  <span>*</span>
+                </label>
+
+                <select id="customerId" required>
+                  <option value="">Select Customer</option>
+                </select>
+
+                <small class="form-error" data-error-for="customer"></small>
+              </div>
+            </div>
+
+            <!-- Customer information -->
+
+            <div class="customer-info" id="customerInfo" hidden>
+              <div class="customer-info-item">
+                <span>Contact Person</span>
+
+                <strong id="customerContactPerson"> - </strong>
+              </div>
+
+              <div class="customer-info-item">
+                <span>Mobile</span>
+
+                <strong id="customerMobile"> - </strong>
+              </div>
+
+              <div class="customer-info-item">
+                <span>GSTIN</span>
+
+                <strong id="customerGstin"> - </strong>
+              </div>
+
+              <div class="customer-info-item">
+                <span>Address</span>
+
+                <strong id="customerAddress"> - </strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="quotation-form-section">
+            <div class="items-section-header">
+              <div>
+                <h3>Quotation Items</h3>
+
+                <p>Select products and enter quantity and rate.</p>
+              </div>
+
+              <button class="secondary-button small" id="addQuotationItemButton" type="button">
+                <i class="fa-solid fa-plus"></i>
+
+                Add Product
+              </button>
+            </div>
+
+            <div class="quotation-items-table-wrap">
+              <table class="quotation-items-table">
+                <thead>
+                  <tr>
+                    <th width="40">#</th>
+
+                    <th>Product</th>
+
+                    <th width="110">Qty</th>
+
+                    <th width="90">Unit</th>
+
+                    <th width="130">Rate (Incl. GST)</th>
+
+                    <th width="100">GST</th>
+
+                    <th width="140">Amount</th>
+
+                    <th width="50"></th>
+                  </tr>
+                </thead>
+
+                <tbody id="quotationItemsBody"></tbody>
+              </table>
+            </div>
+
+            <div class="items-error" id="itemsError"></div>
+
+            <div class="no-items-message" id="noItemsMessage">
+              <i class="fa-solid fa-box-open"></i>
+
+              <span>
+                No products added. Click
+                <strong>Add Product</strong>
+                to add quotation items.
+              </span>
+            </div>
+          </section>
+
+          <section class="quotation-total-section">
+            <div class="quotation-total-box">
+              <div class="total-row">
+                <span> Subtotal (Excl. GST)</span>
+
+                <strong id="subtotalAmount"> ₹0.00 </strong>
+              </div>
+
+              <div class="total-row">
+                <div class="total-label-with-input">
+                  <span> Discount </span>
+
+                  <div class="currency-input">
+                    <span>₹</span>
+
+                    <input id="discount" type="number" min="0" step="0.01" value="0" />
+                  </div>
+                </div>
+
+                <strong id="discountAmount"> ₹0.00 </strong>
+              </div>
+
+              <div class="total-row">
+                <span> GST </span>
+
+                <strong id="taxAmount"> ₹0.00 </strong>
+              </div>
+
+              <div class="total-divider"></div>
+
+              <div class="total-row grand-total-row">
+                <span> Grand Total </span>
+
+                <strong id="grandTotal"> ₹0.00 </strong>
+              </div>
+            </div>
+          </section>
+
+          <section class="quotation-form-section">
+            <div class="items-section-header">
+              <div>
+                <h3>Terms & Conditions</h3>
+
+                <p>Select reusable terms for this quotation.</p>
+              </div>
+
+              <button class="secondary-button small" id="addNewTermButton" type="button">
+                <i class="fa-solid fa-plus"></i>
+
+                Add New Term
+              </button>
+            </div>
+
+            <div class="quotation-terms-list" id="quotationTermsList">
+              <!-- Terms generated by quotation.js -->
+            </div>
+          </section>
+
+          <section class="quotation-form-section">
+            <div class="form-group">
+              <label for="remarks"> Remarks </label>
+
+              <textarea id="remarks" rows="3" maxlength="1000" placeholder="Optional notes..."></textarea>
+            </div>
+          </section>
+
+          <!-- Info -->
+
+          <div class="form-note">
+            <i class="fa-solid fa-circle-info"></i>
+
+            <span>
+              GST is automatically calculated from the selected product's GST
+              rate.
+            </span>
+          </div>
+        </div>
+
+        <!-- Modal Footer -->
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelQuotation" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="saveQuotation" type="submit">
+            <i class="fa-solid fa-check"></i>
+
+            <span> Save Quotation </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       ADD / EDIT TERM MODAL
+  ========================================================== -->
+
+  <div class="modal-overlay" id="termModal" hidden>
+    <div class="modal term-modal" role="dialog" aria-modal="true" aria-labelledby="termModalTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-lines"></i>
+          </div>
+
+          <div>
+            <h2 id="termModalTitle">Add New Term</h2>
+
+            <p>Add reusable quotation term.</p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeTermModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="termForm" novalidate>
+        <div class="term-form-body">
+          <div class="form-group">
+            <label for="termText">
+              Term & Condition
+              <span>*</span>
+            </label>
+
+            <textarea id="termText" rows="5" maxlength="1000" placeholder="Enter term & condition..."
+              required></textarea>
+
+            <small>
+              This term will be available for future quotations.
+            </small>
+          </div>
+
+          <div class="quotation-form-grid">
+            <div class="form-group">
+              <label for="termSortOrder"> Sort Order </label>
+
+              <input id="termSortOrder" type="number" min="0" value="0" />
+            </div>
+
+            <div class="form-group">
+              <label> Status </label>
+
+              <label class="switch">
+                <input type="checkbox" id="termIsActive" checked />
+
+                <span class="slider"></span>
+
+                <span class="switch-label"> Active </span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="secondary-button" id="cancelTerm" type="button">
+            Cancel
+          </button>
+
+          <button class="primary-button" id="saveTerm" type="submit">
+            <i class="fa-solid fa-check"></i>
+
+            <span> Save Term </span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       VIEW QUOTATION MODAL
+  ========================================================== -->
+
+  <div class="modal-overlay" id="viewQuotationModal" hidden>
+    <div class="modal quotation-view-modal" role="dialog" aria-modal="true" aria-labelledby="viewQuotationTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon">
+            <i class="fa-solid fa-file-invoice"></i>
+          </div>
+
+          <div>
+            <h2 id="viewQuotationTitle">Quotation</h2>
+
+            <p id="viewQuotationSubtitle"></p>
+          </div>
+        </div>
+
+        <button class="modal-close" id="closeViewQuotationModal" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div id="quotationDetailsContent" class="quotation-details-content"></div>
+
+      <div class="modal-footer">
+        <button class="secondary-button" id="closeViewQuotation" type="button">
+          Close
+        </button>
+
+        <button class="primary-button" id="downloadQuotationPdf" type="button">
+          <i class="fa-solid fa-file-pdf"></i>
+          <span>Download PDF</span>
+        </button>
+
+        <!-- <button class="primary-button" id="printQuotation" type="button">
+            <i class="fa-solid fa-print"></i>
+
+            Print
+          </button> -->
+      </div>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       DELETE CONFIRMATION
+  ========================================================== -->
+
+  <div class="modal-overlay" id="deleteModal" hidden>
+    <div class="modal confirmation-modal">
+      <div class="confirmation-icon">
+        <i class="fa-solid fa-trash-can"></i>
+      </div>
+
+      <h2>Delete Quotation?</h2>
+
+      <p id="deleteMessage">This quotation will be permanently deleted.</p>
+
+      <div class="modal-footer">
+        <button class="secondary-button" id="cancelDeleteButton" type="button">
+          Cancel
+        </button>
+
+        <button class="danger-button" id="confirmDeleteButton" type="button">
+          <i class="fa-solid fa-trash-can"></i>
+
+          Delete
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- =========================================================
+       SCRIPTS
+  ========================================================== -->
+
+  <script src="/js/authGuard.js"></script>
+
+  <script src="/socket.io/socket.io.js"></script>
+
+  <script src="/js/notifications.js"></script>
+
+  <script src="/js/sidebar.js"></script>
+
+  <script src="/js/header.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js"></script>
+
+  <script src="/js/quotation.js"></script>
+
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const token = localStorage.getItem("accessToken");
+
+      if (!token) {
+        window.location.replace("/login");
+        return;
+      }
+
+      await Promise.all([
+        loadSidebar("quotation"),
+
+        loadHeader({
+          title: "Quotation",
+          description: "Create and manage customer quotations",
+        }),
+      ]);
+
+      if (typeof initQuotationPage === "function") {
+        initQuotationPage();
+      }
+    });
+  </script>
+</body>
+
+</html>

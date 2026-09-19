@@ -161,11 +161,29 @@
                 <input type="hidden" id="materialId">
 
                 <div class="form-grid">
-                    <div class="form-group">
+                    <!-- <div class="form-group">
                         <label for="materialCode">Material Code <span>*</span></label>
                         <input id="materialCode" name="code" type="text" maxlength="50" placeholder="e.g. RM-001"
                             required>
                         <small>Unique code for stock and purchase records.</small>
+                    </div> -->
+
+                    <div class="form-group">
+                        <label for="materialCode">Material Code</label>
+
+                        <input
+                            id="materialCode"
+                            name="code"
+                            type="text"
+                            maxlength="50"
+                            placeholder="Auto generated"
+                            disabled
+                        />
+
+                        <small class="form-hint">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            Material code is auto generated.
+                        </small>
                     </div>
 
                     <div class="form-group">
@@ -241,15 +259,16 @@
             <div class="confirmation-icon">
                 <i class="fa-solid fa-trash-can"></i>
             </div>
-            <h2>Deactivate Material?</h2>
+            <h2>Delete Raw Material?</h2>
             <p id="deleteMessage">
-                This material will be marked inactive. Existing purchase and production history will remain safe.
+                <!-- This material will be marked inactive. Existing purchase and production history will remain safe. -->
+                 This raw material will be permanently deleted. This action cannot be undone.
             </p>
             <div class="modal-footer">
                 <button class="secondary-button" id="cancelDeleteButton" type="button">Cancel</button>
                 <button class="danger-button" id="confirmDeleteButton" type="button">
                     <i class="fa-solid fa-trash-can"></i>
-                    Deactivate
+                    <!-- Deactivate --> Delete
                 </button>
             </div>
         </div>
