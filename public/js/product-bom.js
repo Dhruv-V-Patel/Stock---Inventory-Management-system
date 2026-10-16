@@ -329,7 +329,6 @@ const ProductBomPage = (() => {
           type="number"
           class="bom-material-quantity"
           data-field="quantity"
-          min="0.1"
           step="any"
           value="${escapeHtml(quantity)}"
           placeholder="0.00"

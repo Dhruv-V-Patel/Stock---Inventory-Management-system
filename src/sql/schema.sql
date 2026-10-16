@@ -359,8 +359,8 @@ CREATE TABLE IF NOT EXISTS expense_bills (
   category_id BIGINT NOT NULL REFERENCES expense_categories(id) ON DELETE RESTRICT,
   vendor_name VARCHAR(200),
   bill_number VARCHAR(100),
-  bill_date DATE NOT NULL,
-  due_date DATE,
+  bill_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+  due_date TIMESTAMP WITHOUT TIME ZONE,
   total_amount NUMERIC(14,2) NOT NULL CHECK (total_amount > 0),
   payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
     CHECK (payment_status IN ('PENDING','PARTIAL','PAID')),
@@ -373,13 +373,7 @@ CREATE TABLE IF NOT EXISTS expense_bills (
 CREATE TABLE IF NOT EXISTS payments (
     id BIGSERIAL PRIMARY KEY,
     payment_no VARCHAR(50) UNIQUE NOT NULL,
-    payment_type VARCHAR(20) NOT NULL
-        CHECK (
-            payment_type IN (
-                'CUSTOMER',
-                'SUPPLIER'
-            )
-        ),
+    payment_type VARCHAR(20) NOT NULL,
     customer_id BIGINT REFERENCES customers(id) ON DELETE RESTRICT,
     supplier_id BIGINT REFERENCES suppliers(id) ON DELETE SET NULL,
     sale_id BIGINT REFERENCES sales(id) ON DELETE SET NULL,
@@ -518,7 +512,7 @@ CREATE TABLE IF NOT EXISTS opening_stock (
 
     item_id BIGINT NOT NULL,
 
-    opening_date DATE NOT NULL,
+    opening_date TIMESTAMP WITHOUT TIME ZONE NOT NULL,
 
     quantity NUMERIC(14, 3) NOT NULL DEFAULT 0
         CHECK (quantity >= 0),
@@ -748,7 +742,7 @@ INSERT INTO permissions (module, action, name, description) VALUES
 ('quotations', 'view', 'View Quotations', 'View quotations'),
 ('quotations', 'add', 'Add Quotations', 'Create new quotations'),
 ('quotations', 'edit', 'Edit Quotations', 'Update quotations'),
-('quotations', 'delete', 'Delete Quotations', 'Delete quotations')
+('quotations', 'delete', 'Delete Quotations', 'Delete quotations'),
 
 -- Administration
 ('manage-users', 'view', 'View Manage Users', 'View users'),
@@ -969,9 +963,9 @@ CREATE TABLE IF NOT EXISTS quotations (
         REFERENCES customers(id)
         ON DELETE RESTRICT,
 
-    quotation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+    quotation_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE,
 
-    valid_until DATE,
+    valid_until TIMESTAMP WITHOUT TIME ZONE,
 
     subtotal NUMERIC(15,2) NOT NULL DEFAULT 0
         CHECK (subtotal >= 0),
@@ -1140,3 +1134,16 @@ INSERT INTO permissions (module, action, name, description) VALUES
 ('quotations', 'delete', 'Delete Quotations', 'Delete quotations')
 
 ON CONFLICT (module, action) DO NOTHING;
+
+ALTER TABLE quotations 
+ALTER COLUMN valid_until TYPE TIMESTAMP WITHOUT TIME ZONE,
+ALTER COLUMN quotation_date TYPE TIMESTAMP WITHOUT TIME ZONE;
+
+
+ALTER TABLE  expense_bills
+ALTER COLUMN bill_date TYPE TIMESTAMP WITHOUT TIME ZONE,
+ALTER COLUMN due_date TYPE TIMESTAMP WITHOUT TIME ZONE;
+
+
+ALTER TABLE  opening_stock
+ALTER COLUMN opening_date TYPE TIMESTAMP WITHOUT TIME ZONE;

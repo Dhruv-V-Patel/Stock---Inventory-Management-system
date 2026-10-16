@@ -285,6 +285,8 @@
     height: 100%;
     object-fit: contain;
     padding: 20px;
+    user-select: none;
+    -webkit-user-drag: none;
 }
 
 .image-preview.has-image .preview-image {

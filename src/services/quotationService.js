@@ -65,6 +65,12 @@ const mapQuotation = (row) => ({
   discount: Number(row.discount || 0),
   tax_amount: Number(row.tax_amount || 0),
   total_amount: Number(row.total_amount || 0),
+  product_names: Array.isArray(row.product_names)
+    ? row.product_names
+    : [],
+  product_quantities: Array.isArray(row.product_quantities)
+    ? row.product_quantities.map(Number)
+    : [],
   remarks: row.remarks || "",
   created_by: row.created_by ? Number(row.created_by) : null,
   created_at: row.created_at,
@@ -93,7 +99,6 @@ const mapQuotationTerm = (row) => ({
   term_text: row.term_text || "",
   sort_order: Number(row.sort_order || 0),
 });
-
 
 /* ---------------------------------- */
 /* Quotation Options                  */
@@ -254,6 +259,21 @@ const listQuotations = async ({
       q.discount,
       q.tax_amount,
       q.total_amount,
+
+       (
+    SELECT ARRAY_AGG(p.name ORDER BY qi.id)
+    FROM quotation_items qi
+    INNER JOIN products p
+      ON p.id = qi.product_id
+    WHERE qi.quotation_id = q.id
+  ) AS product_names,
+
+  (
+    SELECT ARRAY_AGG(qi.quantity ORDER BY qi.id)
+    FROM quotation_items qi
+    WHERE qi.quotation_id = q.id
+  ) AS product_quantities,
+
       q.remarks,
       q.created_by,
       q.created_at,
@@ -367,63 +387,43 @@ const validateQuotationPayload = (body, { partial = false } = {}) => {
   const payload = {};
 
   if (!partial || body.customer_id !== undefined) {
-    const customerId = parseId(
-      body.customer_id,
-      "customer id",
-    );
+    const customerId = parseId(body.customer_id, "customer id");
 
     payload.customer_id = customerId;
   }
 
   if (!partial || body.quotation_date !== undefined) {
-    const quotationDate =
-      normalizeText(body.quotation_date);
+    const quotationDate = normalizeText(body.quotation_date);
 
     if (!quotationDate) {
-      throw validationError(
-        "Quotation date is required.",
-      );
+      throw validationError("Quotation date is required.");
     }
 
     payload.quotation_date = quotationDate;
   }
 
   if (!partial || body.valid_until !== undefined) {
-    payload.valid_until =
-      normalizeText(body.valid_until);
+    payload.valid_until = normalizeText(body.valid_until);
   }
 
   if (!partial || body.subtotal !== undefined) {
-    payload.subtotal = parseNumber(
-      body.subtotal,
-      "Subtotal",
-    );
+    payload.subtotal = parseNumber(body.subtotal, "Subtotal");
   }
 
   if (!partial || body.discount !== undefined) {
-    payload.discount = parseNumber(
-      body.discount,
-      "Discount",
-    );
+    payload.discount = parseNumber(body.discount, "Discount");
   }
 
   if (!partial || body.tax_amount !== undefined) {
-    payload.tax_amount = parseNumber(
-      body.tax_amount,
-      "Tax amount",
-    );
+    payload.tax_amount = parseNumber(body.tax_amount, "Tax amount");
   }
 
   if (!partial || body.total_amount !== undefined) {
-    payload.total_amount = parseNumber(
-      body.total_amount,
-      "Total amount",
-    );
+    payload.total_amount = parseNumber(body.total_amount, "Total amount");
   }
 
   if (!partial || body.remarks !== undefined) {
-    payload.remarks =
-      normalizeText(body.remarks);
+    payload.remarks = normalizeText(body.remarks);
   }
 
   return payload;
@@ -435,9 +435,7 @@ const validateQuotationPayload = (body, { partial = false } = {}) => {
 
 const validateQuotationItems = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
-    throw validationError(
-      "At least one quotation item is required.",
-    );
+    throw validationError("At least one quotation item is required.");
   }
 
   return items.map((item, index) => {
@@ -452,10 +450,7 @@ const validateQuotationItems = (items) => {
       { min: 0.0001 },
     );
 
-    const rate = parseNumber(
-      item.rate,
-      `Rate at item ${index + 1}`,
-    );
+    const rate = parseNumber(item.rate, `Rate at item ${index + 1}`);
 
     let gstTaxRate = parseNumber(
       item.gst_tax_rate,
@@ -468,14 +463,11 @@ const validateQuotationItems = (items) => {
       );
     }
 
-    const unit =
-      normalizeText(item.unit) || "PCS";
+    const unit = normalizeText(item.unit) || "PCS";
 
-    const amount =
-      quantity * rate;
+    const amount = quantity * rate;
 
-    const gstAmount =
-      amount * gstTaxRate / 100;
+    const gstAmount = (amount * gstTaxRate) / 100;
 
     return {
       product_id: productId,
@@ -499,29 +491,19 @@ const validateQuotationTerms = (terms) => {
   }
 
   if (!Array.isArray(terms)) {
-    throw validationError(
-      "Terms must be an array.",
-    );
+    throw validationError("Terms must be an array.");
   }
 
   return terms.map((term, index) => {
     const termId =
-      term.term_id === undefined ||
-      term.term_id === null ||
-      term.term_id === ""
+      term.term_id === undefined || term.term_id === null || term.term_id === ""
         ? null
-        : parseId(
-            term.term_id,
-            `term id at position ${index + 1}`,
-          );
+        : parseId(term.term_id, `term id at position ${index + 1}`);
 
-    const termText =
-      normalizeText(term.term_text);
+    const termText = normalizeText(term.term_text);
 
     if (!termText) {
-      throw validationError(
-        `Term text is required at position ${index + 1}.`,
-      );
+      throw validationError(`Term text is required at position ${index + 1}.`);
     }
 
     return {
@@ -549,9 +531,7 @@ const validateCustomer = async (client, customerId) => {
   );
 
   if (result.rowCount === 0) {
-    throw notFoundError(
-      "Customer not found or inactive.",
-    );
+    throw notFoundError("Customer not found or inactive.");
   }
 };
 
@@ -560,11 +540,7 @@ const validateCustomer = async (client, customerId) => {
 /* ---------------------------------- */
 
 const getProductsForItems = async (client, items) => {
-  const productIds = [
-    ...new Set(
-      items.map((item) => item.product_id),
-    ),
-  ];
+  const productIds = [...new Set(items.map((item) => item.product_id))];
 
   const result = await client.query(
     `
@@ -582,27 +558,16 @@ const getProductsForItems = async (client, items) => {
   );
 
   if (result.rows.length !== productIds.length) {
-    throw validationError(
-      "One or more selected products were not found.",
-    );
+    throw validationError("One or more selected products were not found.");
   }
 
-  const products = new Map(
-    result.rows.map((row) => [
-      Number(row.id),
-      row,
-    ]),
-  );
+  const products = new Map(result.rows.map((row) => [Number(row.id), row]));
 
   for (const item of items) {
-    const product = products.get(
-      item.product_id,
-    );
+    const product = products.get(item.product_id);
 
     if (!product.is_active) {
-      throw validationError(
-        `Product "${product.name}" is inactive.`,
-      );
+      throw validationError(`Product "${product.name}" is inactive.`);
     }
   }
 
@@ -613,127 +578,92 @@ const getProductsForItems = async (client, items) => {
 /* Create Quotation                   */
 /* ---------------------------------- */
 
-const createQuotation = async ({
-  body,
-  userId,
-  ipAddress,
-}) => {
-  const payload =
-    validateQuotationPayload(body);
+const createQuotation = async ({ body, userId, ipAddress }) => {
+  const payload = validateQuotationPayload(body);
 
-  const items =
-    validateQuotationItems(body.items);
+  const items = validateQuotationItems(body.items);
 
-  const terms =
-    validateQuotationTerms(body.terms);
+  const terms = validateQuotationTerms(body.terms);
 
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    await validateCustomer(
-      client,
-      payload.customer_id,
-    );
+    await validateCustomer(client, payload.customer_id);
 
-    const products =
-      await getProductsForItems(
-        client,
-        items,
-      );
-
-    /*
-     * GST is always taken from Product Master.
-     * Do not trust frontend GST value.
-     */
+    const products = await getProductsForItems(client, items);
 
     for (const item of items) {
-      const product =
-        products.get(item.product_id);
+      const product = products.get(item.product_id);
 
-      item.unit =
-        product.unit || item.unit;
+      item.unit = product.unit || item.unit;
 
-      item.gst_tax_rate =
-        Number(product.gst_tax_rate || 0);
+      // GST is always taken from Product Master
+      item.gst_tax_rate = Number(product.gst_tax_rate || 0);
 
-      item.amount =
-        Number(
-          (item.quantity * item.rate).toFixed(2),
-        );
+      // Rate is GST-inclusive
+      item.amount = Number((item.quantity * item.rate).toFixed(2));
 
-      item.gst_amount =
-        Number(
-          (
-            item.amount *
-            item.gst_tax_rate /
-            100
-          ).toFixed(2),
-        );
-    }
+      const gstRate = item.gst_tax_rate;
 
-    const subtotal = Number(
-      items
-        .reduce(
-          (sum, item) => sum + item.amount,
-          0,
-        )
-        .toFixed(2),
-    );
-
-    const discount = Number(
-      payload.discount || 0,
-    );
-
-    if (discount > subtotal) {
-      throw validationError(
-        "Discount cannot be greater than subtotal.",
+      // Extract GST from GST-inclusive amount
+      item.gst_amount = Number(
+        (gstRate > 0
+          ? item.amount - (item.amount * 100) / (100 + gstRate)
+          : 0
+        ).toFixed(2),
       );
     }
 
-    const taxableAmount =
-      subtotal - discount;
+    const grossSubtotal = Number(
+      items.reduce((sum, item) => sum + item.amount, 0).toFixed(2),
+    );
+
+    const discount = Number(payload.discount || 0);
+
+    if (discount > grossSubtotal) {
+      throw validationError("Discount cannot be greater than subtotal.");
+    }
+
+    // Discount is deducted from GST-inclusive amount
+    const grossAfterDiscount = Number((grossSubtotal - discount).toFixed(2));
 
     const taxAmount = Number(
       items
-        .reduce(
-          (sum, item) => {
-            const taxableItem =
-              item.amount -
-              (
-                discount *
-                item.amount /
-                subtotal
-              );
+        .reduce((sum, item) => {
+          const itemGross = item.amount;
 
-            return (
-              sum +
-              (
-                taxableItem *
-                item.gst_tax_rate /
-                100
-              )
-            );
-          },
-          0,
-        )
+          if (!itemGross) return sum;
+
+          // Distribute discount proportionally
+          const itemDiscount = discount * (itemGross / grossSubtotal);
+
+          const itemGrossAfterDiscount = Math.max(0, itemGross - itemDiscount);
+
+          const gstRate = Number(item.gst_tax_rate || 0);
+
+          // Extract GST from GST-inclusive discounted amount
+          const itemGst =
+            gstRate > 0
+              ? itemGrossAfterDiscount -
+                (itemGrossAfterDiscount * 100) / (100 + gstRate)
+              : 0;
+
+          return sum + itemGst;
+        }, 0)
         .toFixed(2),
     );
 
-    const totalAmount = Number(
-      (
-        taxableAmount +
-        taxAmount
-      ).toFixed(2),
-    );
+    const subtotal = Number((grossAfterDiscount - taxAmount).toFixed(2));
 
-    const quotationNo =
-      await getNextQuotationNo();
+    // Rate already includes GST
+    const totalAmount = grossAfterDiscount;
 
-    const quotationResult =
-      await client.query(
-        `
+    const quotationNo = await getNextQuotationNo();
+
+    const quotationResult = await client.query(
+      `
           INSERT INTO quotations (
             quotation_no,
             customer_id,
@@ -760,24 +690,21 @@ const createQuotation = async ({
           )
           RETURNING *
         `,
-        [
-          quotationNo,
-          payload.customer_id,
-          payload.quotation_date,
-          payload.valid_until,
-          subtotal,
-          discount,
-          taxAmount,
-          totalAmount,
-          payload.remarks,
-          userId || null,
-        ],
-      );
+      [
+        quotationNo,
+        payload.customer_id,
+        payload.quotation_date,
+        payload.valid_until,
+        subtotal,
+        discount,
+        taxAmount,
+        totalAmount,
+        payload.remarks,
+        userId || null,
+      ],
+    );
 
-    const quotationId =
-      Number(
-        quotationResult.rows[0].id,
-      );
+    const quotationId = Number(quotationResult.rows[0].id);
 
     /* -------------------------------- */
     /* Insert Items                     */
@@ -826,29 +753,25 @@ const createQuotation = async ({
 
     for (const term of terms) {
       if (term.term_id) {
-        const termResult =
-          await client.query(
-            `
+        const termResult = await client.query(
+          `
               SELECT term_text
               FROM quotation_terms
               WHERE id = $1
                 AND is_active = TRUE
               LIMIT 1
             `,
-            [term.term_id],
-          );
+          [term.term_id],
+        );
 
         if (termResult.rowCount === 0) {
-          throw notFoundError(
-            "Selected quotation term not found or inactive.",
-          );
+          throw notFoundError("Selected quotation term not found or inactive.");
         }
 
         /*
          * Snapshot master term text.
          */
-        term.term_text =
-          termResult.rows[0].term_text;
+        term.term_text = termResult.rows[0].term_text;
       }
 
       await client.query(
@@ -866,12 +789,7 @@ const createQuotation = async ({
             $4
           )
         `,
-        [
-          quotationId,
-          term.term_id,
-          term.term_text,
-          term.sort_order,
-        ],
+        [quotationId, term.term_id, term.term_text, term.sort_order],
       );
     }
 
@@ -915,13 +833,9 @@ const createQuotation = async ({
 
     await client.query("COMMIT");
 
-    return getQuotationById(
-      quotationId,
-    );
+    return getQuotationById(quotationId);
   } catch (error) {
-    await client
-      .query("ROLLBACK")
-      .catch(() => {});
+    await client.query("ROLLBACK").catch(() => {});
 
     throw error;
   } finally {
@@ -933,41 +847,19 @@ const createQuotation = async ({
 /* Update Quotation                   */
 /* ---------------------------------- */
 
-const updateQuotation = async ({
-  id: idValue,
-  body,
-  userId,
-  ipAddress,
-}) => {
-  const id = parseId(
-    idValue,
-    "quotation id",
-  );
+const updateQuotation = async ({ id: idValue, body, userId, ipAddress }) => {
+  const id = parseId(idValue, "quotation id");
 
-  const payload =
-    validateQuotationPayload(
-      body,
-      { partial: true },
-    );
+  const payload = validateQuotationPayload(body, { partial: true });
 
   const items =
-    body.items !== undefined
-      ? validateQuotationItems(body.items)
-      : null;
+    body.items !== undefined ? validateQuotationItems(body.items) : null;
 
   const terms =
-    body.terms !== undefined
-      ? validateQuotationTerms(body.terms)
-      : null;
+    body.terms !== undefined ? validateQuotationTerms(body.terms) : null;
 
-  if (
-    Object.keys(payload).length === 0 &&
-    items === null &&
-    terms === null
-  ) {
-    throw validationError(
-      "No fields provided for update.",
-    );
+  if (Object.keys(payload).length === 0 && items === null && terms === null) {
+    throw validationError("No fields provided for update.");
   }
 
   const client = await pool.connect();
@@ -975,147 +867,103 @@ const updateQuotation = async ({
   try {
     await client.query("BEGIN");
 
-    const currentResult =
-      await client.query(
-        `
+    const currentResult = await client.query(
+      `
           SELECT *
           FROM quotations
           WHERE id = $1
           FOR UPDATE
         `,
-        [id],
-      );
-
-    if (currentResult.rowCount === 0) {
-      throw notFoundError(
-        "Quotation not found.",
-      );
-    }
-
-    const current =
-      currentResult.rows[0];
-
-    const customerId =
-      payload.customer_id ??
-      Number(current.customer_id);
-
-    await validateCustomer(
-      client,
-      customerId,
+      [id],
     );
 
-    let finalSubtotal =
-      Number(current.subtotal);
+    if (currentResult.rowCount === 0) {
+      throw notFoundError("Quotation not found.");
+    }
+
+    const current = currentResult.rows[0];
+
+    const customerId = payload.customer_id ?? Number(current.customer_id);
+
+    await validateCustomer(client, customerId);
+
+    let finalSubtotal = Number(current.subtotal);
 
     let finalDiscount =
       payload.discount !== undefined
         ? payload.discount
         : Number(current.discount);
 
-    let finalTaxAmount =
-      Number(current.tax_amount);
+    let finalTaxAmount = Number(current.tax_amount);
 
-    let finalTotalAmount =
-      Number(current.total_amount);
+    let finalTotalAmount = Number(current.total_amount);
 
     /* -------------------------------- */
     /* Update Items                     */
     /* -------------------------------- */
 
     if (items !== null) {
-      const products =
-        await getProductsForItems(
-          client,
-          items,
-        );
+      const products = await getProductsForItems(client, items);
 
       for (const item of items) {
-        const product =
-          products.get(item.product_id);
+        const product = products.get(item.product_id);
 
-        item.unit =
-          product.unit || item.unit;
+        item.unit = product.unit || item.unit;
 
         /*
          * Always use GST from Product Master.
          */
-        item.gst_tax_rate =
-          Number(product.gst_tax_rate || 0);
+        item.gst_tax_rate = Number(product.gst_tax_rate || 0);
 
-        item.amount =
-          Number(
-            (
-              item.quantity *
-              item.rate
-            ).toFixed(2),
-          );
+        item.amount = Number((item.quantity * item.rate).toFixed(2));
 
-        item.gst_amount =
-          Number(
-            (
-              item.amount *
-              item.gst_tax_rate /
-              100
-            ).toFixed(2),
-          );
+        const gstRate = Number(item.gst_tax_rate || 0);
+
+        item.gst_amount = Number(
+          (gstRate > 0
+            ? item.amount - (item.amount * 100) / (100 + gstRate)
+            : 0
+          ).toFixed(2),
+        );
       }
 
       finalSubtotal = Number(
-        items
-          .reduce(
-            (sum, item) =>
-              sum + item.amount,
-            0,
-          )
-          .toFixed(2),
+        items.reduce((sum, item) => sum + item.amount, 0).toFixed(2),
       );
 
-      if (
-        finalDiscount >
-        finalSubtotal
-      ) {
-        throw validationError(
-          "Discount cannot be greater than subtotal.",
-        );
+      if (finalDiscount > finalSubtotal) {
+        throw validationError("Discount cannot be greater than subtotal.");
       }
 
-      const taxableAmount =
-        finalSubtotal -
-        finalDiscount;
+      const taxableAmount = Number((finalSubtotal - finalDiscount).toFixed(2));
 
       finalTaxAmount = Number(
         items
-          .reduce(
-            (sum, item) => {
-              const taxableItem =
-                item.amount -
-                (
-                  finalDiscount *
-                  item.amount /
-                  finalSubtotal
-                );
+          .reduce((sum, item) => {
+            const itemGross = Number(item.amount || 0);
 
-              return (
-                sum +
-                (
-                  taxableItem *
-                  item.gst_tax_rate /
-                  100
-                )
-              );
-            },
-            0,
-          )
+            if (!itemGross) return sum;
+
+            const itemDiscount = finalDiscount * (itemGross / finalSubtotal);
+
+            const itemGrossAfterDiscount = Math.max(0,itemGross - itemDiscount);
+
+            const gstRate = Number(item.gst_tax_rate || 0);
+
+            const itemGst =
+              gstRate > 0
+                ? itemGrossAfterDiscount -
+                  (itemGrossAfterDiscount * 100) / (100 + gstRate)
+                : 0;
+
+            return sum + itemGst;
+          }, 0)
           .toFixed(2),
       );
 
-      finalTotalAmount =
-        Number(
-          (
-            taxableAmount +
-            finalTaxAmount
-          ).toFixed(2),
-        );
+      finalSubtotal = Number((taxableAmount - finalTaxAmount).toFixed(2));
+
+      finalTotalAmount = taxableAmount;
 
       await client.query(
         `
@@ -1178,17 +1026,16 @@ const updateQuotation = async ({
 
       for (const term of terms) {
         if (term.term_id) {
-          const termResult =
-            await client.query(
-              `
+          const termResult = await client.query(
+            `
                 SELECT term_text
                 FROM quotation_terms
                 WHERE id = $1
                   AND is_active = TRUE
                 LIMIT 1
               `,
-              [term.term_id],
-            );
+            [term.term_id],
+          );
 
           if (termResult.rowCount === 0) {
             throw notFoundError(
@@ -1196,8 +1043,7 @@ const updateQuotation = async ({
             );
           }
 
-          term.term_text =
-            termResult.rows[0].term_text;
+          term.term_text = termResult.rows[0].term_text;
         }
 
         await client.query(
@@ -1215,12 +1061,7 @@ const updateQuotation = async ({
               $4
             )
           `,
-          [
-            id,
-            term.term_id,
-            term.term_text,
-            term.sort_order,
-          ],
+          [id, term.term_id, term.term_text, term.sort_order],
         );
       }
     }
@@ -1246,8 +1087,7 @@ const updateQuotation = async ({
       `,
       [
         customerId,
-        payload.quotation_date ??
-          current.quotation_date,
+        payload.quotation_date ?? current.quotation_date,
         payload.valid_until !== undefined
           ? payload.valid_until
           : current.valid_until,
@@ -1255,9 +1095,7 @@ const updateQuotation = async ({
         finalDiscount,
         finalTaxAmount,
         finalTotalAmount,
-        payload.remarks !== undefined
-          ? payload.remarks
-          : current.remarks,
+        payload.remarks !== undefined ? payload.remarks : current.remarks,
         id,
       ],
     );
@@ -1302,9 +1140,7 @@ const updateQuotation = async ({
 
     return getQuotationById(id);
   } catch (error) {
-    await client
-      .query("ROLLBACK")
-      .catch(() => {});
+    await client.query("ROLLBACK").catch(() => {});
 
     throw error;
   } finally {
@@ -1316,40 +1152,29 @@ const updateQuotation = async ({
 /* Delete Quotation                   */
 /* ---------------------------------- */
 
-const deleteQuotation = async ({
-  id: idValue,
-  userId,
-  ipAddress,
-}) => {
-  const id = parseId(
-    idValue,
-    "quotation id",
-  );
+const deleteQuotation = async ({ id: idValue, userId, ipAddress }) => {
+  const id = parseId(idValue, "quotation id");
 
   const client = await pool.connect();
 
   try {
     await client.query("BEGIN");
 
-    const result =
-      await client.query(
-        `
+    const result = await client.query(
+      `
           SELECT *
           FROM quotations
           WHERE id = $1
           FOR UPDATE
         `,
-        [id],
-      );
+      [id],
+    );
 
     if (result.rowCount === 0) {
-      throw notFoundError(
-        "Quotation not found.",
-      );
+      throw notFoundError("Quotation not found.");
     }
 
-    const quotation =
-      result.rows[0];
+    const quotation = result.rows[0];
 
     await client.query(
       `
@@ -1378,25 +1203,17 @@ const deleteQuotation = async ({
           $4
         )
       `,
-      [
-        userId || null,
-        id,
-        JSON.stringify(quotation),
-        ipAddress || null,
-      ],
+      [userId || null, id, JSON.stringify(quotation), ipAddress || null],
     );
 
     await client.query("COMMIT");
 
     return {
       id,
-      quotation_no:
-        quotation.quotation_no,
+      quotation_no: quotation.quotation_no,
     };
   } catch (error) {
-    await client
-      .query("ROLLBACK")
-      .catch(() => {});
+    await client.query("ROLLBACK").catch(() => {});
 
     throw error;
   } finally {
@@ -1433,17 +1250,13 @@ const getQuotationSummary = async () => {
   const row = result.rows[0];
 
   return {
-    total_quotations:
-      Number(row.total_quotations || 0),
+    total_quotations: Number(row.total_quotations || 0),
 
-    total_value:
-      Number(row.total_value || 0),
+    total_value: Number(row.total_value || 0),
 
-    today_quotations:
-      Number(row.today_quotations || 0),
+    today_quotations: Number(row.today_quotations || 0),
 
-    expired_quotations:
-      Number(row.expired_quotations || 0),
+    expired_quotations: Number(row.expired_quotations || 0),
   };
 };
 
@@ -1476,16 +1289,11 @@ const listQuotationTerms = async () => {
   }));
 };
 
-const createQuotationTerm = async ({
-  term_text,
-}) => {
-  const text =
-    normalizeText(term_text);
+const createQuotationTerm = async ({ term_text }) => {
+  const text = normalizeText(term_text);
 
   if (!text) {
-    throw validationError(
-      "Term text is required.",
-    );
+    throw validationError("Term text is required.");
   }
 
   const result = await pool.query(
@@ -1508,18 +1316,12 @@ const updateQuotationTerm = async ({
   is_active,
   sort_order,
 }) => {
-  const id = parseId(
-    idValue,
-    "term id",
-  );
+  const id = parseId(idValue, "term id");
 
-  const text =
-    normalizeText(term_text);
+  const text = normalizeText(term_text);
 
   if (!text) {
-    throw validationError(
-      "Term text is required.",
-    );
+    throw validationError("Term text is required.");
   }
 
   const result = await pool.query(
@@ -1533,28 +1335,18 @@ const updateQuotationTerm = async ({
       WHERE id = $4
       RETURNING *
     `,
-    [
-      text,
-      is_active,
-      sort_order,
-      id,
-    ],
+    [text, is_active, sort_order, id],
   );
 
   if (result.rowCount === 0) {
-    throw notFoundError(
-      "Quotation term not found.",
-    );
+    throw notFoundError("Quotation term not found.");
   }
 
   return result.rows[0];
 };
 
 const deleteQuotationTerm = async (idValue) => {
-  const id = parseId(
-    idValue,
-    "term id",
-  );
+  const id = parseId(idValue, "term id");
 
   const result = await pool.query(
     `
@@ -1566,9 +1358,7 @@ const deleteQuotationTerm = async (idValue) => {
   );
 
   if (result.rowCount === 0) {
-    throw notFoundError(
-      "Quotation term not found.",
-    );
+    throw notFoundError("Quotation term not found.");
   }
 
   return result.rows[0];
@@ -1596,8 +1386,7 @@ const getCompanySettings = async () => {
     website: row.website || "",
     logo_url: row.logo_url || "",
     stamp_url: row.stamp_url || "",
-    authorized_signatory_name:
-      row.authorized_signatory_name || "",
+    authorized_signatory_name: row.authorized_signatory_name || "",
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -1621,5 +1410,5 @@ module.exports = {
   updateQuotationTerm,
   deleteQuotationTerm,
 
-  getCompanySettings
+  getCompanySettings,
 };

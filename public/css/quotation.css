@@ -188,11 +188,13 @@
 .quotations-table th:nth-child(2) { min-width: 190px; }
 .quotations-table th:nth-child(3),
 .quotations-table th:nth-child(4) { width: 125px; }
-.quotations-table th:nth-child(5) { width: 75px; text-align: center; }
-.quotations-table th:nth-child(6) { width: 150px; text-align: right; }
+.quotations-table th:nth-child(5) { min-width: 190px; text-align: center; }
+.quotations-table th:nth-child(6) { text-align: center; }
+.quotations-table th:nth-child(7) { width: 120px; text-align: right; }
 
 .quotations-table td:nth-child(5) { text-align: center; }
-.quotations-table td:nth-child(6) { text-align: right; }
+.quotations-table td:nth-child(6) { text-align: center; }
+.quotations-table td:nth-child(7) { text-align: right; }
 
 .quotation-number {
   display: inline-flex;
@@ -1159,9 +1161,10 @@
   text-align: right;
 }
 
-.quotation-product-name {
+.quotation-product-name, .quotation-product-qty {
   color: #111827;
   font-weight: 700;
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 

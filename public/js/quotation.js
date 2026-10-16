@@ -198,6 +198,14 @@ const QuotationPage = (() => {
 
     item_count: Number(quotation.item_count || quotation.items_count || 0),
 
+    product_names: Array.isArray(quotation.product_names)
+      ? quotation.product_names
+      : [],
+
+    product_quantities: Array.isArray(quotation.product_quantities)
+      ? quotation.product_quantities
+      : [],
+
     subtotal: Number(quotation.subtotal || 0),
 
     discount: Number(quotation.discount || 0),
@@ -361,7 +369,7 @@ const QuotationPage = (() => {
   const renderLoading = () => {
     elements.tableBody.innerHTML = `
       <tr>
-        <td colspan="7">
+        <td colspan="8">
 
           <div class="quotations-loading">
 
@@ -456,13 +464,41 @@ const QuotationPage = (() => {
                 </td>
 
 
-                <td>
+               <td>
+  <div class="quotation-product-list">
+    ${
+      quotation.product_names.length
+        ? quotation.product_names
+            .map(
+              (name) => `
+                <div class="quotation-product-name">
+                  ${escapeHtml(name)}
+                </div>
+              `,
+            )
+            .join("")
+        : "—"
+    }
+  </div>
+</td>
 
-                  <span class="item-count">
-                    ${formatNumber(quotation.item_count)}
-                  </span>
-
-                </td>
+<td>
+  <div class="quotation-qty-list">
+    ${
+      quotation.product_quantities.length
+        ? quotation.product_quantities
+            .map(
+              (quantity) => `
+                <div class="quotation-product-qty">
+                  ${formatNumber(quantity)}
+                </div>
+              `,
+            )
+            .join("")
+        : "—"
+    }
+  </div>
+</td>
 
 
                 <td>
@@ -606,7 +642,7 @@ const QuotationPage = (() => {
       elements.tableBody.innerHTML = `
         <tr>
 
-          <td colspan="7">
+          <td colspan="8">
 
             <div class="quotations-loading">
 
@@ -988,49 +1024,6 @@ const QuotationPage = (() => {
      TOTAL CALCULATION
   ======================================== */
 
-  // const calculateTotals = () => {
-  //   const subtotal = state.items.reduce(
-  //     (sum, item) => sum + Number(item.amount || 0),
-  //     0,
-  //   );
-
-  //   const discount = Math.max(0, Number(elements.discount.value || 0));
-
-  //   const taxableAmount = Math.max(0, subtotal - discount);
-
-  //   /*
-  //     GST is calculated proportionally
-  //     after discount.
-  //   */
-
-  //   let tax = 0;
-
-  //   if (subtotal > 0 && taxableAmount > 0) {
-  //     tax = state.items.reduce((sum, item) => {
-  //       const itemAmount = Number(item.amount || 0);
-
-  //       if (!itemAmount) {
-  //         return sum;
-  //       }
-
-  //       const itemDiscount = discount * (itemAmount / subtotal);
-
-  //       const taxableItem = Math.max(0, itemAmount - itemDiscount);
-
-  //       return sum + (taxableItem * Number(item.gst_tax_rate || 0)) / 100;
-  //     }, 0);
-  //   }
-
-  //   const total = taxableAmount + tax;
-
-  //   return {
-  //     subtotal,
-  //     discount,
-  //     tax,
-  //     total,
-  //   };
-  // };
-
   const calculateTotals = () => {
     const grossSubtotal = state.items.reduce(
       (sum, item) => sum + Number(item.amount || 0),
@@ -1080,6 +1073,7 @@ const QuotationPage = (() => {
       total,
     };
   };
+
   const updateTotal = () => {
     const totals = calculateTotals();
 
@@ -1440,38 +1434,6 @@ const QuotationPage = (() => {
   /* ========================================
      PAYLOAD
   ======================================== */
-
-  // const getPayload = () => {
-  //   updateSelectedTerms();
-
-  //   const totals = calculateTotals();
-
-  //   return {
-  //     customer_id: Number(elements.customerId.value),
-
-  //     quotation_date: elements.quotationDate.value,
-
-  //     valid_until: elements.validUntil.value,
-
-  //     discount: Number(totals.discount || 0),
-
-  //     remarks: elements.remarks.value.trim() || null,
-
-  //     items: state.items.map((item) => ({
-  //       product_id: Number(item.product_id),
-
-  //       quantity: Number(item.quantity),
-
-  //       rate: Number(item.rate),
-  //     })),
-
-  //     terms: state.selectedTerms.map((termId, index) => ({
-  //       term_id: Number(termId),
-
-  //       sort_order: index + 1,
-  //     })),
-  //   };
-  // };
 
   const getPayload = () => {
     updateSelectedTerms();
