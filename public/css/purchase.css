@@ -791,6 +791,271 @@
 .toast.success i { color: var(--success); }
 .toast.error i { color: var(--danger); }
 
+
+/* =========================================
+   SUPPLIER BILL UPLOAD — PREMIUM UI
+========================================= */
+
+.purchase-bill-upload-group {
+  margin: 18px 0;
+  min-width: 0;
+}
+
+.purchase-bill-upload-group > label {
+  display: block;
+  margin-bottom: 9px;
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* Upload area */
+.purchase-bill-upload-group input[type="file"] {
+  display: block;
+  width: 100%;
+  min-height: 64px;
+  padding: 12px;
+  border: 1px dashed #b9c9df;
+  border-radius: 12px;
+  background: #f8faff;
+  color: #475569;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.purchase-bill-upload-group input[type="file"]:hover {
+  border-color: var(--primary);
+  background: #f2f6ff;
+}
+
+.purchase-bill-upload-group input[type="file"]:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Choose file button */
+.purchase-bill-upload-group input[type="file"]::file-selector-button {
+  margin-right: 12px;
+  padding: 9px 15px;
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1e40af;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.purchase-bill-upload-group input[type="file"]::file-selector-button:hover {
+  border-color: var(--primary);
+  background: #eff6ff;
+}
+
+/* Helper text */
+.purchase-bill-upload-group small {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-secondary, #64748b);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* Selected/existing file link area */
+.current-bill-link {
+  margin-top: 10px;
+      font-size: 12px;
+    font-weight: 600;
+}
+
+.current-bill-link:empty {
+  display: none;
+}
+
+.current-bill-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  max-width: 100%;
+  padding: 10px 13px;
+  border: 1px solid #dbe5f2;
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition: all 0.2s ease;
+}
+
+.current-bill-link a:hover {
+  border-color: var(--primary);
+  background: #f5f8ff;
+}
+
+/* =========================================
+   SUPPLIER BILL — DETAILS VIEW CARD
+========================================= */
+
+.supplier-bill-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+  margin-top: 14px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8faff 100%);
+  box-sizing: border-box;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.supplier-bill-card:hover {
+  border-color: #cbdaf1;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, 0.05);
+}
+
+/* Document icon */
+.supplier-bill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #dbeafe;
+  border-radius: 11px;
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 20px;
+}
+
+/* Bill information */
+.supplier-bill-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.supplier-bill-label {
+  color: #64748b;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.09em;
+}
+
+.supplier-bill-info strong {
+  color: #172033;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.supplier-bill-info small {
+  color: #64748b;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* View Bill button */
+.supplier-bill-view-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.supplier-bill-view-button:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 3px 8px rgba(37, 99, 235, 0.08);
+}
+
+.supplier-bill-view-button:focus-visible {
+  outline: 3px solid rgba(37, 99, 235, 0.2);
+  outline-offset: 2px;
+}
+
+.supplier-bill-view-button i:last-child {
+  font-size: 10px;
+  opacity: 0.7;
+}
+
+/* Missing bill status */
+.supplier-bill-missing {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 8px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Mobile responsive */
+@media (max-width: 600px) {
+  .supplier-bill-card {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 13px;
+  }
+
+  .supplier-bill-icon {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+  }
+
+  .supplier-bill-info {
+    flex-basis: calc(100% - 60px);
+  }
+
+  .supplier-bill-view-button {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+  }
+
+  .supplier-bill-missing {
+    margin-left: 52px;
+  }
+}
+
+
 @media (max-width: 1050px) {
   .purchase-summary-grid {
     grid-template-columns: repeat(2, 1fr);

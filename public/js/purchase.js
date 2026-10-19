@@ -34,7 +34,9 @@ const PurchasePage = (() => {
     const response = await fetch(url, {
       ...options,
       headers: {
-        "Content-Type": "application/json",
+        ...(options.body instanceof FormData
+          ? {}
+          : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
         ...(options.headers || {}),
       },
@@ -171,7 +173,9 @@ const PurchasePage = (() => {
     item_count: Number(purchase.item_count || 0),
     total_amount: Number(purchase.total_amount || 0),
     purchase_return_amount: Number(purchase.purchase_return_amount || 0),
-    net_purchase_amount: Number(purchase.net_purchase_amount ?? purchase.total_amount ?? 0),
+    net_purchase_amount: Number(
+      purchase.net_purchase_amount ?? purchase.total_amount ?? 0,
+    ),
     payment_status: purchase.payment_status ?? "PENDING",
   });
 
@@ -207,7 +211,7 @@ const PurchasePage = (() => {
     //   (sum, purchase) => sum + purchase.total_amount,
     //   0,
     // );
-   
+
     const value = purchases.reduce(
       (sum, purchase) => sum + purchase.net_purchase_amount,
       0,
@@ -435,6 +439,13 @@ const PurchasePage = (() => {
     elements.itemsBody.innerHTML = "";
     elements.itemsError.textContent = "";
     state.items = [];
+    if (elements.billFile) {
+      elements.billFile.value = "";
+    }
+
+    if (elements.currentBillLink) {
+      elements.currentBillLink.innerHTML = "";
+    }
     if (elements.modalTitle) elements.modalTitle.textContent = "Add Purchase";
     if (elements.savePurchase)
       elements.savePurchase.querySelector("span").textContent = "Save Purchase";
@@ -453,7 +464,10 @@ const PurchasePage = (() => {
   const populateEditForm = (purchase) => {
     state.editingId = Number(purchase.id);
     elements.supplierId.value = String(purchase.supplier_id || "");
-    elements.purchaseDate.value = String(purchase.purchase_date || "").slice(0,10);
+    elements.purchaseDate.value = String(purchase.purchase_date || "").slice(
+      0,
+      10,
+    );
     elements.invoiceNo.value = purchase.invoice_no || "";
     elements.invoiceDate.value = purchase.invoice_date
       ? String(purchase.invoice_date).slice(0, 10)
@@ -466,6 +480,25 @@ const PurchasePage = (() => {
     elements.freightAmount.value = Number(purchase.freight_amount || 0);
     elements.paymentStatus.value = purchase.payment_status || "PENDING";
     elements.remarks.value = purchase.remarks || "";
+    if (elements.billFile) {
+      elements.billFile.value = "";
+    }
+
+    if (elements.currentBillLink) {
+      if (purchase.bill_file_path) {
+        const link = document.createElement("a");
+
+        link.href = purchase.bill_file_path;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = "View Existing Supplier Bill";
+
+        elements.currentBillLink.replaceChildren(link);
+      } else {
+        elements.currentBillLink.textContent = "No bill uploaded.";
+      }
+    }
+
     state.items = (purchase.items || []).map((item) => ({
       uid: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
       raw_material_id: String(item.raw_material_id || ""),
@@ -678,7 +711,7 @@ const PurchasePage = (() => {
       return false;
     }
 
-    const seen = new Set();
+    // const seen = new Set();
 
     state.items.forEach((item) => {
       const id = String(item.raw_material_id);
@@ -695,15 +728,15 @@ const PurchasePage = (() => {
         valid = false;
       }
 
-      if (seen.has(id) && id !== "") {
-        valid = false;
-        elements.itemsError.textContent =
-          "The same raw material cannot be added more than once.";
-      }
+      // if (seen.has(id) && id !== "") {
+      //   valid = false;
+      //   elements.itemsError.textContent =
+      //     "The same raw material cannot be added more than once.";
+      // }
 
-      if (id !== "") {
-        seen.add(id);
-      }
+      // if (id !== "") {
+      //   seen.add(id);
+      // }
     });
 
     if (!valid && !elements.itemsError.textContent) {
@@ -744,11 +777,25 @@ const PurchasePage = (() => {
       ? "Updating..."
       : "Saving...";
     try {
+      const purchaseData = getPayload();
+      const formData = new FormData();
+
+      Object.entries(purchaseData).forEach(([key, value]) => {
+        if (key === "items") {
+          formData.append("items", JSON.stringify(value));
+        } else {
+          formData.append(key, value ?? "");
+        }
+      });
+
+      if (elements.billFile?.files?.length > 0) {
+        formData.append("bill_file", elements.billFile.files[0]);
+      }
       const payload = await apiRequest(
         isEdit ? `/api/purchases/${state.editingId}` : "/api/purchases",
         {
           method: isEdit ? "PUT" : "POST",
-          body: JSON.stringify(getPayload()),
+          body: formData,
         },
       );
       closeModal();
@@ -888,7 +935,41 @@ const PurchasePage = (() => {
             </tbody>
           </table>
         </div>
+        <div class="supplier-bill-card">
+  <div class="supplier-bill-icon">
+    <i class="fa-solid fa-file-invoice"></i>
+  </div>
 
+  <div class="supplier-bill-info">
+    <span class="supplier-bill-label">SUPPLIER BILL</span>
+
+    <strong>Original Purchase Invoice</strong>
+
+    <small>Uploaded supplier document</small>
+  </div>
+
+  ${
+    purchase.bill_file_path
+      ? `
+        <a
+          class="supplier-bill-view-button"
+          href="${escapeHtml(purchase.bill_file_path)}"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <i class="fa-solid fa-eye"></i>
+          <span>View Bill</span>
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+        </a>
+      `
+      : `
+        <span class="supplier-bill-missing">
+          <i class="fa-solid fa-circle-minus"></i>
+          Not Uploaded
+        </span>
+      `
+  }
+</div>
         <div class="details-total">
           <span>Subtotal: ${formatCurrency(purchase.subtotal)}</span>
           <span>Discount: ${formatCurrency(purchase.discount)}</span>
@@ -1316,6 +1397,8 @@ const PurchasePage = (() => {
     elements.freightAmount = qs("#freightAmount");
     elements.grandTotal = qs("#grandTotal");
     elements.remarks = qs("#remarks");
+    elements.billFile = qs("#billFile");
+    elements.currentBillLink = qs("#currentBillLink");
 
     elements.savePurchase = qs("#savePurchase");
 

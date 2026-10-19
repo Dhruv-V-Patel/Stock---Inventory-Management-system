@@ -306,6 +306,26 @@
           </div>
         </div>
 
+        <!-- Supplier Bill Upload -->
+<div class="form-group purchase-bill-upload-group">
+  <label for="billFile">
+    Supplier Bill Attachment
+  </label>
+
+  <input
+    type="file"
+    id="billFile"
+    name="bill_file"
+    accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+  />
+
+  <small>
+    Upload supplier invoice or bill. PDF, JPG, JPEG or PNG. Maximum 10 MB.
+  </small>
+
+  <div id="currentBillLink" class="current-bill-link"></div>
+</div>
+
         <div class="form-group remarks-group">
           <label for="remarks">Remarks</label>
           <textarea id="remarks" rows="2" maxlength="1000" placeholder="Optional notes..."></textarea>

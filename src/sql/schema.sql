@@ -119,6 +119,7 @@ CREATE TABLE IF NOT EXISTS purchases (
     tax_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     freight_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
     total_amount NUMERIC(14, 2) NOT NULL DEFAULT 0,
+    bill_file_path TEXT,
     payment_status VARCHAR(20) NOT NULL DEFAULT 'PENDING'
         CHECK (
             payment_status IN (
@@ -959,9 +960,16 @@ CREATE TABLE IF NOT EXISTS quotations (
 
     quotation_no VARCHAR(50) NOT NULL UNIQUE,
 
-    customer_id INTEGER NOT NULL
+    customer_id INTEGER
         REFERENCES customers(id)
         ON DELETE RESTRICT,
+
+    customer_name VARCHAR(200),
+    customer_contact_person VARCHAR(150),
+    customer_mobile VARCHAR(30),
+    customer_gstin VARCHAR(20),
+    customer_address TEXT,
+    delivery_address TEXT,
 
     quotation_date TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_DATE,
 
@@ -1147,3 +1155,27 @@ ALTER COLUMN due_date TYPE TIMESTAMP WITHOUT TIME ZONE;
 
 ALTER TABLE  opening_stock
 ALTER COLUMN opening_date TYPE TIMESTAMP WITHOUT TIME ZONE;
+
+
+-- Run this migration once on the existing Jay Products ERP database.
+BEGIN;
+ALTER TABLE quotations ALTER COLUMN customer_id DROP NOT NULL;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS customer_name VARCHAR(200);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS customer_contact_person VARCHAR(150);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS customer_mobile VARCHAR(30);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS customer_gstin VARCHAR(20);
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS customer_address TEXT;
+ALTER TABLE quotations ADD COLUMN IF NOT EXISTS delivery_address TEXT;
+-- Backfill snapshots for existing quotations so old quotations remain stable if master data changes.
+UPDATE quotations q SET
+ customer_name = COALESCE(q.customer_name, c.name),
+ customer_contact_person = COALESCE(q.customer_contact_person, c.contact_person),
+ customer_mobile = COALESCE(q.customer_mobile, c.mobile),
+ customer_gstin = COALESCE(q.customer_gstin, c.gstin),
+ customer_address = COALESCE(q.customer_address, c.address)
+FROM customers c WHERE c.id = q.customer_id;
+COMMIT;
+
+
+ALTER TABLE purchases
+ADD COLUMN IF NOT EXISTS bill_file_path TEXT;

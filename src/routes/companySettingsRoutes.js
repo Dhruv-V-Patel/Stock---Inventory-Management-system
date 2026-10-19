@@ -19,7 +19,7 @@ const { authenticateToken } = require("../middleware/authenticateToken");
 const uploadDir = path.join(
   process.cwd(),
   "public",
-  "images",
+  "uploads",
   "company-profile",
 );
 

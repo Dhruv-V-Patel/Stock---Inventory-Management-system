@@ -144,11 +144,11 @@
 
                   <th>Customer</th>
 
+                  <th>Delivaery Address</th>
+
                   <th>Date</th>
 
                   <th>Valid Until</th>
-
-                  <!-- <th>Items</th> -->
 
                   <th>Product Name</th>
                   
@@ -281,21 +281,29 @@
               </div>
 
               <div class="form-group quotation-customer-field">
-                <label for="customerId">
-                  Customer
-                  <span>*</span>
-                </label>
+                <label for="customerMode">Customer Type <span>*</span></label>
+                <select id="customerMode">
+                  <option value="existing">Select Existing Customer</option>
+                  <option value="manual">Enter Customer Manually</option>
+                </select>
+              </div>
 
-                <select id="customerId" required>
+              <div class="form-group quotation-customer-field" id="existingCustomerField">
+                <label for="customerId">Customer <span>*</span></label>
+                <select id="customerId">
                   <option value="">Select Customer</option>
                 </select>
-
                 <small class="form-error" data-error-for="customer"></small>
+              </div>
+
+              <div class="form-group quotation-customer-field" id="manualCustomerNameField" hidden>
+                <label for="manualCustomerName">Customer / Company Name <span>*</span></label>
+                <input id="manualCustomerName" type="text" maxlength="200" placeholder="Enter customer or company name" />
+                <small class="form-error" data-error-for="manualCustomerName"></small>
               </div>
             </div>
 
             <!-- Customer information -->
-
             <div class="customer-info" id="customerInfo" hidden>
               <div class="customer-info-item">
                 <span>Contact Person</span>
@@ -316,10 +324,34 @@
               </div>
 
               <div class="customer-info-item">
-                <span>Address</span>
+                <span>Billing Address</span>
 
                 <strong id="customerAddress"> - </strong>
               </div>
+            </div>
+
+            <div class="customer-info customer-manual-fields" id="manualCustomerInfo" hidden>
+              <div class="form-group">
+                <label for="manualContactPerson">Contact Person</label>
+                <input id="manualContactPerson" type="text" maxlength="150" placeholder="Enter contact person" />
+              </div>
+              <div class="form-group">
+                <label for="manualMobile">Mobile</label>
+                <input id="manualMobile" type="text" maxlength="10" placeholder="Enter mobile number" />
+              </div>
+              <div class="form-group">
+                <label for="manualGstin">GSTIN</label>
+                <input id="manualGstin" type="text" maxlength="20" placeholder="Enter GSTIN" />
+              </div>
+              <div class="form-group">
+                <label for="manualAddress">Billing Address</label>
+                <textarea id="manualAddress" rows="1" maxlength="1000" placeholder="Enter address"></textarea>
+              </div>
+            </div>
+
+            <div class="form-group quotation-delivery-address-field">
+              <label for="deliveryAddress">Delivery / Shipping Address</label>
+              <textarea id="deliveryAddress" rows="1" maxlength="1500" placeholder="Enter delivery or shipping address (if different from billing address)"></textarea>
             </div>
           </section>
 

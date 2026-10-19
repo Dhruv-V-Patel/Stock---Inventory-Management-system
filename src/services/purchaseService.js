@@ -3,6 +3,127 @@ const { createAuditLog } = require("./auditLogService");
 const { sendPushNotification } = require("./pushService");
 const { createNotification } = require("./notificationService");
 const { applyAvailableAdvance } = require("./paymentService");
+const fs = require("fs/promises");
+const path = require("path");
+
+const deletePurchaseBillFile = async (billFilePath) => {
+  if (!billFilePath) return;
+
+  const normalizedPath = String(billFilePath).replace(/\\/g, "/");
+  const prefix = "/uploads/purchase-bills/";
+
+  // Only allow deleting files from the purchase bills folder.
+  if (!normalizedPath.startsWith(prefix)) {
+    console.warn("Skipped deletion: invalid purchase bill path.");
+    return;
+  }
+
+  const filename = normalizedPath.slice(prefix.length);
+
+  // Prevent path traversal or nested paths.
+  if (
+    !filename ||
+    filename !== path.basename(filename) ||
+    filename.includes("..")
+  ) {
+    console.warn("Skipped deletion: invalid bill filename.");
+    return;
+  }
+
+  const absolutePath = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "purchase-bills",
+    filename,
+  );
+
+  try {
+    await fs.unlink(absolutePath);
+    console.log("Purchase bill deleted:", filename);
+  } catch (error) {
+    if (error.code !== "ENOENT") {
+      console.error("Purchase bill deletion failed:", error);
+    }
+  }
+};
+
+const generateFinalPurchaseBillPath = async (
+  tempBillFilePath,
+  purchaseNo,
+  purchaseDate,
+) => {
+  if (!tempBillFilePath) return null;
+
+  const date = String(purchaseDate || "").slice(0, 10);
+  const [year, month, day] = date.split("-");
+
+  if (
+    !/^\d{4}$/.test(year || "") ||
+    !/^\d{2}$/.test(month || "") ||
+    !/^\d{2}$/.test(day || "")
+  ) {
+    throw new Error("Valid purchase date is required for bill filename.");
+  }
+
+  const formattedDate = `${day}${month}${year}`;
+  const safePurchaseNo = String(purchaseNo).replace(/[^a-zA-Z0-9_-]/g, "-");
+
+  const prefix = "/uploads/purchase-bills/";
+
+  if (!tempBillFilePath.startsWith(prefix)) {
+    throw new Error("Invalid purchase bill file path.");
+  }
+
+  const tempFilename = tempBillFilePath.slice(prefix.length);
+
+  if (
+    !tempFilename ||
+    tempFilename !== path.basename(tempFilename) ||
+    tempFilename.includes("..")
+  ) {
+    throw new Error("Invalid temporary bill filename.");
+  }
+
+  const directory = path.join(
+    process.cwd(),
+    "public",
+    "uploads",
+    "purchase-bills",
+  );
+
+  const tempPath = path.join(directory, tempFilename);
+  const ext = path.extname(tempFilename).toLowerCase();
+
+  let counter = 1;
+
+  while (true) {
+    const uniqueNumber = String(counter).padStart(3, "0");
+
+    const filename = `purchase-bill-${safePurchaseNo}-${formattedDate}-${uniqueNumber}${ext}`;
+
+    const finalPath = path.join(directory, filename);
+
+    try {
+      await fs.copyFile(
+        tempPath,
+        finalPath,
+        require("fs").constants.COPYFILE_EXCL,
+      );
+
+      await fs.unlink(tempPath);
+
+      return `${prefix}${filename}`;
+    } catch (error) {
+      if (error.code === "EEXIST") {
+        counter++;
+        continue;
+      }
+
+      throw error;
+    }
+  }
+};
 
 const generatePurchaseNo = async (client) => {
   const { rows } = await client.query(`
@@ -132,91 +253,6 @@ const getPurchases = async () => {
   return rows;
 };
 
-// const getPurchaseById = async (id) => {
-//   // const purchaseResult = await pool.query(
-//   //   `
-//   //   SELECT
-//   //     p.*,
-//   //     s.name AS supplier_name,
-//   //     s.mobile AS supplier_mobile,
-//   //     s.gstin AS supplier_gstin,
-//   //     s.address AS supplier_address
-//   //   FROM purchases p
-//   //   JOIN suppliers s ON s.id = p.supplier_id
-//   //   WHERE p.id = $1;
-//   // `,
-//   //   [id],
-//   // );
-
-//   const purchaseResult = await pool.query(
-//   `
-//   SELECT
-//     p.*,
-
-//     COALESCE(
-//       (
-//         SELECT SUM(pr.total_amount)
-//         FROM purchase_returns pr
-//         WHERE pr.purchase_id = p.id
-//       ),
-//       0
-//     ) AS purchase_return_amount,
-
-//     GREATEST(
-//       0,
-//       p.total_amount - COALESCE(
-//         (
-//           SELECT SUM(pr.total_amount)
-//           FROM purchase_returns pr
-//           WHERE pr.purchase_id = p.id
-//         ),
-//         0
-//       )
-//     ) AS net_purchase_amount,
-
-//     s.name AS supplier_name,
-//     s.mobile AS supplier_mobile,
-//     s.gstin AS supplier_gstin,
-//     s.address AS supplier_address
-
-//   FROM purchases p
-//   JOIN suppliers s
-//     ON s.id = p.supplier_id
-//   WHERE p.id = $1;
-// `,
-//   [id],
-// );
-
-//   if (!purchaseResult.rows[0]) {
-//     return null;
-//   }
-
-//   const itemsResult = await pool.query(
-//     `
-//     SELECT
-//       pi.id,
-//       pi.raw_material_id,
-//       rm.code AS material_code,
-//       rm.name AS material_name,
-//       pi.quantity,
-//       pi.unit,
-//       pi.rate,
-//       pi.amount
-//     FROM purchase_items pi
-//     JOIN raw_materials rm
-//       ON rm.id = pi.raw_material_id
-//     WHERE pi.purchase_id = $1
-//     ORDER BY pi.id ASC;
-//   `,
-//     [id],
-//   );
-
-//   return {
-//     ...purchaseResult.rows[0],
-//     items: itemsResult.rows,
-//   };
-// };
-
 const getPurchaseById = async (id) => {
   const purchaseResult = await pool.query(
     `
@@ -309,14 +345,10 @@ const getPurchaseById = async (id) => {
 
   const items = itemsResult.rows.map((item) => {
     const quantity = Number(item.quantity || 0);
-    const returnedQuantity = Number(
-      item.returned_quantity || 0,
-    );
+    const returnedQuantity = Number(item.returned_quantity || 0);
 
     const amount = Number(item.amount || 0);
-    const returnedAmount = Number(
-      item.returned_amount || 0,
-    );
+    const returnedAmount = Number(item.returned_amount || 0);
 
     return {
       ...item,
@@ -325,10 +357,7 @@ const getPurchaseById = async (id) => {
 
       returned_quantity: returnedQuantity,
 
-      remaining_quantity: Math.max(
-        0,
-        quantity - returnedQuantity,
-      ),
+      remaining_quantity: Math.max(0, quantity - returnedQuantity),
 
       rate: Number(item.rate || 0),
 
@@ -336,21 +365,15 @@ const getPurchaseById = async (id) => {
 
       returned_amount: returnedAmount,
 
-      net_amount: Math.max(
-        0,
-        amount - returnedAmount,
-      ),
+      net_amount: Math.max(0, amount - returnedAmount),
     };
   });
 
-  const purchaseReturnAmount = Number(
-    purchase.purchase_return_amount || 0,
-  );
+  const purchaseReturnAmount = Number(purchase.purchase_return_amount || 0);
 
   const netPurchaseAmount = Math.max(
     0,
-    Number(purchase.total_amount || 0) -
-      purchaseReturnAmount,
+    Number(purchase.total_amount || 0) - purchaseReturnAmount,
   );
 
   return {
@@ -364,7 +387,7 @@ const getPurchaseById = async (id) => {
   };
 };
 
-const createPurchase = async (payload, {userId = null, ipAddress}) => {
+const createPurchase = async (payload, { userId = null, ipAddress }) => {
   const client = await pool.connect();
 
   try {
@@ -393,12 +416,18 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
       Number(item.raw_material_id),
     );
 
-    if (
-      materialIds.some((id) => !Number.isInteger(id) || id <= 0) ||
-      new Set(materialIds).size !== materialIds.length
-    ) {
-      throw new Error("Invalid or duplicate raw material.");
+    // if (
+    //   materialIds.some((id) => !Number.isInteger(id) || id <= 0) ||
+    //   new Set(materialIds).size !== materialIds.length
+    // ) {
+    //   throw new Error("Invalid or duplicate raw material.");
+    // }
+
+    if (materialIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+      throw new Error("Invalid raw material.");
     }
+
+    const uniqueMaterialIds = [...new Set(materialIds)];
 
     const materialsResult = await client.query(
       `
@@ -407,10 +436,11 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
       WHERE id = ANY($1::BIGINT[])
         AND is_active = TRUE;
     `,
-      [materialIds],
+      [uniqueMaterialIds],
     );
 
-    if (materialsResult.rows.length !== materialIds.length) {
+    // if (materialsResult.rows.length !== materialIds.length) {
+    if (materialsResult.rows.length !== uniqueMaterialIds.length) {
       throw new Error("One or more raw materials are invalid or inactive.");
     }
 
@@ -478,6 +508,12 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
 
     const purchaseNo = await generatePurchaseNo(client);
 
+    const finalBillFilePath = await generateFinalPurchaseBillPath(
+      payload.bill_file_path,
+      purchaseNo,
+      payload.purchase_date,
+    );
+
     const purchaseResult = await client.query(
       `
       INSERT INTO purchases (
@@ -496,11 +532,12 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
         total_amount,
         payment_status,
         remarks,
+        bill_file_path,
         created_by
       )
       VALUES (
         $1, $2, COALESCE($3::DATE, CURRENT_TIMESTAMP), $4, $5,
-        $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16
+        $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17
       )
       RETURNING *;
     `,
@@ -520,6 +557,7 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
         totalAmount,
         paymentStatus,
         payload.remarks || null,
+        finalBillFilePath || null,
         userId,
       ],
     );
@@ -581,7 +619,9 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
           item.raw_material_id,
           item.quantity,
           purchase.id,
-          payload.purchase_date ? `${payload.purchase_date} ${new Date().toTimeString().slice(0, 8)}` : null,
+          payload.purchase_date
+            ? `${payload.purchase_date} ${new Date().toTimeString().slice(0, 8)}`
+            : null,
           `Purchase ${purchaseNo}`,
           userId,
         ],
@@ -621,7 +661,7 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
     sendPushNotification({
       title: "New Purchase Added",
       body: `${newPurchase.supplier_name} - ₹${Number(
-        newPurchase.total_amount || 0
+        newPurchase.total_amount || 0,
       ).toLocaleString("en-IN")}. Purchase: ${newPurchase.purchase_no}`,
       icon: "/images/cart-plus-solid.png",
       url: `/purchases`,
@@ -636,7 +676,8 @@ const createPurchase = async (payload, {userId = null, ipAddress}) => {
   }
 };
 
-const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
+const updatePurchase = async (id, payload, { userId = null, ipAddress }) => {
+  let transactionCommitted = false;
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
@@ -650,7 +691,7 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
 
     const oldPurchase = await getPurchaseById(id);
 
-   const supplierId = Number(payload.supplier_id);
+    const supplierId = Number(payload.supplier_id);
 
     if (!Number.isInteger(supplierId) || supplierId <= 0) {
       throw new Error("Invalid supplier.");
@@ -669,12 +710,18 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
       Number(item.raw_material_id),
     );
 
-    if (
-      materialIds.some((id) => !Number.isInteger(id) || id <= 0) ||
-      new Set(materialIds).size !== materialIds.length
-    ) {
-      throw new Error("Invalid or duplicate raw material.");
+    // if (
+    //   materialIds.some((id) => !Number.isInteger(id) || id <= 0) ||
+    //   new Set(materialIds).size !== materialIds.length
+    // ) {
+    //   throw new Error("Invalid or duplicate raw material.");
+    // }
+
+    if (materialIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+      throw new Error("Invalid raw material.");
     }
+
+    const uniqueMaterialIds = [...new Set(materialIds)];
 
     const materialsResult = await client.query(
       `
@@ -683,10 +730,11 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
       WHERE id = ANY($1::BIGINT[])
         AND is_active = TRUE;
     `,
-      [materialIds],
+      [uniqueMaterialIds],
     );
 
-    if (materialsResult.rows.length !== materialIds.length) {
+    // if (materialsResult.rows.length !== materialIds.length) {
+    if (materialsResult.rows.length !== uniqueMaterialIds.length) {
       throw new Error("One or more raw materials are invalid or inactive.");
     }
 
@@ -751,8 +799,25 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
     if (!["PENDING", "PARTIAL", "PAID"].includes(paymentStatus)) {
       throw new Error("Invalid payment status.");
     }
-    
+
     const purchase = purchaseResult.rows[0];
+
+    const oldBillFilePath = purchase.bill_file_path || null;
+
+    let finalBillFilePath = null;
+
+    if (payload.bill_file_path) {
+      const purchaseDate =
+        payload.purchase_date || String(purchase.purchase_date).slice(0, 10);
+
+      finalBillFilePath = await generateFinalPurchaseBillPath(
+        payload.bill_file_path,
+        purchase.purchase_no,
+        purchaseDate,
+      );
+
+      payload.bill_file_path = finalBillFilePath;
+    }
 
     await client.query(
       `DELETE FROM stock_movements WHERE item_type = 'RAW_MATERIAL' AND direction = 'IN' AND movement_type = 'PURCHASE' AND reference_type = 'PURCHASE' AND reference_id = $1;`,
@@ -767,8 +832,8 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
       UPDATE purchases SET
         supplier_id = $1, purchase_date = COALESCE($2::DATE, purchase_date), invoice_no = $3, invoice_date = $4,
         vehicle_no = $5, driver_name = $6, driver_mobile = $7, subtotal = $8, discount = $9, tax_amount = $10,
-        freight_amount = $11, total_amount = $12, payment_status = $13, remarks = $14, updated_at = NOW()
-      WHERE id = $15 RETURNING *;
+        freight_amount = $11, total_amount = $12, payment_status = $13, remarks = $14,bill_file_path = COALESCE($15, bill_file_path), updated_at = NOW()
+      WHERE id = $16 RETURNING *;
     `,
       [
         supplierId,
@@ -785,6 +850,7 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
         totalAmount,
         paymentStatus,
         payload.remarks || null,
+        payload.bill_file_path || null,
         id,
       ],
     );
@@ -825,6 +891,17 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
       );
     }
     await client.query("COMMIT");
+    transactionCommitted = true;
+
+    const newBillFilePath = payload.bill_file_path || null;
+
+    if (
+      newBillFilePath &&
+      oldBillFilePath &&
+      newBillFilePath !== oldBillFilePath
+    ) {
+      await deletePurchaseBillFile(oldBillFilePath);
+    }
 
     const newPurchase = await getPurchaseById(id);
 
@@ -839,39 +916,49 @@ const updatePurchase = async (id, payload,  {userId = null, ipAddress}) => {
     });
 
     await createNotification({
-  title: "Purchase Updated",
-  message: `${newPurchase.supplier_name} - ₹${Number(
-    newPurchase.total_amount || 0
-  ).toLocaleString("en-IN")}. <br> Purchase: ${newPurchase.purchase_no}`,
-  type: "purchase_updated",
-  referenceType: "purchase",
-  referenceId: Number(id),
-  createdBy: userId || null,
-});
+      title: "Purchase Updated",
+      message: `${newPurchase.supplier_name} - ₹${Number(
+        newPurchase.total_amount || 0,
+      ).toLocaleString("en-IN")}. <br> Purchase: ${newPurchase.purchase_no}`,
+      type: "purchase_updated",
+      referenceType: "purchase",
+      referenceId: Number(id),
+      createdBy: userId || null,
+    });
 
-sendPushNotification({
-  title: "Purchase Updated",
-  body: `${newPurchase.supplier_name} - ₹${Number(
-    newPurchase.total_amount || 0
-  ).toLocaleString("en-IN")}. Purchase: ${newPurchase.purchase_no}`,
-  icon: "/images/cart-shopping-solid.png",
-  badge: "/images/icon-192.png",
-  url: "/purchases",
-}).catch((error) => {
-  console.error("Purchase update push notification error:", error);
-});
-
+    sendPushNotification({
+      title: "Purchase Updated",
+      body: `${newPurchase.supplier_name} - ₹${Number(
+        newPurchase.total_amount || 0,
+      ).toLocaleString("en-IN")}. Purchase: ${newPurchase.purchase_no}`,
+      icon: "/images/cart-shopping-solid.png",
+      badge: "/images/icon-192.png",
+      url: "/purchases",
+    }).catch((error) => {
+      console.error("Purchase update push notification error:", error);
+    });
 
     return newPurchase;
   } catch (error) {
-    await client.query("ROLLBACK");
+    if (!transactionCommitted) {
+      try {
+        await client.query("ROLLBACK");
+      } catch (rollbackError) {
+        console.error("Purchase rollback failed:", rollbackError);
+      }
+
+      if (payload.bill_file_path) {
+        await deletePurchaseBillFile(payload.bill_file_path);
+      }
+    }
+
     throw error;
   } finally {
     client.release();
   }
 };
 
-const deletePurchase = async (id,{userId = null, ipAddress}) => {
+const deletePurchase = async (id, { userId = null, ipAddress }) => {
   const client = await pool.connect();
 
   try {
@@ -906,7 +993,7 @@ const deletePurchase = async (id,{userId = null, ipAddress}) => {
 
     await client.query("COMMIT");
 
-      await createAuditLog({
+    await createAuditLog({
       userId: userId || null,
       module: "PURCHASES",
       action: "DELETE",
@@ -917,27 +1004,31 @@ const deletePurchase = async (id,{userId = null, ipAddress}) => {
     });
 
     await createNotification({
-  title: "Purchase Deleted",
-  message: `${oldPurchase.supplier_name} - ₹${Number(
-    oldPurchase.total_amount || 0
-  ).toLocaleString("en-IN")}.<br> Purchase: ${oldPurchase.purchase_no} deleted.`,
-  type: "purchase_deleted",
-  referenceType: "purchase",
-  referenceId: Number(id),
-  createdBy: userId || null,
-});
+      title: "Purchase Deleted",
+      message: `${oldPurchase.supplier_name} - ₹${Number(
+        oldPurchase.total_amount || 0,
+      ).toLocaleString(
+        "en-IN",
+      )}.<br> Purchase: ${oldPurchase.purchase_no} deleted.`,
+      type: "purchase_deleted",
+      referenceType: "purchase",
+      referenceId: Number(id),
+      createdBy: userId || null,
+    });
 
-sendPushNotification({
-  title: "Purchase Deleted",
-  body: `${oldPurchase.supplier_name} - ₹${Number(
-    oldPurchase.total_amount || 0
-  ).toLocaleString("en-IN")}. Purchase: ${oldPurchase.purchase_no} deleted.`,
-  icon: "/images/cart-shopping-solid.png",
-  badge: "/images/icon-192.png",
-  url: "/purchases",
-}).catch((error) => {
-  console.error("Purchase delete push notification error:", error);
-});
+    sendPushNotification({
+      title: "Purchase Deleted",
+      body: `${oldPurchase.supplier_name} - ₹${Number(
+        oldPurchase.total_amount || 0,
+      ).toLocaleString(
+        "en-IN",
+      )}. Purchase: ${oldPurchase.purchase_no} deleted.`,
+      icon: "/images/cart-shopping-solid.png",
+      badge: "/images/icon-192.png",
+      url: "/purchases",
+    }).catch((error) => {
+      console.error("Purchase delete push notification error:", error);
+    });
 
     return purchase;
   } catch (error) {

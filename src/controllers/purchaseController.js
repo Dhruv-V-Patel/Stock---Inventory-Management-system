@@ -74,8 +74,25 @@ const getPurchase = async (req, res) => {
 const createPurchase = async (req, res) => {
   try {
     // const userId = req.user?.id || null;
+    const billFilePath = req.file
+      ? `/uploads/purchase-bills/${req.file.filename}`
+      : null;
 
-    const purchase = await purchaseService.createPurchase(req.body, { userId: getUserId(req), ipAddress: getIpAddress(req),});
+    if (typeof req.body.items === "string") {
+      try {
+        req.body.items = JSON.parse(req.body.items);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid purchase items data.",
+        });
+      }
+    }
+
+    const purchase = await purchaseService.createPurchase(
+      { ...req.body, bill_file_path: billFilePath },
+      { userId: getUserId(req), ipAddress: getIpAddress(req) },
+    );
 
     return res.status(201).json({
       success: true,
@@ -89,7 +106,7 @@ const createPurchase = async (req, res) => {
       "At least one purchase item is required.",
       "Invalid supplier.",
       "Supplier not found or inactive.",
-      "Invalid or duplicate raw material.",
+      "Invalid raw material.",
       "One or more raw materials are invalid or inactive.",
       "Quantity must be greater than zero.",
       "Rate cannot be negative.",
@@ -112,18 +129,34 @@ const updatePurchase = async (req, res) => {
       .status(400)
       .json({ success: false, message: "Invalid purchase ID." });
   try {
+    const billFilePath = req.file
+      ? `/uploads/purchase-bills/${req.file.filename}`
+      : null;
+
+    if (typeof req.body.items === "string") {
+      try {
+        req.body.items = JSON.parse(req.body.items);
+      } catch {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid purchase items data.",
+        });
+      }
+    }
+
     const purchase = await purchaseService.updatePurchase(
       id,
-      req.body,
-      { userId: getUserId(req), ipAddress: getIpAddress(req),}
+      {
+        ...req.body,
+        bill_file_path: billFilePath,
+      },
+      { userId: getUserId(req), ipAddress: getIpAddress(req) },
     );
-    return res
-      .status(200)
-      .json({
-        success: true,
-        message: "Purchase updated successfully.",
-        purchase,
-      });
+    return res.status(200).json({
+      success: true,
+      message: "Purchase updated successfully.",
+      purchase,
+    });
   } catch (error) {
     console.error("[Purchase Controller] update:", error);
     const knownErrors = [
@@ -139,12 +172,10 @@ const updatePurchase = async (req, res) => {
       "Invalid purchase totals.",
       "Invalid payment status.",
     ];
-    return res
-      .status(knownErrors.includes(error.message) ? 400 : 500)
-      .json({
-        success: false,
-        message: error.message || "Failed to update purchase.",
-      });
+    return res.status(knownErrors.includes(error.message) ? 400 : 500).json({
+      success: false,
+      message: error.message || "Failed to update purchase.",
+    });
   }
 };
 
@@ -159,7 +190,10 @@ const deletePurchase = async (req, res) => {
   }
 
   try {
-    const purchase = await purchaseService.deletePurchase(id, { userId: getUserId(req), ipAddress: getIpAddress(req),});
+    const purchase = await purchaseService.deletePurchase(id, {
+      userId: getUserId(req),
+      ipAddress: getIpAddress(req),
+    });
 
     return res.status(200).json({
       success: true,
