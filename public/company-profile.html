@@ -84,6 +84,12 @@
                                             autocomplete="off">
                                         <small class="form-error" data-error-for="gstin"></small>
                                     </div>
+                                     <div class="form-group">
+                                        <label for="panno">PAN / Income Tax No</label>
+                                        <input id="panno" type="text" maxlength="10" placeholder="e.g. ABCDE1234F"
+                                            autocomplete="off">
+                                        <small class="form-error" data-error-for="panno"></small>
+                                    </div>
 
                                     <div class="form-group">
                                         <label for="phone">Phone</label>
@@ -104,6 +110,63 @@
                                             placeholder="e.g. https://www.company.com">
                                         <small class="form-error" data-error-for="website"></small>
                                     </div>
+                                </div>
+                            </section>
+
+                                                        <section class="content-card profile-card">
+                                <div class="card-header">
+                                    <div class="section-title">
+                                        <div class="section-icon green">
+                                            <i class="fa-solid fa-building-columns"></i>
+                                        </div>
+                                        <div>
+                                            <h3>Bank Details</h3>
+                                            <p>Banking information used on quotations, invoices and other documents.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="form-grid bank-grid">
+                                    <div class="form-group">
+                                        <label for="bankName">Bank Name</label>
+                                        <input id="bankName" type="text" maxlength="150"
+                                            placeholder="e.g. State Bank of India" autocomplete="organization">
+                                             <small class="form-error" data-error-for="bankName"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="bankBranch">Branch Name</label>
+                                        <input id="bankBranch" type="text" maxlength="150"
+                                            placeholder="e.g. Mehsana Branch" autocomplete="off">
+                                            <small class="form-error" data-error-for="bankBranch"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="bankAccountNumber">Account Number</label>
+                                        <input id="bankAccountNumber" type="text" maxlength="34"
+                                            placeholder="Enter bank account number" autocomplete="off">
+                                        <small class="form-error" data-error-for="bankAccountNumber"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="confirmBankAccountNumber">Confirm Account Number</label>
+                                        <input id="confirmBankAccountNumber" type="text" maxlength="34"
+                                            placeholder="Re-enter bank account number" autocomplete="off">
+                                        <small class="form-error" data-error-for="confirmBankAccountNumber"></small>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="bankIfsc">IFSC Code</label>
+                                        <input id="bankIfsc" type="text" maxlength="11" placeholder="e.g. SBIN0001234"
+                                            autocomplete="off" autocapitalize="characters">
+                                        <small class="form-error" data-error-for="bankIfsc"></small>
+                                    </div>
+                                </div>
+
+                                <div class="form-note">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                    <span>Confirm Account Number is used only to verify your entry and is not stored
+                                        separately.</span>
                                 </div>
                             </section>
 
@@ -158,7 +221,8 @@
                                                 <i class="fa-solid fa-image"></i>
                                                 <span>No logo uploaded</span>
                                             </div>
-                                            <img id="logoPreviewImage" draggable="false" oncontextmenu="return false" class="preview-image" src="" alt="Company Logo">
+                                            <img id="logoPreviewImage" draggable="false" oncontextmenu="return false"
+                                                class="preview-image" src="" alt="Company Logo">
                                         </div>
 
                                         <input id="logoFile" type="file"
@@ -190,8 +254,8 @@
                                                 <i class="fa-solid fa-stamp"></i>
                                                 <span>No stamp uploaded</span>
                                             </div>
-                                            <img id="stampPreviewImage"  draggable="false" oncontextmenu="return false" class="preview-image" src=""
-                                                alt="Company Stamp and Signature">
+                                            <img id="stampPreviewImage" draggable="false" oncontextmenu="return false"
+                                                class="preview-image" src="" alt="Company Stamp and Signature">
                                         </div>
 
                                         <input id="stampFile" type="file"

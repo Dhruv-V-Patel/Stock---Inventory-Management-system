@@ -2,7 +2,7 @@ const pool = require("../config/db");
 const { createAuditLog } = require("./auditLogService");
 const { sendPushNotification } = require("./pushService");
 const { createNotification } = require("./notificationService");
-
+const { decrypt } = require("../utils/crypto.util");
 const EPSILON = 0.000001;
 
 const toNumber = (value, fallback = 0) => {
@@ -20,6 +20,52 @@ const assertId = (value, label = "id") => {
   return id;
 };
 
+// const normalizeItems = (items) => {
+//   if (!Array.isArray(items) || items.length === 0) {
+//     const error = new Error("At least one sale item is required.");
+//     error.statusCode = 400;
+//     throw error;
+//   }
+
+//   const map = new Map();
+
+//   for (const rawItem of items) {
+//     const productId = assertId(rawItem?.product_id, "product");
+//     const quantity = toNumber(rawItem?.quantity, NaN);
+//     const rate = toNumber(rawItem?.rate, NaN);
+
+//     if (!Number.isFinite(quantity) || quantity <= 0) {
+//       const error = new Error(
+//         "Every sale item must have a quantity greater than zero.",
+//       );
+//       error.statusCode = 400;
+//       throw error;
+//     }
+
+//     if (!Number.isFinite(rate) || rate < 0) {
+//       const error = new Error("Every sale item must have a valid rate.");
+//       error.statusCode = 400;
+//       throw error;
+//     }
+
+//     const existing = map.get(productId);
+
+//     if (existing) {
+//       existing.quantity += quantity;
+//       existing.amount = existing.quantity * existing.rate;
+//     } else {
+//       map.set(productId, {
+//         product_id: productId,
+//         quantity,
+//         rate,
+//         amount: quantity * rate,
+//       });
+//     }
+//   }
+
+//   return [...map.values()];
+// };
+
 const normalizeItems = (items) => {
   if (!Array.isArray(items) || items.length === 0) {
     const error = new Error("At least one sale item is required.");
@@ -34,6 +80,15 @@ const normalizeItems = (items) => {
     const quantity = toNumber(rawItem?.quantity, NaN);
     const rate = toNumber(rawItem?.rate, NaN);
 
+    const rawRateIncludingGst = rawItem?.rate_including_gst;
+
+    const rateIncludingGst =
+      rawRateIncludingGst === undefined ||
+      rawRateIncludingGst === null ||
+      String(rawRateIncludingGst).trim() === ""
+        ? null
+        : toNumber(rawRateIncludingGst, NaN);
+
     if (!Number.isFinite(quantity) || quantity <= 0) {
       const error = new Error(
         "Every sale item must have a quantity greater than zero.",
@@ -43,24 +98,36 @@ const normalizeItems = (items) => {
     }
 
     if (!Number.isFinite(rate) || rate < 0) {
-      const error = new Error("Every sale item must have a valid rate.");
+      const error = new Error("Every sale item must have a valid basic rate.");
       error.statusCode = 400;
       throw error;
     }
 
-    const existing = map.get(productId);
-
-    if (existing) {
-      existing.quantity += quantity;
-      existing.amount = existing.quantity * existing.rate;
-    } else {
-      map.set(productId, {
-        product_id: productId,
-        quantity,
-        rate,
-        amount: quantity * rate,
-      });
+    if (
+      rateIncludingGst !== null &&
+      (!Number.isFinite(rateIncludingGst) || rateIncludingGst < 0)
+    ) {
+      const error = new Error("Rate including GST must be a valid number.");
+      error.statusCode = 400;
+      throw error;
     }
+
+    if (map.has(productId)) {
+      const error = new Error(
+        "The same product cannot be added more than once to a sale.",
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+
+    map.set(productId, {
+      product_id: productId,
+      quantity,
+      rate: Number(rate.toFixed(2)),
+      rate_including_gst:
+        rateIncludingGst === null ? null : Number(rateIncludingGst.toFixed(2)),
+      amount: Number((quantity * rate).toFixed(2)),
+    });
   }
 
   return [...map.values()];
@@ -96,12 +163,21 @@ const validateHeader = (payload) => {
     challanLrNo: payload?.challan_lr_no?.trim() || null,
     driverName: payload?.driver_name?.trim() || null,
     driverMobile: payload?.driver_mobile?.trim() || null,
+    ewayBillNo: payload?.eway_bill_no?.trim() || null,
+    consigneeAddress: payload?.consignee_address?.trim() || null,
+    destination: payload?.destination?.trim() || null,
+    deliveryNote: payload?.delivery_note?.trim() || null,
+    deliveryNoteDate: payload?.delivery_note_date || null,
+    dispatchDocNo: payload?.dispatch_doc_no?.trim() || null,
+    dispatchedThrough: payload?.dispatched_through?.trim() || null,
+    challanLrNoDate: payload?.challan_lr_no_date || null,
     discount,
     taxAmount,
     paymentStatus,
     remarks: payload?.remarks?.trim() || null,
   };
 };
+
 
 const getProductStock = async (client, productId) => {
   const result = await client.query(
@@ -182,7 +258,7 @@ const validateProductsAndStock = async (
   for (const item of items) {
     const result = await client.query(
       `
-        SELECT id, code, name, unit, selling_rate, is_active
+        SELECT id, code, name, unit, selling_rate,gst_tax_rate, is_active
         FROM products
         WHERE id = $1
       `,
@@ -217,8 +293,50 @@ const validateProductsAndStock = async (
       throw error;
     }
 
+    //   validated.push({
+    //     ...item,
+    //     unit: product.unit,
+    //     product_code: product.code,
+    //     product_name: product.name,
+    //     gst_tax_rate: Number(product.gst_tax_rate || 0),
+    // rate_including_gst: Number(
+    //   (item.rate * (1 + Number(product.gst_tax_rate || 0) / 100)).toFixed(2)
+    // ),
+    //   });
+
+    const gstRate = toNumber(product.gst_tax_rate, 0);
+
+    let rate;
+    let rateIncludingGst;
+
+    if (
+      item.rate_including_gst !== null &&
+      Number.isFinite(item.rate_including_gst)
+    ) {
+      // User-entered GST-inclusive rate: preserve it exactly to 2 decimals.
+      rateIncludingGst = Number(item.rate_including_gst.toFixed(2));
+
+      // Derive basic rate from inclusive rate.
+      rate = Number((rateIncludingGst / (1 + gstRate / 100)).toFixed(2));
+    } else {
+      // If inclusive rate was not provided, calculate it from basic rate.
+      rate = Number(item.rate.toFixed(2));
+
+      rateIncludingGst = Number((rate * (1 + gstRate / 100)).toFixed(2));
+    }
+
+    if (!Number.isFinite(rate) || !Number.isFinite(rateIncludingGst)) {
+      const error = new Error("Invalid sale rate. Please enter a valid rate.");
+      error.statusCode = 400;
+      throw error;
+    }
+
     validated.push({
       ...item,
+      rate,
+      rate_including_gst: rateIncludingGst,
+      gst_tax_rate: gstRate,
+      amount: Number((item.quantity * rate).toFixed(2)),
       unit: product.unit,
       product_code: product.code,
       product_name: product.name,
@@ -228,37 +346,102 @@ const validateProductsAndStock = async (
   return validated;
 };
 
-const calculateTotals = ({ items, discount, taxAmount }) => {
-  const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+// const calculateTotals = ({ items, discount, taxAmount }) => {
+//   const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
 
-  const total = Math.max(0, subtotal - discount + taxAmount);
+//   const total = Math.max(0, subtotal - discount + taxAmount);
+
+//   return {
+//     subtotal,
+//     discount,
+//     tax_amount: taxAmount,
+//     total_amount: total,
+//   };
+// };
+
+// const generateSaleNo = async (client) => {
+//   const result = await client.query(`
+//     SELECT COALESCE(
+//       MAX(
+//         CASE
+//           WHEN sale_no ~ '^INV-[0-9]+$'
+//           THEN CAST(SUBSTRING(sale_no FROM 5) AS BIGINT)
+//           ELSE 0
+//         END
+//       ),
+//       0
+//     ) AS last_no
+//     FROM sales
+//   `);
+
+//   const next = Number(result.rows[0]?.last_no || 0) + 1;
+//   return `INV-${String(next).padStart(5, "0")}`;
+// };
+
+const calculateTotals = ({ items, discount, taxAmount }) => {
+  const subtotal = Number(
+    items.reduce((sum, item) => sum + Number(item.amount || 0), 0).toFixed(2),
+  );
+
+  const safeDiscount = Number(Number(discount || 0).toFixed(2));
+  const safeTaxAmount = Number(Number(taxAmount || 0).toFixed(2));
+
+  // Total before round off
+  const beforeRoundOff = Number(
+    Math.max(0, subtotal - safeDiscount + safeTaxAmount).toFixed(2),
+  );
+
+  // Round to nearest whole rupee
+  const totalAmount = Number(Math.round(beforeRoundOff).toFixed(2));
+
+  // Difference between rounded total and actual total
+  const roundOff = Number((totalAmount - beforeRoundOff).toFixed(2));
 
   return {
     subtotal,
-    discount,
-    tax_amount: taxAmount,
-    total_amount: total,
+    discount: safeDiscount,
+    tax_amount: safeTaxAmount,
+    round_off: roundOff,
+    total_amount: totalAmount,
   };
 };
+async function generateSaleNo(client) {
+  const companyResult = await client.query(`
+        SELECT company_name
+        FROM company_settings
+        LIMIT 1
+    `);
 
-const generateSaleNo = async (client) => {
-  const result = await client.query(`
-    SELECT COALESCE(
-      MAX(
-        CASE
-          WHEN sale_no ~ '^INV-[0-9]+$'
-          THEN CAST(SUBSTRING(sale_no FROM 5) AS BIGINT)
-          ELSE 0
-        END
-      ),
-      0
-    ) AS last_no
-    FROM sales
-  `);
+  const companyName = companyResult.rows[0]?.company_name?.trim();
 
-  const next = Number(result.rows[0]?.last_no || 0) + 1;
-  return `INV-${String(next).padStart(5, "0")}`;
-};
+  let prefix = companyName
+    ? companyName
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((word) => word[0])
+        .join("")
+        .toUpperCase()
+        .replace(/[^A-Z]/g, "")
+    : "INV";
+
+  if (!prefix) {
+    prefix = "INV";
+  }
+
+  const result = await client.query(
+    `
+        SELECT COALESCE(
+            MAX(SUBSTRING(sale_no FROM $2)::BIGINT),
+            0
+        ) + 1 AS next_number
+        FROM sales
+        WHERE sale_no ~ $1
+        `,
+    [`^${prefix}[0-9]+$`, `^${prefix}([0-9]+)$`],
+  );
+
+  return `${prefix}${result.rows[0].next_number}`;
+}
 
 const insertStockMovement = async (
   client,
@@ -334,9 +517,18 @@ const getSaleById = async (id, client = pool) => {
         s.driver_name,
         s.driver_mobile,
 
+        s.eway_bill_no,
+      s.consignee_address,
+      s.destination,
+      s.delivery_note ,
+      s.delivery_note_date ,
+      s.dispatch_doc_no ,
+      s.dispatched_through ,
+      s.challan_lr_no_date, 
         s.subtotal,
         s.discount,
         s.tax_amount,
+        s.round_off,
         s.total_amount,
         s.payment_status,
         s.remarks,
@@ -380,11 +572,13 @@ const getSaleById = async (id, client = pool) => {
 
               'product_code', p.code,
               'product_name', p.name,
-
+              'hsn_sac_code', p.hsn_sac_code,
               'quantity', si.quantity,
               'unit', si.unit,
               'rate', si.rate,
-              'amount', si.amount,
+'gst_tax_rate', si.gst_tax_rate,
+'rate_including_gst', si.rate_including_gst,
+'amount', si.amount,
 
               -- Returned quantity
               'returned_quantity',
@@ -448,6 +642,35 @@ const getSaleById = async (id, client = pool) => {
 
   const row = result.rows[0];
 
+  const companyResult = await client.query(`
+  SELECT
+    company_name,
+    tagline,
+    address,
+    gstin,
+    pan_no,
+    phone,
+    email,
+    website,
+    logo_url,
+    stamp_url,
+    bank_name,
+    bank_account_number,
+    bank_ifsc,
+    bank_branch,
+    authorized_signatory_name
+  FROM company_settings
+  ORDER BY id
+  LIMIT 1
+`);
+
+const encryptedCompany = companyResult.rows[0] || {};
+const company = {
+  ...encryptedCompany,
+  logo_url: encryptedCompany.logo_url ? decrypt(encryptedCompany.logo_url) : null,
+  stamp_url: encryptedCompany.stamp_url ? decrypt(encryptedCompany.stamp_url) : null,
+};
+
   const returnAmount = Number(row.return_amount || 0);
 
   const netTotal = Math.max(0, Number(row.total_amount || 0) - returnAmount);
@@ -485,6 +708,7 @@ const getSaleById = async (id, client = pool) => {
 
   return {
     ...row,
+    company,
 
     id: Number(row.id),
 
@@ -622,6 +846,7 @@ const getOptions = async () => {
         p.name,
         p.unit,
         p.selling_rate,
+        COALESCE(p.gst_tax_rate, 0) AS gst_tax_rate,
         COALESCE(
           SUM(
             CASE
@@ -696,14 +921,23 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
           subtotal,
           discount,
           tax_amount,
+          round_off,
           total_amount,
           payment_status,
           remarks,
+          eway_bill_no,
+consignee_address,
+destination,
+      delivery_note ,
+      delivery_note_date ,
+      dispatch_doc_no ,
+      dispatched_through ,
+      challan_lr_no_date, 
           created_by
         )
         VALUES (
           $1, $2, $3, $4, $5, $6,
-          $7, $8, $9, $10, $11, $12, $13, $14
+          $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21,  $22, $23
         )
         RETURNING *
       `,
@@ -718,9 +952,18 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
         totals.subtotal,
         totals.discount,
         totals.tax_amount,
+        totals.round_off,
         totals.total_amount,
         header.paymentStatus,
         header.remarks,
+        header.ewayBillNo,
+        header.consigneeAddress,
+        header.destination,
+        header.deliveryNote,
+        header.deliveryNoteDate,
+        header.dispatchDocNo,
+        header.dispatchedThrough,
+        header.challanLrNoDate,
         userId || null,
       ],
     );
@@ -737,9 +980,11 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
             quantity,
             unit,
             rate,
+            gst_tax_rate,
+            rate_including_gst,
             amount
           )
-          VALUES ($1, $2, $3, $4, $5, $6)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           saleId,
@@ -747,6 +992,8 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
           item.quantity,
           item.unit,
           item.rate,
+          item.gst_tax_rate,
+          item.rate_including_gst,
           item.amount,
         ],
       );
@@ -759,7 +1006,9 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
         quantity: item.quantity,
         movementType: "SALE",
         saleId,
-        movementDate: header.saleDate ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}` : null,
+        movementDate: header.saleDate
+          ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+          : null,
         remarks: `Finished stock sold through ${saleNo}.`,
         userId,
       });
@@ -780,27 +1029,27 @@ const createSale = async (payload, { userId = null, ipAddress }) => {
     });
 
     await createNotification({
-  title: "New Sale Added",
-  message: `${newReturn.customer_name} - ₹${Number(
-    newReturn.total_amount || 0
-  ).toLocaleString("en-IN")}.<br> Sale: ${newReturn.sale_no}`,
-  type: "sale_created",
-  referenceType: "sale",
-  referenceId: saleId,
-  createdBy: userId || null,
-});
+      title: "New Sale Added",
+      message: `${newReturn.customer_name} - ₹${Number(
+        newReturn.total_amount || 0,
+      ).toLocaleString("en-IN")}.<br> Sale: ${newReturn.sale_no}`,
+      type: "sale_created",
+      referenceType: "sale",
+      referenceId: saleId,
+      createdBy: userId || null,
+    });
 
-sendPushNotification({
-  title: "New Sale Added",
-  body: `${newReturn.customer_name} - ₹${Number(
-    newReturn.total_amount || 0
-  ).toLocaleString("en-IN")}. Sale: ${newReturn.sale_no}`,
-  icon: "/images/truck-regular.png",
-  badge: "/images/icon-192.png",
-  url: "/sales",
-}).catch((error) => {
-  console.error("Sale create push notification error:", error);
-});
+    sendPushNotification({
+      title: "New Sale Added",
+      body: `${newReturn.customer_name} - ₹${Number(
+        newReturn.total_amount || 0,
+      ).toLocaleString("en-IN")}. Sale: ${newReturn.sale_no}`,
+      icon: "/images/truck-regular.png",
+      badge: "/images/icon-192.png",
+      url: "/sales",
+    }).catch((error) => {
+      console.error("Sale create push notification error:", error);
+    });
 
     return getSaleById(saleId);
   } catch (error) {
@@ -837,41 +1086,6 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
     const existing = existingResult.rows[0];
 
     const oldSale = await getSaleById(saleId, client);
-
-    // const paymentResult = await client.query(
-    //   `
-    //     SELECT COUNT(*)::int AS count
-    //     FROM payments
-    //     WHERE payment_type = 'CUSTOMER'
-    //       AND sale_id = $1
-    //   `,
-    //   [saleId],
-    // );
-
-    // if (Number(paymentResult.rows[0]?.count || 0) > 0) {
-    //   const error = new Error(
-    //     "This sale has customer payments. Payment-linked sales cannot be edited.",
-    //   );
-    //   error.statusCode = 409;
-    //   throw error;
-    // }
-
-    // const dispatchResult = await client.query(
-    //   `
-    //     SELECT COUNT(*)::int AS count
-    //     FROM dispatches
-    //     WHERE sale_id = $1
-    //   `,
-    //   [saleId],
-    // );
-
-    // if (Number(dispatchResult.rows[0]?.count || 0) > 0) {
-    //   const error = new Error(
-    //     "This sale is already linked to a dispatch and cannot be edited.",
-    //   );
-    //   error.statusCode = 409;
-    //   throw error;
-    // }
 
     const header = validateHeader(payload);
     const items = normalizeItems(payload.items);
@@ -963,48 +1177,21 @@ const updateSale = async (id, payload, { userId = null, ipAddress }) => {
       taxAmount: header.taxAmount,
     });
 
-    // for (const item of oldItems) {
-    //   await insertStockMovement(client, {
-    //     productId: item.product_id,
-    //     direction: "IN",
-    //     quantity: item.quantity,
-    //     movementType: "SALE_EDIT_REVERSAL",
-    //     saleId,
-    //     movementDate: existing.sale_date ? `${existing.sale_date}` : null,
-    //     remarks: `Previous quantity restored while editing sale ${existing.sale_no}.`,
-    //     userId,
-    //   });
-    // }
-
-    // for (const item of validatedItems) {
-    //   await insertStockMovement(client, {
-    //     productId: item.product_id,
-    //     direction: "OUT",
-    //     quantity: item.quantity,
-    //     movementType: "SALE_EDIT",
-    //     saleId,
-    //     movementDate: header.saleDate ? `${header.saleDate}` : null,
-    //     remarks: `Updated finished-stock quantity for sale ${existing.sale_no}.`,
-    //     userId,
-    //   });
-    // }
-
     // =====================================================
-// UPDATE EXISTING STOCK MOVEMENTS
-// Do NOT create reversal + new movement on every edit.
-// =====================================================
+    // UPDATE EXISTING STOCK MOVEMENTS
+    // Do NOT create reversal + new movement on every edit.
+    // =====================================================
 
+    for (const productId of allProductIds) {
+      const oldQuantity = oldByProduct.get(productId) || 0;
+      const newQuantity = newByProduct.get(productId) || 0;
 
-for (const productId of allProductIds) {
-  const oldQuantity = oldByProduct.get(productId) || 0;
-  const newQuantity = newByProduct.get(productId) || 0;
-
-  // ---------------------------------------------
-  // Product existed before and still exists
-  // ---------------------------------------------
-  if (oldQuantity > 0 && newQuantity > 0) {
-    const movementResult = await client.query(
-      `
+      // ---------------------------------------------
+      // Product existed before and still exists
+      // ---------------------------------------------
+      if (oldQuantity > 0 && newQuantity > 0) {
+        const movementResult = await client.query(
+          `
         SELECT id
         FROM stock_movements
         WHERE item_type = 'PRODUCT'
@@ -1017,13 +1204,13 @@ for (const productId of allProductIds) {
         LIMIT 1
         FOR UPDATE
       `,
-      [productId, saleId]
-    );
+          [productId, saleId],
+        );
 
-    if (movementResult.rows.length) {
-      // UPDATE existing movement
-      await client.query(
-        `
+        if (movementResult.rows.length) {
+          // UPDATE existing movement
+          await client.query(
+            `
           UPDATE stock_movements
           SET
             quantity = $1,
@@ -1032,40 +1219,40 @@ for (const productId of allProductIds) {
             created_by = COALESCE($4, created_by)
           WHERE id = $5
         `,
-        [
-          newQuantity,
-          header.saleDate
-            ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
-            : null,
-          `Finished stock sold through updated sale ${existing.sale_no}.`,
-          userId || null,
-          movementResult.rows[0].id,
-        ]
-      );
-    } else {
-      // Old sale movement not found.
-      // Create it once to repair missing stock movement.
-      await insertStockMovement(client, {
-        productId,
-        direction: "OUT",
-        quantity: newQuantity,
-        movementType: "SALE",
-        saleId,
-        movementDate: header.saleDate
-          ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
-          : null,
-        remarks: `Finished stock sold through updated sale ${existing.sale_no}.`,
-        userId,
-      });
-    }
-  }
+            [
+              newQuantity,
+              header.saleDate
+                ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+                : null,
+              `Finished stock sold through updated sale ${existing.sale_no}.`,
+              userId || null,
+              movementResult.rows[0].id,
+            ],
+          );
+        } else {
+          // Old sale movement not found.
+          // Create it once to repair missing stock movement.
+          await insertStockMovement(client, {
+            productId,
+            direction: "OUT",
+            quantity: newQuantity,
+            movementType: "SALE",
+            saleId,
+            movementDate: header.saleDate
+              ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+              : null,
+            remarks: `Finished stock sold through updated sale ${existing.sale_no}.`,
+            userId,
+          });
+        }
+      }
 
-  // ---------------------------------------------
-  // Product was removed from the sale
-  // ---------------------------------------------
-  else if (oldQuantity > 0 && newQuantity === 0) {
-    await client.query(
-      `
+      // ---------------------------------------------
+      // Product was removed from the sale
+      // ---------------------------------------------
+      else if (oldQuantity > 0 && newQuantity === 0) {
+        await client.query(
+          `
         DELETE FROM stock_movements
         WHERE item_type = 'PRODUCT'
           AND item_id = $1
@@ -1074,48 +1261,57 @@ for (const productId of allProductIds) {
           AND reference_type = 'SALE'
           AND reference_id = $2
       `,
-      [productId, saleId]
-    );
-  }
+          [productId, saleId],
+        );
+      }
 
-  // ---------------------------------------------
-  // New product added to existing sale
-  // ---------------------------------------------
-  else if (oldQuantity === 0 && newQuantity > 0) {
-    await insertStockMovement(client, {
-      productId,
-      direction: "OUT",
-      quantity: newQuantity,
-      movementType: "SALE",
-      saleId,
-      movementDate: header.saleDate
-        ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
-        : null,
-      remarks: `Finished stock added through updated sale ${existing.sale_no}.`,
-      userId,
-    });
-  }
-}
+      // ---------------------------------------------
+      // New product added to existing sale
+      // ---------------------------------------------
+      else if (oldQuantity === 0 && newQuantity > 0) {
+        await insertStockMovement(client, {
+          productId,
+          direction: "OUT",
+          quantity: newQuantity,
+          movementType: "SALE",
+          saleId,
+          movementDate: header.saleDate
+            ? `${header.saleDate} ${new Date().toTimeString().slice(0, 8)}`
+            : null,
+          remarks: `Finished stock added through updated sale ${existing.sale_no}.`,
+          userId,
+        });
+      }
+    }
 
     await client.query(
       `
-        UPDATE sales
-        SET
-          customer_id = $1,
-          sale_date = $2,
-          vehicle_no = $3,
-          driver_name = $4,
-          driver_mobile = $5,
-          subtotal = $6,
-          discount = $7,
-          tax_amount = $8,
-          total_amount = $9,
-          payment_status = $10,
-          remarks = $11,
-          challan_lr_no = $12,
-          updated_at = NOW()
-        WHERE id = $13
-      `,
+    UPDATE sales
+    SET
+      customer_id = $1,
+      sale_date = $2,
+      vehicle_no = $3,
+      driver_name = $4,
+      driver_mobile = $5,
+      subtotal = $6,
+      discount = $7,
+      tax_amount = $8,
+      round_off = $9,
+      total_amount = $10,
+      payment_status = $11,
+      remarks = $12,
+      challan_lr_no = $13,
+      eway_bill_no = $14,
+      consignee_address = $15,
+      destination = $16,
+      delivery_note = $17,
+      delivery_note_date = $18 ,
+      dispatch_doc_no = $19 ,
+      dispatched_through = $20 ,
+      challan_lr_no_date = $21, 
+      updated_at = NOW()
+    WHERE id = $22
+  `,
       [
         header.customerId,
         header.saleDate,
@@ -1125,10 +1321,22 @@ for (const productId of allProductIds) {
         totals.subtotal,
         totals.discount,
         totals.tax_amount,
+        totals.round_off,
         totals.total_amount,
         header.paymentStatus,
         header.remarks,
         header.challanLrNo,
+
+        // New fields
+        header.ewayBillNo,
+        header.consigneeAddress,
+        header.destination,
+        header.deliveryNote,
+        header.deliveryNoteDate,
+        header.dispatchDocNo,
+        header.dispatchedThrough,
+        header.challanLrNoDate,
+
         saleId,
       ],
     );
@@ -1144,9 +1352,11 @@ for (const productId of allProductIds) {
             quantity,
             unit,
             rate,
+             gst_tax_rate,
+            rate_including_gst,
             amount
           )
-          VALUES ($1, $2, $3, $4, $5, $6)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
         `,
         [
           saleId,
@@ -1154,6 +1364,8 @@ for (const productId of allProductIds) {
           item.quantity,
           item.unit,
           item.rate,
+          item.gst_tax_rate,
+          item.rate_including_gst,
           item.amount,
         ],
       );
@@ -1174,27 +1386,27 @@ for (const productId of allProductIds) {
     });
 
     await createNotification({
-  title: "Sale Updated",
-  message: `${newSale.customer_name} - ₹${Number(
-    newSale.total_amount || 0
-  ).toLocaleString("en-IN")}. <br>Sale: ${newSale.sale_no}`,
-  type: "sale_updated",
-  referenceType: "sale",
-  referenceId: saleId,
-  createdBy: userId || null,
-});
+      title: "Sale Updated",
+      message: `${newSale.customer_name} - ₹${Number(
+        newSale.total_amount || 0,
+      ).toLocaleString("en-IN")}. <br>Sale: ${newSale.sale_no}`,
+      type: "sale_updated",
+      referenceType: "sale",
+      referenceId: saleId,
+      createdBy: userId || null,
+    });
 
-sendPushNotification({
-  title: "Sale Updated",
-  body: `${newSale.customer_name} - ₹${Number(
-    newSale.total_amount || 0
-  ).toLocaleString("en-IN")}. Sale: ${newSale.sale_no}`,
-  icon: "/images/truck-regular.png",
-  badge: "/images/icon-192.png",
-  url: "/sales",
-}).catch((error) => {
-  console.error("Sale update push notification error:", error);
-});
+    sendPushNotification({
+      title: "Sale Updated",
+      body: `${newSale.customer_name} - ₹${Number(
+        newSale.total_amount || 0,
+      ).toLocaleString("en-IN")}. Sale: ${newSale.sale_no}`,
+      icon: "/images/truck-regular.png",
+      badge: "/images/icon-192.png",
+      url: "/sales",
+    }).catch((error) => {
+      console.error("Sale update push notification error:", error);
+    });
 
     return getSaleById(saleId);
   } catch (error) {
@@ -1231,35 +1443,6 @@ const deleteSale = async (id, { userId = null, ipAddress }) => {
     const sale = saleResult.rows[0];
     const oldSale = await getSaleById(saleId, client);
 
-    // const [paymentResult, dispatchResult, returnResult] =
-    //   await Promise.all([
-    //     client.query(
-    //       `
-    //         SELECT COUNT(*)::int AS count
-    //         FROM payments
-    //         WHERE payment_type = 'CUSTOMER'
-    //           AND sale_id = $1
-    //       `,
-    //       [saleId],
-    //     ),
-    //     client.query(
-    //       `
-    //         SELECT COUNT(*)::int AS count
-    //         FROM dispatches
-    //         WHERE sale_id = $1
-    //       `,
-    //       [saleId],
-    //     ),
-    //     client.query(
-    //       `
-    //         SELECT COUNT(*)::int AS count
-    //         FROM sales_returns
-    //         WHERE sale_id = $1
-    //       `,
-    //       [saleId],
-    //     ),
-    //   ]);
-
     const paymentResult = await client.query(
       `
     SELECT COUNT(*)::int AS count
@@ -1285,8 +1468,8 @@ const deleteSale = async (id, { userId = null, ipAddress }) => {
         FROM sales_returns
         WHERE sale_id = $1
       `,
-          [saleId],
-        );
+      [saleId],
+    );
 
     if (Number(paymentResult.rows[0]?.count || 0) > 0) {
       const error = new Error(
@@ -1359,27 +1542,27 @@ const deleteSale = async (id, { userId = null, ipAddress }) => {
     });
 
     await createNotification({
-  title: "Sale Deleted",
-  message: `${oldSale.customer_name} - ₹${Number(
-    oldSale.total_amount || 0
-  ).toLocaleString("en-IN")}.<br> Sale: ${oldSale.sale_no} deleted.`,
-  type: "sale_deleted",
-  referenceType: "sale",
-  referenceId: saleId,
-  createdBy: userId || null,
-});
+      title: "Sale Deleted",
+      message: `${oldSale.customer_name} - ₹${Number(
+        oldSale.total_amount || 0,
+      ).toLocaleString("en-IN")}.<br> Sale: ${oldSale.sale_no} deleted.`,
+      type: "sale_deleted",
+      referenceType: "sale",
+      referenceId: saleId,
+      createdBy: userId || null,
+    });
 
-sendPushNotification({
-  title: "Sale Deleted",
-  body: `${oldSale.customer_name} - ₹${Number(
-    oldSale.total_amount || 0
-  ).toLocaleString("en-IN")}. Sale: ${oldSale.sale_no} deleted.`,
-  icon: "/images/truck-regular.png",
-  badge: "/images/icon-192.png",
-  url: "/sales",
-}).catch((error) => {
-  console.error("Sale delete push notification error:", error);
-});
+    sendPushNotification({
+      title: "Sale Deleted",
+      body: `${oldSale.customer_name} - ₹${Number(
+        oldSale.total_amount || 0,
+      ).toLocaleString("en-IN")}. Sale: ${oldSale.sale_no} deleted.`,
+      icon: "/images/truck-regular.png",
+      badge: "/images/icon-192.png",
+      url: "/sales",
+    }).catch((error) => {
+      console.error("Sale delete push notification error:", error);
+    });
 
     return {
       id: saleId,

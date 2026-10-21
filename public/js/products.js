@@ -52,6 +52,7 @@ const ProductsPage = (() => {
     minimum_stock: Number(product.minimum_stock ?? 0),
     selling_rate: Number(product.selling_rate ?? 0),
     gst_tax_rate: Number(product.gst_tax_rate ?? 0),
+    hsn_sac_code: String(product.hsn_sac_code ?? ""),
     is_active: Boolean(product.is_active),
   });
 
@@ -437,6 +438,7 @@ const ProductsPage = (() => {
     elements.minimumStock.value = "0";
     elements.sellingRate.value = "0";
     elements.gstTaxRate.value = "0";
+    elements.hsn_sac_code.value = ""
     elements.unit.value = "PCS";
     elements.status.value = "true";
     state.editingId = null;
@@ -507,6 +509,7 @@ const ProductsPage = (() => {
       elements.size.value = product.size;
       elements.unit.value = product.unit;
       elements.minimumStock.value = product.minimum_stock;
+      elements.hsn_sac_code.value = String( product.hsn_sac_code ?? "");
       elements.sellingRate.value = product.selling_rate;
       elements.gstTaxRate.value = String(product.gst_tax_rate ?? 0);
       elements.status.value = String(product.is_active);
@@ -574,6 +577,7 @@ const ProductsPage = (() => {
     size: elements.size.value.trim() || null,
     unit: elements.unit.value,
     minimum_stock: Number(elements.minimumStock.value || 0),
+    hsn_sac_code: elements.hsn_sac_code.value || 0,
     selling_rate: Number(elements.sellingRate.value || 0),
     gst_tax_rate: Number(elements.gstTaxRate.value || 0),
     is_active: elements.status.value === "true",
@@ -1009,7 +1013,8 @@ const ProductsPage = (() => {
     elements.minimumStock = qs("#minimumStock");
     elements.sellingRate = qs("#sellingRate");
     elements.gstTaxRate = qs("#gstTaxRate");
-    elements.status = qs("#productStatus");
+    elements.status = qs("#productStatus"); 
+    elements.hsn_sac_code = qs("#hsn_sac_code");
 
     elements.modalTitle = qs("#productModalTitle");
     elements.modalDescription = qs("#productModalDescription");

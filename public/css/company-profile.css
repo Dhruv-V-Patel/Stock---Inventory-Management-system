@@ -126,6 +126,10 @@
   gap: 15px;
   padding: 19px 20px 20px;
 }
+.bank-grid{
+  padding: 19px 20px 0px;
+
+}
 
 .single-grid {
   grid-template-columns: minmax(0, 1fr);

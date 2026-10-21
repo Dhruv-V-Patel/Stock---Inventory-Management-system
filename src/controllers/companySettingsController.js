@@ -153,12 +153,17 @@ const saveCompanySettings = async (req, res) => {
       tagline: body.tagline,
       address: body.address,
       gstin: body.gstin,
+      pan_no: body.pan_no,
       phone: body.phone,
       email: body.email,
       website: body.website,
       logo_url: logoUrl,
       stamp_url: stampUrl,
       authorized_signatory_name: body.authorized_signatory_name,
+      bank_name: body.bank_name,
+      bank_account_number: body.bank_account_number,
+      bank_ifsc: body.bank_ifsc,
+      bank_branch: body.bank_branch,
     };
 
     const data = await companySettingsService.saveCompanySettings(payload);

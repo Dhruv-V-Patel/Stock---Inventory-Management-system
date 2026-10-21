@@ -291,6 +291,18 @@ const validateProductPayload = (
   payload.gst_tax_rate = gstTaxRate;
 }
 
+/* HSN / SAC Code */
+if (!partial || body.hsn_sac_code !== undefined) {
+  const hsnSacCode = normalizeText(body.hsn_sac_code);
+
+  if (hsnSacCode && hsnSacCode.length > 20) {
+    throw validationError(
+      "HSN/SAC Code must not exceed 20 characters."
+    );
+  }
+
+  payload.hsn_sac_code = hsnSacCode;
+}
 
   if (!partial || body.is_active !== undefined) {
     payload.is_active =
@@ -329,6 +341,8 @@ const mapProduct = (row) => ({
   gst_tax_rate: Number(row.gst_tax_rate),
 
   is_active: row.is_active,
+
+  hsn_sac_code: row.hsn_sac_code,
 
   created_at: row.created_at,
 
@@ -392,6 +406,7 @@ const listProducts = async () => {
       p.selling_rate,
       p.gst_tax_rate,
       p.is_active,
+      p.hsn_sac_code,
       p.created_at,
       p.updated_at
     FROM products p
@@ -425,6 +440,7 @@ const getProduct = async (idValue) => {
         p.unit,
         p.minimum_stock,
         p.selling_rate,
+        p.hsn_sac_code,
         p.gst_tax_rate,
         p.is_active,
         p.created_at,
@@ -456,6 +472,7 @@ const getProduct = async (idValue) => {
     minimum_stock: Number(row.minimum_stock || 0),
     selling_rate: Number(row.selling_rate || 0),
     gst_tax_rate: row.gst_tax_rate,
+    hsn_sac_code: row.hsn_sac_code,
     is_active: Boolean(row.is_active),
     created_at: row.created_at,
     updated_at: row.updated_at,
@@ -505,6 +522,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             minimum_stock,
             selling_rate,
             gst_tax_rate,
+            hsn_sac_code,
             is_active
           )
           VALUES (
@@ -516,7 +534,8 @@ const createProduct = async ({ body, userId, ipAddress }) => {
             $6,
             $7,
             $8,
-            $9
+            $9,
+            $10
           )
           RETURNING *
         `,
@@ -529,6 +548,7 @@ const createProduct = async ({ body, userId, ipAddress }) => {
         payload.minimum_stock,
         payload.selling_rate,
         payload.gst_tax_rate,
+        payload.hsn_sac_code,
         payload.is_active,
       ],
     );
@@ -636,6 +656,11 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         payload.gst_tax_rate ??
         current.gst_tax_rate,
 
+      hsn_sac_code:
+  payload.hsn_sac_code !== undefined
+    ? payload.hsn_sac_code
+    : current.hsn_sac_code,
+
       is_active:
         payload.is_active ??
         current.is_active,
@@ -655,9 +680,10 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
             minimum_stock = $6,
             selling_rate = $7,
             gst_tax_rate = $8,
-            is_active = $9,
+            hsn_sac_code = $9,
+            is_active = $10,
             updated_at = NOW()
-          WHERE id = $10
+          WHERE id = $11
           RETURNING *
         `,
       [
@@ -669,6 +695,7 @@ const updateProduct = async ({ id: idValue, body, userId, ipAddress }) => {
         next.minimum_stock,
         next.selling_rate,
         next.gst_tax_rate,
+        next.hsn_sac_code,
         next.is_active,
         id,
       ],

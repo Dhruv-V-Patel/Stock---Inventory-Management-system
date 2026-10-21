@@ -266,6 +266,9 @@ CREATE TABLE IF NOT EXISTS sales (
     vehicle_no VARCHAR(30),
     driver_name VARCHAR(150),
     driver_mobile VARCHAR(20),
+    eway_bill_no VARCHAR(100),
+    consignee_address TEXT,
+    destination VARCHAR(200),
     subtotal NUMERIC(14, 2) NOT NULL DEFAULT 0,
     challan_lr_no VARCHAR(100),
     discount NUMERIC(14, 2) NOT NULL DEFAULT 0,
@@ -1124,6 +1127,11 @@ CREATE TABLE IF NOT EXISTS company_settings (
     logo_url TEXT,
     stamp_url TEXT,
 
+    bank_name VARCHAR(150),
+    bank_account_number VARCHAR(34),
+    bank_ifsc VARCHAR(11),
+    bank_branch VARCHAR(150),
+
     authorized_signatory_name VARCHAR(100),
 
     created_at TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -1179,3 +1187,33 @@ COMMIT;
 
 ALTER TABLE purchases
 ADD COLUMN IF NOT EXISTS bill_file_path TEXT;
+
+ALTER TABLE company_settings
+    ADD COLUMN IF NOT EXISTS bank_name VARCHAR(150),
+    ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(34),
+    ADD COLUMN IF NOT EXISTS bank_ifsc VARCHAR(11),
+    ADD COLUMN IF NOT EXISTS bank_branch VARCHAR(150);
+
+ALTER TABLE products
+ADD COLUMN IF NOT EXISTS hsn_sac_code VARCHAR(20);
+
+ALTER TABLE sales
+    ADD COLUMN IF NOT EXISTS eway_bill_no VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS consignee_address TEXT,
+    ADD COLUMN IF NOT EXISTS destination VARCHAR(200);
+
+
+ALTER TABLE sale_items
+    ADD COLUMN IF NOT EXISTS rate_including_gst NUMERIC(14,2),
+    ADD COLUMN IF NOT EXISTS gst_tax_rate NUMERIC(5,2) NOT NULL DEFAULT 0;
+
+ALTER TABLE sales
+ADD COLUMN IF NOT EXISTS round_off NUMERIC(14, 2) NOT NULL DEFAULT 0,
+ADD COLUMN IF NOT EXISTS delivery_note VARCHAR(200),
+ADD COLUMN IF NOT EXISTS delivery_note_date TIMESTAMP WITHOUT TIME ZONE,
+ADD COLUMN IF NOT EXISTS dispatch_doc_no VARCHAR(200),
+ADD COLUMN IF NOT EXISTS dispatched_through VARCHAR(200),
+ADD COLUMN IF NOT EXISTS challan_lr_no_date TIMESTAMP WITHOUT TIME ZONE;
+
+ALTER TABLE company_settings
+ADD COLUMN IF NOT EXISTS pan_no VARCHAR(10);

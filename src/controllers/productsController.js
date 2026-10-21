@@ -28,7 +28,7 @@ const getProduct = async (req, res) => {
       req.params.id
     );
 
-    console.log("Get Product controller called");
+    // console.log("Get Product controller called");
 
     return res.status(200).json({
       success: true,

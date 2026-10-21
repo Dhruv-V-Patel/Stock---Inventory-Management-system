@@ -17,12 +17,18 @@
     tagline: document.getElementById("tagline"),
     address: document.getElementById("companyAddress"),
     gstin: document.getElementById("gstin"),
+    pan_no: document.getElementById("panno"),
     phone: document.getElementById("phone"),
     email: document.getElementById("email"),
     website: document.getElementById("website"),
     authorized_signatory_name: document.getElementById(
       "authorizedSignatoryName",
     ),
+     bank_name: document.getElementById("bankName"),
+    bank_account_number: document.getElementById("bankAccountNumber"),
+    confirm_bank_account_number: document.getElementById("confirmBankAccountNumber"),
+    bank_ifsc: document.getElementById("bankIfsc"),
+    bank_branch: document.getElementById("bankBranch"),
   };
 
   // File inputs
@@ -211,6 +217,8 @@
 
       gstin: data.gstin ?? "",
 
+      pan_no: data.pan_no ?? "",
+
       phone: data.phone ?? "",
 
       email: data.email ?? "",
@@ -218,6 +226,10 @@
       website: data.website ?? "",
 
       authorized_signatory_name: data.authorized_signatory_name ?? "",
+      bank_name: data.bank_name ?? "",
+      bank_account_number: data.bank_account_number ?? "",
+      bank_ifsc: data.bank_ifsc ?? "",
+      bank_branch: data.bank_branch ?? "",
 
       logo_url: data.logo_url ?? data.logo ?? "",
 
@@ -240,6 +252,8 @@
 
     formData.append("gstin", getValue(fields.gstin).toUpperCase());
 
+    formData.append("pan_no", getValue(fields.pan_no).toUpperCase());
+
     formData.append("phone", getValue(fields.phone));
 
     formData.append("email", getValue(fields.email));
@@ -250,6 +264,11 @@
       "authorized_signatory_name",
       getValue(fields.authorized_signatory_name),
     );
+
+    formData.append("bank_name", getValue(fields.bank_name));
+    formData.append("bank_account_number", getValue(fields.bank_account_number));
+    formData.append("bank_ifsc", getValue(fields.bank_ifsc).toUpperCase());
+    formData.append("bank_branch", getValue(fields.bank_branch));
 
     // Logo
     if (logoInput?.files?.length) {
@@ -285,29 +304,49 @@
   const validateForm = () => {
     let valid = true;
 
-    document.querySelectorAll(".field-error").forEach((el) => el.remove());
+    document.querySelectorAll(".form-error").forEach((el) => {
+  el.textContent = "";
+});
 
-    document
-      .querySelectorAll(".input-error")
-      .forEach((el) => el.classList.remove("input-error"));
+document.querySelectorAll(".field-error").forEach((el) => {
+  el.remove();
+});
 
-    const addError = (element, message) => {
-      if (!element) {
-        return;
-      }
+document.querySelectorAll(".input-error").forEach((el) => {
+  el.classList.remove("input-error");
+});
 
-      valid = false;
+// Display validation error
+const addError = (element, message) => {
+  if (!element) return;
 
-      element.classList.add("input-error");
+  valid = false;
 
-      const error = document.createElement("small");
+  // Add error class to input
+  element.classList.add("input-error");
 
-      error.className = "field-error";
+  // Find existing error element in HTML
+  let errorElement = document.querySelector(
+    `.form-error[data-error-for="${element.id}"]`
+  );
 
-      error.textContent = message;
+  // If error element does not exist, create one
+  if (!errorElement) {
+    errorElement = document.createElement("small");
+    errorElement.className = "form-error";
 
-      element.parentElement.appendChild(error);
-    };
+    const formGroup = element.closest(".form-group");
+
+    if (formGroup) {
+      formGroup.appendChild(errorElement);
+    } else {
+      element.parentElement.appendChild(errorElement);
+    }
+  }
+
+  // Display error message
+  errorElement.textContent = message;
+};
 
     // Company name
     const companyName = getValue(fields.company_name);
@@ -322,6 +361,13 @@
     if (gstin && !/^[A-Z0-9]{15}$/i.test(gstin)) {
       addError(fields.gstin, "Enter a valid 15-character GSTIN");
     }
+
+    // PAN No
+    const panNo = getValue(fields.pan_no);
+
+if (panNo && !/^[A-Z]{5}[0-9]{4}[A-Z]$/.test(panNo)) {
+  addError(fields.pan_no, "Enter a valid 10-character PAN number");
+}
 
     // Email
     const email = getValue(fields.email);
@@ -341,6 +387,21 @@
       }
     }
 
+    // Bank details
+    const bankIfsc = getValue(fields.bank_ifsc).toUpperCase();
+    if (bankIfsc && !/^[A-Z]{4}0[A-Z0-9]{6}$/.test(bankIfsc)) {
+      addError(fields.bank_ifsc, "Enter a valid 11-character IFSC code");
+    }
+
+    const bankAccountNumber = getValue(fields.bank_account_number);
+    const confirmBankAccountNumber = getValue(fields.confirm_bank_account_number);
+    if (bankAccountNumber && !/^[A-Za-z0-9-]{5,34}$/.test(bankAccountNumber)) {
+      addError(fields.bank_account_number, "Enter a valid account number (5–34 characters)");
+    }
+    if (bankAccountNumber !== confirmBankAccountNumber) {
+      addError(fields.confirm_bank_account_number, "Account numbers do not match");
+    }
+
     // Phone
     const phone = getValue(fields.phone);
 
@@ -350,6 +411,23 @@
     ) {
       addError(fields.phone, "Enter a valid Indian mobile number");
     }
+
+    if (!valid) {
+  const firstInvalidField = document.querySelector(
+    "#companyProfileForm .input-error"
+  );
+
+  if (firstInvalidField) {
+    firstInvalidField.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+
+    setTimeout(() => {
+      firstInvalidField.focus({ preventScroll: true });
+    }, 350);
+  }
+}
 
     return valid;
   };
@@ -556,6 +634,8 @@
 
       setValue(fields.gstin, profile.gstin);
 
+      setValue(fields.pan_no, profile.pan_no);
+
       setValue(fields.phone, profile.phone);
 
       setValue(fields.email, profile.email);
@@ -566,6 +646,11 @@
         fields.authorized_signatory_name,
         profile.authorized_signatory_name,
       );
+      setValue(fields.bank_name, profile.bank_name);
+      setValue(fields.bank_account_number, profile.bank_account_number);
+      setValue(fields.confirm_bank_account_number, profile.bank_account_number);
+      setValue(fields.bank_ifsc, profile.bank_ifsc);
+      setValue(fields.bank_branch, profile.bank_branch);
 
       removeLogo = false;
       removeStamp = false;
@@ -696,6 +781,8 @@
 
     setValue(fields.gstin, originalProfile.gstin);
 
+    setValue(fields.pan_no, originalProfile.pan_no);
+
     setValue(fields.phone, originalProfile.phone);
 
     setValue(fields.email, originalProfile.email);
@@ -706,6 +793,11 @@
       fields.authorized_signatory_name,
       originalProfile.authorized_signatory_name,
     );
+    setValue(fields.bank_name, originalProfile.bank_name);
+    setValue(fields.bank_account_number, originalProfile.bank_account_number);
+    setValue(fields.confirm_bank_account_number, originalProfile.bank_account_number);
+    setValue(fields.bank_ifsc, originalProfile.bank_ifsc);
+    setValue(fields.bank_branch, originalProfile.bank_branch);
 
     if (logoInput) {
       logoInput.value = "";
@@ -817,12 +909,35 @@
   });
 
   // =========================================================
-  // GSTIN UPPERCASE
+  // GSTIN and PAN UPPERCASE
   // =========================================================
 
   if (fields.gstin) {
     fields.gstin.addEventListener("input", () => {
       fields.gstin.value = fields.gstin.value.toUpperCase();
+    });
+  }
+
+  if (fields.pan_no) {
+  fields.pan_no.addEventListener("input", () => {
+    fields.pan_no.value = fields.pan_no.value.toUpperCase();
+  });
+}
+
+  // =========================================================
+  // BANK FIELD NORMALIZATION
+  // =========================================================
+
+  if (fields.bank_ifsc) {
+    fields.bank_ifsc.addEventListener("input", () => {
+      fields.bank_ifsc.value = fields.bank_ifsc.value.toUpperCase();
+    });
+  }
+
+
+  if (fields.bank_ifsc) {
+    fields.bank_ifsc.addEventListener("input", () => {
+      fields.bank_ifsc.value = fields.bank_ifsc.value.toUpperCase();
     });
   }
 
