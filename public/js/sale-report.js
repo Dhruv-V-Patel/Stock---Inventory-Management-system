@@ -168,7 +168,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
             <td>${formatCurrency(row.subtotal)}</td>
             <td>${formatCurrency(row.discount)}</td>
             <td>${formatCurrency(row.tax_amount)}</td>
-            <td>${formatCurrency(row.freight_amount)}</td>
+            <td>${formatCurrency(row.round_off)}</td>
             <td>
               <strong>${formatCurrency(row.total_amount)}</strong>
             </td>
@@ -264,7 +264,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
 
             <td>
               <span class="muted">
-                ${escapeHtml(sale.invoice_no || sale.sale_no || "—")}
+                ${escapeHtml(sale.destination || "—")}
               </span>
             </td>
 
@@ -274,7 +274,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
 
             <td>${formatCurrency(sale.tax_amount)}</td>
 
-            <td>${formatCurrency(sale.freight_amount)}</td>
+            <td>${formatCurrency(sale.round_off)}</td>
 
             <td>
               <strong>${formatCurrency(sale.total_amount)}</strong>
@@ -458,8 +458,8 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
           </div>
 
           <div class="detail-box">
-            <span>Invoice No.</span>
-            <strong>${escapeHtml(sale.invoice_no || sale.sale_no || "—")}</strong>
+            <span>Destination</span>
+            <strong>${escapeHtml(sale.destination || "—")}</strong>
           </div>
 
           <div class="detail-box">
@@ -578,8 +578,8 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
           </div>
 
           <div>
-            <span>Freight</span>
-            <strong>${formatCurrency(sale.freight_amount)}</strong>
+            <span>Round Off</span>
+            <strong>${formatCurrency(sale.round_off)}</strong>
           </div>
             
           <div class="purchase-return-total">
@@ -837,7 +837,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         Subtotal: number(row.subtotal),
         Discount: number(row.discount),
         Tax: number(row.tax_amount),
-        Freight: number(row.freight_amount),
+        "Round Off": number(row.round_off),
         Total: number(row.total_amount),
         Return: number(row.sales_return_amount),
         "Net Total": number(row.net_sales_amount),
@@ -875,12 +875,11 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         "Sale No.": row.sale_no,
         Date: formatDateForExcel(row.sale_date),
         Customer: row.customer_name,
-        "Invoice No.": row.invoice_no || row.sale_no || "",
-        Items: number(row.item_count),
+        Destination: row.destination || "",
         Subtotal: number(row.subtotal),
         Discount: number(row.discount),
         Tax: number(row.tax_amount),
-        Freight: number(row.freight_amount),
+        "Round Off": number(row.round_off),
         Total: number(row.total_amount),
         Return: number(row.sales_return_amount),
         "Net Total": number(row.net_sales_amount),
@@ -897,7 +896,6 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         { wch: 14 },
         { wch: 28 },
         { wch: 18 },
-        { wch: 10 },
         { wch: 16 },
         { wch: 14 },
         { wch: 14 },
@@ -934,6 +932,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
           Quantity: number(item.quantity),
           Unit: item.unit,
           Rate: number(item.rate),
+          "Rate Inc. GST": number(item.rate_including_gst ?? item.rate ),
           Amount: number(item.amount),
         }));
 

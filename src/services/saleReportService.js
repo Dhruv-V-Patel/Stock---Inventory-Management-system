@@ -60,19 +60,6 @@ const getSaleReport = async ({
     `);
   }
 
-  /*
-   * The supplied sales schema does not contain invoice_no or freight_amount.
-   *
-   * For compatibility:
-   * - invoice_no is exposed as sale_no.
-   * - freight_amount is exposed as 0.
-   *
-   * This keeps the Sales Report visually identical to Purchase Report
-   * without inventing database columns.
-   *
-   * Payments are aggregated BEFORE joining sale_items so multiple items
-   * never duplicate the paid amount.
-   */
   const salesQuery = `
     SELECT
       s.id,
@@ -92,8 +79,9 @@ const getSaleReport = async ({
       s.subtotal,
       s.discount,
       s.tax_amount,
-      0::numeric AS freight_amount,
       s.total_amount,
+      s.round_off,
+      s.destination,
 
         COALESCE(
       (
@@ -168,6 +156,8 @@ const getSaleReport = async ({
       s.discount,
       s.tax_amount,
       s.total_amount,
+       s.round_off,
+      s.destination,
 
       s.payment_status,
       s.remarks,
@@ -187,9 +177,9 @@ const getSaleReport = async ({
     subtotal: toNumber(row.subtotal),
     discount: toNumber(row.discount),
     tax_amount: toNumber(row.tax_amount),
-    freight_amount: 0,
     total_amount: toNumber(row.total_amount),
     sales_return_amount: toNumber(row.sales_return_amount),
+    round_off: toNumber(row.round_off),
 
     net_sales_amount: Math.max(
       0,
@@ -242,7 +232,7 @@ const getSaleReport = async ({
       subtotal: 0,
       discount: 0,
       tax_amount: 0,
-      freight_amount: 0,
+      round_off: 0,
       total_amount: 0,
       sales_return_amount: 0,
       net_sales_amount: 0,
@@ -255,7 +245,7 @@ const getSaleReport = async ({
     existing.subtotal += row.subtotal;
     existing.discount += row.discount;
     existing.tax_amount += row.tax_amount;
-    existing.freight_amount += row.freight_amount;
+    existing.round_off += row.round_off;
     existing.total_amount += row.total_amount;
     existing.sales_return_amount += row.sales_return_amount;
     existing.net_sales_amount += row.net_sales_amount;
