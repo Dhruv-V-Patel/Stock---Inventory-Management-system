@@ -997,12 +997,12 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
        * SHEET 3
        * Purchase Entries
        */
-      console.log("Purchase Row:",state.rows);
       const purchaseRows = state.rows.map((row, index) => ({
         "#": index + 1,
         "Purchase No.": row.purchase_no,
         Date: formatDateForExcel(row.purchase_date),
         Supplier: row.supplier_name,
+        "Vehicle No.": row.vehicle_no,
         "Invoice No.": row.invoice_no || "",
         Items: number(row.item_count),
         Subtotal: number(row.subtotal),
@@ -1025,6 +1025,7 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
         { wch: 18 },
         { wch: 14 },
         { wch: 28 },
+        { wch: 18 },
         { wch: 18 },
         { wch: 10 },
         { wch: 16 },
@@ -1059,18 +1060,6 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
        */
       const itemRows = [];
 
-      state.rows.forEach((purchase) => {
-        /*
-         * Main report does not contain items.
-         * They are loaded separately during
-         * detail view, so export all items
-         * from the purchases endpoint.
-         *
-         * This sheet will be populated by
-         * loadPurchaseItemsForExport().
-         */
-      });
-
       /*
        * We intentionally export Purchase Items
        * using the already loaded item cache.
@@ -1082,12 +1071,13 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
           "Purchase No.": item.purchase_no,
           "Purchase Date": formatDateForExcel(item.purchase_date),
           Supplier: item.supplier_name,
+          "Vehicle No.": item.vehicle_no,
           "Raw Material": item.material_name,
           "Material Code": item.material_code,
           Quantity: number(item.quantity),
           Unit: item.unit,
           Rate: number(item.rate),
-          Amount: number(item.amount),
+          Amount: number(item.total_amount),
         });
       });
 
@@ -1097,6 +1087,7 @@ elements.netPurchaseValue.textContent =  formatCurrency(summary?.netPurchaseValu
         { wch: 18 },
         { wch: 16 },
         { wch: 28 },
+        { wch: 18 }, 
         { wch: 30 },
         { wch: 18 },
         { wch: 14 },
@@ -1246,7 +1237,11 @@ XLSX.utils.book_append_sheet(
             purchase_no: detail.purchase_no,
             purchase_date: detail.purchase_date,
             supplier_name: detail.supplier_name,
+            vehicle_no: detail.vehicle_no,
           }));
+
+          console.log("Items:", detail.items);
+
         } catch (error) {
           console.error(`Failed to load purchase ${purchase.id} items:`, error);
         }

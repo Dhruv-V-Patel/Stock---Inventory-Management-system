@@ -643,7 +643,9 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
             sale_no: detail.sale_no,
             sale_date: detail.sale_date,
             customer_name: detail.customer_name,
+            vehicle_no: detail.vehicle_no,
           }));
+
         } catch (error) {
           console.error(
             `Failed to load sale ${sale.id} items:`,
@@ -876,6 +878,8 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         Date: formatDateForExcel(row.sale_date),
         Customer: row.customer_name,
         Destination: row.destination || "",
+        "Vehicle No.": row.vehicle_no,
+        "Invoice No.": row.invoice_no || row.sale_no || "",
         Subtotal: number(row.subtotal),
         Discount: number(row.discount),
         Tax: number(row.tax_amount),
@@ -895,6 +899,8 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         { wch: 18 },
         { wch: 14 },
         { wch: 28 },
+        { wch: 18 },
+        { wch: 18 },
         { wch: 18 },
         { wch: 16 },
         { wch: 14 },
@@ -927,6 +933,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
           "Sale No.": item.sale_no,
           "Sale Date": formatDateForExcel(item.sale_date),
           Customer: item.customer_name,
+          "Vehicle No.": item.vehicle_no,
           Product: item.product_name,
           "Product Code": item.product_code,
           Quantity: number(item.quantity),
@@ -941,6 +948,7 @@ elements.netSalesValue.textContent =  formatCurrency(summary?.netSalesValue);
         { wch: 18 }, 
         { wch: 16 }, 
         { wch: 28 }, 
+        { wch: 18 }, 
         { wch: 30 },
         { wch: 18 }, 
         { wch: 14 }, 
