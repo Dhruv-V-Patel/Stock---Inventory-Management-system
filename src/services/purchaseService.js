@@ -451,13 +451,16 @@ const createPurchase = async (payload, { userId = null, ipAddress }) => {
     const normalizedItems = payload.items.map((item) => {
       const rawMaterialId = Number(item.raw_material_id);
       const quantity = Number(item.quantity);
-      const rate = Number(item.rate);
+      const rawRate = item.rate === null || item.rate === undefined || String(item.rate).trim() === ""
+        ? null
+        : Number(item.rate);
+      const rate = rawRate;
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
         throw new Error("Quantity must be greater than zero.");
       }
 
-      if (!Number.isFinite(rate) || rate < 0) {
+      if (rate !== null && (!Number.isFinite(rate) || rate < 0)) {
         throw new Error("Rate cannot be negative.");
       }
 
@@ -472,7 +475,7 @@ const createPurchase = async (payload, { userId = null, ipAddress }) => {
         quantity,
         unit: material.unit,
         rate,
-        amount: quantity * rate,
+        amount: rate === null ? 0 : quantity * rate,
       };
     });
 
@@ -498,9 +501,10 @@ const createPurchase = async (payload, { userId = null, ipAddress }) => {
       subtotal - discount + taxAmount + freightAmount,
     );
 
-    const paymentStatus = String(
-      payload.payment_status || "PENDING",
-    ).toUpperCase();
+    const hasPendingRateItems = normalizedItems.some((item) => item.rate === null);
+    const paymentStatus = hasPendingRateItems && totalAmount <= 0
+      ? "PENDING"
+      : String(payload.payment_status || "PENDING").toUpperCase();
 
     if (!["PENDING", "PARTIAL", "PAID"].includes(paymentStatus)) {
       throw new Error("Invalid payment status.");
@@ -633,7 +637,9 @@ const createPurchase = async (payload, { userId = null, ipAddress }) => {
       }
     }
 
-    await applyAvailableAdvance(client, "SUPPLIER", supplierId, purchase.id);
+    if (totalAmount > 0) {
+      await applyAvailableAdvance(client, "SUPPLIER", supplierId, purchase.id);
+    }
 
     await client.query("COMMIT");
 
@@ -745,13 +751,16 @@ const updatePurchase = async (id, payload, { userId = null, ipAddress }) => {
     const normalizedItems = payload.items.map((item) => {
       const rawMaterialId = Number(item.raw_material_id);
       const quantity = Number(item.quantity);
-      const rate = Number(item.rate);
+      const rawRate = item.rate === null || item.rate === undefined || String(item.rate).trim() === ""
+        ? null
+        : Number(item.rate);
+      const rate = rawRate;
 
       if (!Number.isFinite(quantity) || quantity <= 0) {
         throw new Error("Quantity must be greater than zero.");
       }
 
-      if (!Number.isFinite(rate) || rate < 0) {
+      if (rate !== null && (!Number.isFinite(rate) || rate < 0)) {
         throw new Error("Rate cannot be negative.");
       }
 
@@ -766,7 +775,7 @@ const updatePurchase = async (id, payload, { userId = null, ipAddress }) => {
         quantity,
         unit: material.unit,
         rate,
-        amount: quantity * rate,
+        amount: rate === null ? 0 : quantity * rate,
       };
     });
 
@@ -958,6 +967,202 @@ const updatePurchase = async (id, payload, { userId = null, ipAddress }) => {
   }
 };
 
+
+const validateRateSettlementPayload = (payload = {}) => {
+  const fromDate = String(payload.from_date || "").trim();
+  const toDate = String(payload.to_date || "").trim();
+  const supplierId = Number(payload.supplier_id);
+  const rawMaterialId = Number(payload.raw_material_id);
+  const rate = Number(payload.rate);
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) || !/^\d{4}-\d{2}-\d{2}$/.test(toDate)) {
+    throw new Error("Valid from and to dates are required.");
+  }
+  if (fromDate > toDate) throw new Error("From date cannot be after To date.");
+  if (!Number.isInteger(supplierId) || supplierId <= 0) throw new Error("Invalid supplier.");
+  if (!Number.isInteger(rawMaterialId) || rawMaterialId <= 0) throw new Error("Invalid raw material.");
+  if (!Number.isFinite(rate) || rate < 0) throw new Error("Rate must be a valid non-negative number.");
+
+  return { fromDate, toDate, supplierId, rawMaterialId, rate };
+};
+
+const getPurchaseRateSettlementPreview = async (payload) => {
+  const { fromDate, toDate, supplierId, rawMaterialId } = validateRateSettlementPayload({ ...payload, rate: 0 });
+  const result = await pool.query(
+    `
+      SELECT
+        COUNT(DISTINCT p.id)::INTEGER AS purchase_count,
+        COUNT(pi.id)::INTEGER AS item_count,
+        COALESCE(SUM(pi.quantity), 0)::NUMERIC AS total_quantity,
+        COALESCE(SUM(pi.quantity * $5::NUMERIC), 0)::NUMERIC AS estimated_amount,
+        MIN(p.purchase_date) AS first_purchase_date,
+        MAX(p.purchase_date) AS last_purchase_date
+      FROM purchase_items pi
+      INNER JOIN purchases p ON p.id = pi.purchase_id
+      WHERE p.purchase_date >= $1::DATE
+        AND p.purchase_date <= $2::DATE
+        AND p.supplier_id = $3
+        AND pi.raw_material_id = $4
+    `,
+    [fromDate, toDate, supplierId, rawMaterialId, Number(payload.rate || 0)],
+  );
+  return result.rows[0];
+};
+
+const applyPurchaseRateSettlement = async (payload, { userId = null, ipAddress } = {}) => {
+  const { fromDate, toDate, supplierId, rawMaterialId, rate } = validateRateSettlementPayload(payload);
+  const client = await pool.connect();
+  let committed = false;
+
+  try {
+    await client.query("BEGIN");
+
+    const supplierResult = await client.query(
+      `SELECT id FROM suppliers WHERE id = $1 AND is_active = TRUE`,
+      [supplierId],
+    );
+    if (!supplierResult.rows[0]) throw new Error("Supplier not found or inactive.");
+
+    const materialResult = await client.query(
+      `SELECT id FROM raw_materials WHERE id = $1 AND is_active = TRUE`,
+      [rawMaterialId],
+    );
+    if (!materialResult.rows[0]) throw new Error("Invalid raw material.");
+
+    const pendingResult = await client.query(
+      `
+        SELECT
+          pi.id AS purchase_item_id,
+          pi.purchase_id,
+          pi.quantity,
+          p.purchase_no,
+          p.supplier_id,
+          p.subtotal,
+          p.discount,
+          p.tax_amount,
+          p.freight_amount,
+          p.total_amount
+        FROM purchase_items pi
+        INNER JOIN purchases p ON p.id = pi.purchase_id
+        WHERE p.purchase_date >= $1::DATE
+          AND p.purchase_date <= $2::DATE
+          AND p.supplier_id = $3
+          AND pi.raw_material_id = $4
+        ORDER BY p.purchase_date ASC, p.id ASC, pi.id ASC
+        FOR UPDATE OF p, pi
+      `,
+      [fromDate, toDate, supplierId, rawMaterialId],
+    ); // AND pi.rate IS NULL
+
+    if (!pendingResult.rows.length) {
+      throw new Error("No pending-rate purchase items found for the selected filters.");
+    }
+
+    const affectedPurchaseIds = [...new Set(pendingResult.rows.map((row) => Number(row.purchase_id)))];
+    const itemIds = pendingResult.rows.map((row) => Number(row.purchase_item_id));
+
+    await client.query(
+      `UPDATE purchase_items SET rate = $1, amount = quantity * $1 WHERE id = ANY($2::BIGINT[]) `, //AND rate IS NULL
+      [rate, itemIds],
+    );
+
+    for (const purchaseId of affectedPurchaseIds) {
+      await client.query(
+        `
+          UPDATE purchases p
+          SET
+            subtotal = totals.subtotal,
+            total_amount = GREATEST(0, totals.subtotal - p.discount + p.tax_amount + p.freight_amount),
+            updated_at = NOW()
+          FROM (
+            SELECT purchase_id, COALESCE(SUM(amount), 0)::NUMERIC AS subtotal
+            FROM purchase_items
+            WHERE purchase_id = $1
+            GROUP BY purchase_id
+          ) totals
+          WHERE p.id = totals.purchase_id
+        `,
+        [purchaseId],
+      );
+
+      // Preserve legacy direct-linked payments: applyAvailableAdvance() calculates
+      // remaining invoice value from allocation rows, so do not call it when a
+      // legacy payments.purchase_id entry exists (that could over-allocate).
+      const legacyPaymentResult = await client.query(
+        `
+          SELECT COALESCE(SUM(amount), 0)::NUMERIC AS paid
+          FROM payments
+          WHERE purchase_id = $1
+            AND payment_type = 'SUPPLIER'
+        `,
+        [purchaseId],
+      );
+      const legacyPaid = Number(legacyPaymentResult.rows[0]?.paid || 0);
+
+      if (legacyPaid > 0) {
+        const [purchaseTotalResult, allocationResult] = await Promise.all([
+          client.query(`SELECT total_amount FROM purchases WHERE id = $1`, [purchaseId]),
+          client.query(
+            `
+              SELECT COALESCE(SUM(pa.allocated_amount), 0)::NUMERIC AS allocated
+              FROM payment_allocations pa
+              INNER JOIN payments p ON p.id = pa.payment_id
+              WHERE pa.purchase_id = $1
+                AND p.payment_type = 'SUPPLIER'
+            `,
+            [purchaseId],
+          ),
+        ]);
+        const invoiceTotal = Number(purchaseTotalResult.rows[0]?.total_amount || 0);
+        const allocated = Number(allocationResult.rows[0]?.allocated || 0);
+        const paid = Math.min(invoiceTotal, allocated + legacyPaid);
+        const status = paid <= 0 ? "PENDING" : paid >= invoiceTotal ? "PAID" : "PARTIAL";
+        await client.query(
+          `UPDATE purchases SET payment_status = $1, updated_at = NOW() WHERE id = $2`,
+          [status, purchaseId],
+        );
+      } else {
+        // Existing allocation rows remain untouched; only unallocated supplier
+        // advance is applied, limited by the recalculated outstanding balance.
+        await applyAvailableAdvance(client, "SUPPLIER", supplierId, purchaseId);
+      }
+    }
+
+    await client.query("COMMIT");
+    committed = true;
+
+    const affected = await pool.query(
+      `SELECT id, purchase_no, total_amount, payment_status FROM purchases WHERE id = ANY($1::BIGINT[]) ORDER BY purchase_date, id`,
+      [affectedPurchaseIds],
+    );
+
+    for (const purchase of affected.rows) {
+      await createAuditLog({
+        userId: userId || null,
+        module: "PURCHASES",
+        action: "RATE_SETTLEMENT",
+        recordId: Number(purchase.id),
+        oldData: { rate_pending: true },
+        newData: { rate, total_amount: Number(purchase.total_amount), payment_status: purchase.payment_status, from_date: fromDate, to_date: toDate, raw_material_id: rawMaterialId },
+        ipAddress: ipAddress || null,
+      });
+    }
+
+    return {
+      updated_item_count: pendingResult.rows.length,
+      updated_purchase_count: affectedPurchaseIds.length,
+      total_quantity: pendingResult.rows.reduce((sum, row) => sum + Number(row.quantity || 0), 0),
+      applied_rate: rate,
+      purchases: affected.rows,
+    };
+  } catch (error) {
+    if (!committed) await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
+  }
+};
+
 const deletePurchase = async (id, { userId = null, ipAddress }) => {
   const client = await pool.connect();
 
@@ -1045,5 +1250,7 @@ module.exports = {
   getPurchaseById,
   createPurchase,
   updatePurchase,
+  getPurchaseRateSettlementPreview,
+  applyPurchaseRateSettlement,
   deletePurchase,
 };

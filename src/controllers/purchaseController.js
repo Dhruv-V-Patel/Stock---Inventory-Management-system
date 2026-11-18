@@ -179,6 +179,38 @@ const updatePurchase = async (req, res) => {
   }
 };
 
+const getRateSettlementPreview = async (req, res) => {
+  try {
+    const preview = await purchaseService.getPurchaseRateSettlementPreview(req.body || {});
+    return res.status(200).json({ success: true, preview });
+  } catch (error) {
+    const known = ["Valid from and to dates are required.", "From date cannot be after To date.", "Invalid supplier.", "Invalid raw material."];
+    return res.status(known.includes(error.message) ? 400 : 500).json({ success: false, message: error.message || "Failed to preview rate settlement." });
+  }
+};
+
+const applyRateSettlement = async (req, res) => {
+  try {
+    const result = await purchaseService.applyPurchaseRateSettlement(req.body || {}, {
+      userId: getUserId(req),
+      ipAddress: getIpAddress(req),
+    });
+    return res.status(200).json({ success: true, message: "Purchase rates settled successfully.", result });
+  } catch (error) {
+    console.error("[Purchase Controller] rate settlement:", error);
+    const known = [
+      "Valid from and to dates are required.",
+      "From date cannot be after To date.",
+      "Invalid supplier.",
+      "Invalid raw material.",
+      "Rate must be a valid non-negative number.",
+      "Supplier not found or inactive.",
+      "No pending-rate purchase items found for the selected filters.",
+    ];
+    return res.status(known.includes(error.message) ? 400 : 500).json({ success: false, message: error.message || "Failed to settle purchase rates." });
+  }
+};
+
 const deletePurchase = async (req, res) => {
   const id = Number(req.params.id);
 
@@ -217,4 +249,6 @@ module.exports = {
   createPurchase,
   updatePurchase,
   deletePurchase,
+  getRateSettlementPreview,
+  applyRateSettlement,
 };

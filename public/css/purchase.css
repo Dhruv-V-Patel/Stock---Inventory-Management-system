@@ -98,7 +98,7 @@
 }
 
 .summary-icon.blue {
-  background: rgba(37,99,235,.1);
+  background: rgba(37, 99, 235, .1);
   color: var(--primary);
 }
 
@@ -108,12 +108,12 @@
 }
 
 .summary-icon.orange {
-  background: rgba(245,158,11,.12);
+  background: rgba(245, 158, 11, .12);
   color: #d97706;
 }
 
 .summary-icon.purple {
-  background: rgba(124,58,237,.1);
+  background: rgba(124, 58, 237, .1);
   color: #7c3aed;
 }
 
@@ -156,7 +156,8 @@
   font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
-.date-filter{
+
+.date-filter {
   height: 36px;
   border: 1px solid var(--border);
   border-radius: 7px;
@@ -166,7 +167,7 @@
   font-size: 12px;
   font-family: inherit;
   transition: border-color 0.2s, box-shadow 0.2s;
-  padding:10px;
+  padding: 10px;
 }
 
 
@@ -255,8 +256,8 @@
   white-space: nowrap;
 }
 
-.action-column{
-  width:110px;
+.action-column {
+  width: 110px;
   text-align: end !important;
 }
 
@@ -281,12 +282,14 @@
   font-size: 11px;
 }
 
-.purchase-amount, .purchase-net-amount {
+.purchase-amount,
+.purchase-net-amount {
   color: var(--text-primary);
   font-weight: 700;
 }
 
-.purchase-return-amount, .purchase-return-total{
+.purchase-return-amount,
+.purchase-return-total {
   color: var(--danger) !important;
   font-weight: 700;
 }
@@ -303,12 +306,12 @@
 
 .payment-badge.pending {
   color: #b45309;
-  background: rgba(245,158,11,.12);
+  background: rgba(245, 158, 11, .12);
 }
 
 .payment-badge.partial {
   color: #2563eb;
-  background: rgba(37,99,235,.1);
+  background: rgba(37, 99, 235, .1);
 }
 
 .payment-badge.paid {
@@ -434,7 +437,8 @@
 ======================================== */
 
 
-.purchase-modal, .purchase-view-modal {
+.purchase-modal,
+.purchase-view-modal {
   width: min(720px, 100%);
   max-height: calc(100vh - 40px);
   overflow-y: auto;
@@ -508,7 +512,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37,99,235,.09);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .09);
 }
 
 .form-error {
@@ -747,22 +751,24 @@
 }
 
 .details-total {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 5px;
-    margin-top: 15px;
-    padding: 12px;
-    border-radius: 8px;
-    background: var(--surface-secondary);
-    color: var(--text-secondary);
-    font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  margin-top: 15px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
 }
+
 .details-total strong:nth-of-type(2) {
-    margin-top: 3px;
-    color: var(--text-primary);
-    font-size: 15px;
+  margin-top: 3px;
+  color: var(--text-primary);
+  font-size: 15px;
 }
+
 .toast-container {
   position: fixed;
   right: 20px;
@@ -788,8 +794,13 @@
   font-size: 11px;
 }
 
-.toast.success i { color: var(--success); }
-.toast.error i { color: var(--danger); }
+.toast.success i {
+  color: var(--success);
+}
+
+.toast.error i {
+  color: var(--danger);
+}
 
 
 /* =========================================
@@ -801,7 +812,7 @@
   min-width: 0;
 }
 
-.purchase-bill-upload-group > label {
+.purchase-bill-upload-group>label {
   display: block;
   margin-bottom: 9px;
   color: var(--text-primary);
@@ -872,8 +883,8 @@
 /* Selected/existing file link area */
 .current-bill-link {
   margin-top: 10px;
-      font-size: 12px;
-    font-weight: 600;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .current-bill-link:empty {
@@ -1092,7 +1103,7 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .purchase-summary-card:nth-last-child(-n+2){
+  .purchase-summary-card:nth-last-child(-n+2) {
     grid-column: 1 / -1;
   }
 
@@ -1111,21 +1122,22 @@
     width: auto;
   }
 
-  .purchase-form-grid{
+  .purchase-form-grid {
     grid-template-columns: 1fr;
   }
 
-  .purchase-total-grid:not(:last-child){
-      grid-template-columns: repeat(2, 1fr); 
+  .purchase-total-grid:not(:last-child) {
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .purchase-total-grid .form-group:nth-last-child(-n+2){
+  .purchase-total-grid .form-group:nth-last-child(-n+2) {
     grid-column: 1 / -1;
   }
 
-  .details-grid{
+  .details-grid {
     grid-template-columns: repeat(2, 1fr);
-  } 
+  }
+
   .purchase-grand-total {
     grid-column: 1 / -1;
     justify-content: space-between;
@@ -1155,7 +1167,134 @@
     flex-direction: column;
     padding: 17px;
   }
+
   .card-header .primary-button {
-      width: 100%;
+    width: 100%;
+  }
+}
+
+
+/* Purchase rate settlement */
+.purchase-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap
+}
+
+.rate-settlement-modal {
+  width: min(760px, calc(100% - 28px));
+  max-height: calc(100vh - 36px);
+  overflow: auto
+}
+
+.rate-settlement-body {
+  padding: 22px 24px
+}
+
+.rate-settlement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px
+}
+
+.rate-settlement-grid .form-group:last-child {
+  grid-column: 1/-1;
+  max-width: calc(50% - 8px)
+}
+
+.rate-settlement-grid input,
+.rate-settlement-grid select {
+  width: 100%
+}
+
+.rate-settlement-preview {
+  margin-top: 20px;
+  padding: 16px;
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 12px;
+  background: var(--surface-muted, #f8fafc)
+}
+
+.rate-preview-empty {
+  color: var(--text-muted, #64748b);
+  font-size: 14px;
+  text-align: center;
+  padding: 18px 8px
+}
+
+.rate-preview-empty.error {
+  color: #dc2626
+}
+
+.rate-preview-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px
+}
+
+.rate-preview-stats>div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px
+}
+
+.rate-preview-stats span {
+  font-size: 12px;
+  color: var(--text-muted, #64748b)
+}
+
+.rate-preview-stats strong {
+  font-size: 18px;
+  color: var(--text-primary, #111827)
+}
+
+.rate-preview-caption {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--text-muted, #64748b)
+}
+
+.rate-settlement-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  color: #1e40af;
+  font-size: 13px;
+  line-height: 1.5
+}
+
+.rate-settlement-note i {
+  margin-top: 2px
+}
+
+@media(max-width:640px) {
+  .purchase-header-actions {
+    width: 100%
+  }
+
+  .purchase-header-actions button {
+    flex: 1
+  }
+
+  .rate-settlement-grid {
+    grid-template-columns: 1fr
+  }
+
+  .rate-settlement-grid .form-group:last-child {
+    grid-column: auto;
+    max-width: none
+  }
+
+  .rate-preview-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+  }
+
+  .rate-settlement-body {
+    padding: 16px
   }
 }

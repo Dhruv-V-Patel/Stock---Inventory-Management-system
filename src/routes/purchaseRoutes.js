@@ -9,6 +9,10 @@ router.use(authenticateToken);
 
 router.get("/options", requirePermission("purchases.view"), purchaseController.getOptions);
 router.get("/", requirePermission("purchases.view"),  purchaseController.getPurchases);
+
+router.post("/rate-settlement/preview", requirePermission("purchases.view"), purchaseController.getRateSettlementPreview);
+router.post("/rate-settlement/apply", requirePermission("purchases.edit"), purchaseController.applyRateSettlement);
+
 router.get("/:id", requirePermission("purchases.view"), purchaseController.getPurchase);
 
 router.post("/", requirePermission("purchases.add"),purchaseBillUpload.single("bill_file"), purchaseController.createPurchase);

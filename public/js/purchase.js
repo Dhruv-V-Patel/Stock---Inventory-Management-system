@@ -13,6 +13,7 @@ const PurchasePage = (() => {
     pageSize: 30,
     editingId: null,
     deletingId: null,
+    settlementPreview: null,
   };
 
   const elements = {};
@@ -203,6 +204,13 @@ const PurchasePage = (() => {
         )
         .join("")}
     `;
+
+    if (elements.settlementSupplier) {
+      elements.settlementSupplier.innerHTML = `<option value="">Select Supplier</option>${state.suppliers.map((supplier) => `<option value="${supplier.id}">${escapeHtml(supplier.name)}</option>`).join("")}`;
+    }
+    if (elements.settlementMaterial) {
+      elements.settlementMaterial.innerHTML = `<option value="">Select Raw Material</option>${state.materials.map((material) => `<option value="${material.id}">${escapeHtml(material.code)} — ${escapeHtml(material.name)}</option>`).join("")}`;
+    }
   };
 
   const updateSummary = (purchases) => {
@@ -607,14 +615,12 @@ const PurchasePage = (() => {
                  min="0"
                  step="0.01"
                  value="${escapeHtml(item.rate)}"
-                 placeholder="0.00">
+                 placeholder="Leave blank if rate is not available">
         </td>
 
         <td>
           <span class="item-amount">
-            ${formatCurrency(
-              Number(item.quantity || 0) * Number(item.rate || 0),
-            )}
+            ${item.rate === "" || item.rate === null ? "Pending" : formatCurrency(Number(item.quantity || 0) * Number(item.rate || 0))}
           </span>
         </td>
 
@@ -657,9 +663,10 @@ const PurchasePage = (() => {
 
     const amount = row.querySelector(".item-amount");
     if (amount) {
-      amount.textContent = formatCurrency(
-        Number(quantity || 0) * Number(rate || 0),
-      );
+      amount.textContent =
+        rate === ""
+          ? "Pending"
+          : formatCurrency(Number(quantity || 0) * Number(rate || 0));
     }
 
     const unit = row.querySelector(".item-unit");
@@ -672,7 +679,11 @@ const PurchasePage = (() => {
 
   const updateTotal = () => {
     const subtotal = state.items.reduce(
-      (sum, item) => sum + Number(item.quantity || 0) * Number(item.rate || 0),
+      (sum, item) =>
+        sum +
+        (item.rate === "" || item.rate === null
+          ? 0
+          : Number(item.quantity || 0) * Number(item.rate || 0)),
       0,
     );
 
@@ -724,7 +735,11 @@ const PurchasePage = (() => {
         valid = false;
       }
 
-      if (Number(item.rate) < 0 || item.rate === "") {
+      if (
+        item.rate !== "" &&
+        item.rate !== null &&
+        (!Number.isFinite(Number(item.rate)) || Number(item.rate) < 0)
+      ) {
         valid = false;
       }
 
@@ -741,7 +756,7 @@ const PurchasePage = (() => {
 
     if (!valid && !elements.itemsError.textContent) {
       elements.itemsError.textContent =
-        "Please select valid materials, quantities and rates.";
+        "Please select valid materials and quantities. Rate is optional.";
     }
 
     return valid;
@@ -763,7 +778,7 @@ const PurchasePage = (() => {
     items: state.items.map((item) => ({
       raw_material_id: Number(item.raw_material_id),
       quantity: Number(item.quantity),
-      rate: Number(item.rate),
+      rate: item.rate === "" || item.rate === null ? null : Number(item.rate),
     })),
   });
 
@@ -908,7 +923,7 @@ const PurchasePage = (() => {
   </td>
 
   <td>
-    ${formatCurrency(item.rate)}
+    ${item.rate === null || item.rate === undefined ? "Pending" : formatCurrency(item.rate)}
   </td>
 
   <td>
@@ -1128,7 +1143,202 @@ const PurchasePage = (() => {
     }
   };
 
+  const closeRateSettlementModal = () => {
+    elements.rateSettlementModal.hidden = true;
+    document.body.style.overflow = "";
+  };
+
+  const openRateSettlementModal = () => {
+    state.settlementPreview = null;
+    elements.settlementFromDate.value = "";
+    elements.settlementToDate.value = "";
+    elements.settlementSupplier.value = "";
+    elements.settlementMaterial.value = "";
+    elements.settlementRate.value = "";
+    elements.rateSettlementPreview.innerHTML = `<div class="rate-preview-empty">Select dates, supplier and raw material, then click Preview.</div>`;
+    elements.applyRateSettlement.disabled = true;
+    elements.rateSettlementModal.hidden = false;
+    document.body.style.overflow = "hidden";
+  };
+
+  const getSettlementPayload = () => ({
+    from_date: elements.settlementFromDate.value,
+    to_date: elements.settlementToDate.value,
+    supplier_id: Number(elements.settlementSupplier.value),
+    raw_material_id: Number(elements.settlementMaterial.value),
+    rate: Number(elements.settlementRate.value),
+  });
+
+  const previewRateSettlement = async () => {
+    const payload = getSettlementPayload();
+    if (
+      !payload.from_date ||
+      !payload.to_date ||
+      !payload.supplier_id ||
+      !payload.raw_material_id ||
+      !Number.isFinite(payload.rate) ||
+      payload.rate < 0
+    ) {
+      showToast(
+        "Please enter dates, supplier, raw material and a valid rate.",
+        "error",
+      );
+      return;
+    }
+    const button = elements.previewRateSettlement;
+    button.disabled = true;
+    button.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Checking...`;
+    try {
+      const response = await apiRequest(
+        "/api/purchases/rate-settlement/preview",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      state.settlementPreview = response.preview;
+      const preview = response.preview || {};
+      const itemCount = Number(preview.item_count || 0);
+      elements.rateSettlementPreview.innerHTML =
+        itemCount > 0
+          ? `
+        <div class="rate-preview-stats">
+          <div><span>Pending Items</span><strong>${itemCount.toLocaleString("en-IN")}</strong></div>
+          <div><span>Purchases</span><strong>${Number(preview.purchase_count || 0).toLocaleString("en-IN")}</strong></div>
+          <div><span>Total Quantity</span><strong>${formatNumber(preview.total_quantity)}</strong></div>
+          <div><span>Estimated Value</span><strong>${formatCurrency(Number(preview.total_quantity || 0) * payload.rate)}</strong></div>
+        </div>
+        <p class="rate-preview-caption">The entered rate will be applied to all matching pending items in this date range.</p>
+      `
+          : `<div class="rate-preview-empty">No pending-rate items found for the selected filters.</div>`;
+      elements.applyRateSettlement.disabled = itemCount === 0;
+    } catch (error) {
+      state.settlementPreview = null;
+      elements.rateSettlementPreview.innerHTML = `<div class="rate-preview-empty error">${escapeHtml(error.message)}</div>`;
+      elements.applyRateSettlement.disabled = true;
+    } finally {
+      button.disabled = false;
+      button.innerHTML = `<i class="fa-solid fa-magnifying-glass"></i> Preview`;
+    }
+  };
+
+  const applyRateSettlement = () => {
+    if (
+      !state.settlementPreview ||
+      Number(state.settlementPreview.item_count || 0) <= 0
+    ) {
+      return;
+    }
+
+    const payload = getSettlementPayload();
+    const itemCount = Number(state.settlementPreview.item_count);
+
+    elements.rateSettlementConfirmMessage.textContent = `Are you sure you want to overwrite the rate with ${formatCurrency(payload.rate)} for all ${itemCount.toLocaleString("en-IN")} matching purchase item(s)? Existing rates will also be replaced.`;
+
+    elements.rateSettlementConfirmModal.hidden = false;
+  };
+
+  const closeRateSettlementConfirmModal = () => {
+    elements.rateSettlementConfirmModal.hidden = true;
+  };
+
+  const confirmApplyRateSettlement = async () => {
+    if (
+      !state.settlementPreview ||
+      Number(state.settlementPreview.item_count || 0) <= 0
+    ) {
+      closeRateSettlementConfirmModal();
+      return;
+    }
+
+    const payload = getSettlementPayload();
+    const button = elements.confirmRateSettlementButton;
+
+    button.disabled = true;
+    button.innerHTML = `
+    <i class="fa-solid fa-spinner fa-spin"></i>
+    Applying...
+  `;
+
+    try {
+      const response = await apiRequest(
+        "/api/purchases/rate-settlement/apply",
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+
+      const result = response.result || {};
+
+      closeRateSettlementConfirmModal();
+      closeRateSettlementModal();
+
+      showToast(
+        `${Number(result.updated_item_count || 0)} item(s) updated in ${Number(result.updated_purchase_count || 0)} purchase(s).`,
+      );
+
+      await loadPurchases();
+    } catch (error) {
+      showToast(error.message || "Unable to apply purchase rates.", "error");
+    } finally {
+      button.disabled = false;
+      button.innerHTML = `
+      <i class="fa-solid fa-check"></i>
+      Apply Rate
+    `;
+    }
+  };
+
   const bindEvents = () => {
+    elements.openRateSettlement?.addEventListener(
+      "click",
+      openRateSettlementModal,
+    );
+    elements.closeRateSettlement?.addEventListener(
+      "click",
+      closeRateSettlementModal,
+    );
+    elements.cancelRateSettlement?.addEventListener(
+      "click",
+      closeRateSettlementModal,
+    );
+    elements.previewRateSettlement?.addEventListener(
+      "click",
+      previewRateSettlement,
+    );
+    elements.applyRateSettlement?.addEventListener(
+      "click",
+      applyRateSettlement,
+    );
+
+    elements.cancelRateSettlementConfirm?.addEventListener(
+      "click",
+      closeRateSettlementConfirmModal,
+    );
+
+    elements.confirmRateSettlementButton?.addEventListener(
+      "click",
+      confirmApplyRateSettlement,
+    );
+
+    [
+      elements.settlementFromDate,
+      elements.settlementToDate,
+      elements.settlementSupplier,
+      elements.settlementMaterial,
+      elements.settlementRate,
+    ].forEach((input) => {
+      input?.addEventListener("change", () => {
+        state.settlementPreview = null;
+        elements.applyRateSettlement.disabled = true;
+      });
+      input?.addEventListener("input", () => {
+        state.settlementPreview = null;
+        elements.applyRateSettlement.disabled = true;
+      });
+    });
+
     // ========================================
     // PURCHASE MODAL
     // ========================================
@@ -1415,6 +1625,24 @@ const PurchasePage = (() => {
     elements.confirmDeleteButton = qs("#confirmDeleteButton");
 
     elements.toastContainer = qs("#toastContainer");
+
+    elements.openRateSettlement = qs("#openRateSettlementButton");
+    elements.rateSettlementModal = qs("#rateSettlementModal");
+    elements.closeRateSettlement = qs("#closeRateSettlementModal");
+    elements.cancelRateSettlement = qs("#cancelRateSettlement");
+    elements.settlementFromDate = qs("#settlementFromDate");
+    elements.settlementToDate = qs("#settlementToDate");
+    elements.settlementSupplier = qs("#settlementSupplier");
+    elements.settlementMaterial = qs("#settlementMaterial");
+    elements.settlementRate = qs("#settlementRate");
+    elements.rateSettlementPreview = qs("#rateSettlementPreview");
+    elements.previewRateSettlement = qs("#previewRateSettlement");
+    elements.applyRateSettlement = qs("#applyRateSettlement");
+
+    elements.rateSettlementConfirmModal = qs("#rateSettlementConfirmModal");
+    elements.rateSettlementConfirmMessage = qs("#rateSettlementConfirmMessage");
+    elements.cancelRateSettlementConfirm = qs("#cancelRateSettlementConfirm");
+    elements.confirmRateSettlementButton = qs("#confirmRateSettlementButton");
   };
 
   const init = async () => {

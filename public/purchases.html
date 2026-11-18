@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/purchase.css">
+  <link rel="stylesheet" href="/css/purchase-rate-settlement.css">
   <link rel="manifest" href="/manifest.json">
   <meta name="theme-color" content="#2563eb">
 </head>
@@ -78,10 +79,16 @@
               <h2>Purchase List</h2>
               <p>Raw material purchases recorded in the system.</p>
             </div>
-            <button class="primary-button" id="addPurchaseButton" type="button">
+            <div class="purchase-header-actions">
+              <button class="secondary-button" id="openRateSettlementButton" type="button">
+                <i class="fa-solid fa-scale-balanced"></i>
+                <span>Set Purchase Rates</span>
+              </button>
+              <button class="primary-button" id="addPurchaseButton" type="button">
               <i class="fa-solid fa-plus"></i>
-              <span>New Purchase</span>
-            </button>
+                <span>New Purchase</span>
+              </button>
+            </div>
           </div>
 
           <div class="purchase-filters">
@@ -351,6 +358,75 @@
       </form>
     </div>
   </div>
+
+
+  <!-- Purchase Rate Settlement Modal -->
+  <div class="modal-overlay" id="rateSettlementModal" hidden>
+    <div class="modal rate-settlement-modal" role="dialog" aria-modal="true" aria-labelledby="rateSettlementTitle">
+      <div class="modal-header">
+        <div class="modal-title-wrap">
+          <div class="modal-title-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+          <div>
+            <h2 id="rateSettlementTitle">Purchase Rate Settlement</h2>
+            <p>Apply one supplier rate to pending purchase items in a custom date range.</p>
+          </div>
+        </div>
+        <button class="modal-close" id="closeRateSettlementModal" type="button" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="rate-settlement-body">
+        <div class="rate-settlement-grid">
+          <div class="form-group"><label for="settlementFromDate">From Date <span>*</span></label><input id="settlementFromDate" type="date" required></div>
+          <div class="form-group"><label for="settlementToDate">To Date <span>*</span></label><input id="settlementToDate" type="date" required></div>
+          <div class="form-group"><label for="settlementSupplier">Supplier <span>*</span></label><select id="settlementSupplier"><option value="">Select Supplier</option></select></div>
+          <div class="form-group"><label for="settlementMaterial">Raw Material <span>*</span></label><select id="settlementMaterial"><option value="">Select Raw Material</option></select></div>
+          <div class="form-group"><label for="settlementRate">Rate <span>*</span></label><div class="currency-input"><span>₹</span><input id="settlementRate" type="number" min="0" step="0.01" placeholder="Enter rate"></div></div>
+        </div>
+        <div class="rate-settlement-preview" id="rateSettlementPreview" aria-live="polite">
+          <div class="rate-preview-empty">Select dates, supplier and raw material, then click Preview.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="secondary-button" id="cancelRateSettlement" type="button">Cancel</button>
+        <button class="secondary-button" id="previewRateSettlement" type="button"><i class="fa-solid fa-magnifying-glass"></i> Preview</button>
+        <button class="primary-button" id="applyRateSettlement" type="button" disabled><i class="fa-solid fa-check"></i> Apply Rate</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Purchase Rate Settlement Confirmation Modal -->
+<div class="modal-overlay" id="rateSettlementConfirmModal" hidden>
+  <div class="modal confirmation-modal">
+    <div class="confirmation-icon">
+      <i class="fa-solid fa-scale-balanced"></i>
+    </div>
+
+    <h2>Apply Purchase Rate?</h2>
+
+    <p id="rateSettlementConfirmMessage">
+      Are you sure you want to overwrite rates for all matching purchase items?
+    </p>
+
+    <div class="modal-footer">
+      <button
+        class="secondary-button"
+        id="cancelRateSettlementConfirm"
+        type="button"
+      >
+        Cancel
+      </button>
+
+      <button
+        class="primary-button"
+        id="confirmRateSettlementButton"
+        type="button"
+      >
+        <i class="fa-solid fa-check"></i>
+        Apply Rate
+      </button>
+    </div>
+  </div>
+</div>
 
   <!-- View Purchase Modal -->
   <div class="modal-overlay" id="viewPurchaseModal" hidden>
